@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@fontsource/plus-jakarta-sans";
 import "./globals.css";
+import AuthProvider from "@/components/providers/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -18,7 +19,9 @@ export default function RootLayout({
         className="font-plus-jakarta-sans antialiased bg-white text-black min-h-screen"
         style={{ fontFamily: '"Plus Jakarta Sans Variable", sans-serif' }}
       >
-        <main className="w-full min-h-screen flex flex-col">{children}</main>
+        <AuthProvider>
+          <main className="w-full min-h-screen flex flex-col">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

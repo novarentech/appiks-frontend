@@ -37,6 +37,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { signOut } from "next-auth/react";
 
 interface MenuItem {
   title: string;
@@ -62,7 +63,6 @@ interface NavbarProps {
   };
   menu?: MenuItem[];
   user?: UserProfile;
-  onLogout?: () => void;
 }
 
 const NavbarUserDashboard = ({
@@ -93,7 +93,6 @@ const NavbarUserDashboard = ({
     initials: "MN",
     avatar: "/avatar-placeholder.jpg"
   },
-  onLogout,
 }: NavbarProps) => {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -106,12 +105,11 @@ const isActiveMenu = (url: string) => {
   // For other routes, check if pathname starts with the URL
   return pathname === url || pathname.startsWith(url + '/');
 };
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      console.log("Logout clicked");
-    }
+
+  const handleLogout = async () => {
+    await signOut({
+      callbackUrl: "/",
+    });
   };
 
   const closeSheet = () => {
