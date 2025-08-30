@@ -72,6 +72,8 @@ export const authConfig: AuthOptions = {
         token.verified = user.verified;
         token.token = user.token;
         token.expiresIn = user.expiresIn;
+        token.name = user.name;
+        token.phone = user.phone;
       }
 
       // Check if token is completely expired
@@ -122,6 +124,8 @@ export const authConfig: AuthOptions = {
         session.user.verified = token.verified;
         session.user.token = token.token;
         session.user.expiresIn = token.expiresIn;
+        session.user.name = token.name;
+        session.user.phone = token.phone;
       }
 
       return session;

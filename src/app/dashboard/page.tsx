@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { UserProfile } from "@/components/auth/UserProfile";
 
 export default function DashboardPage() {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, isVerified } = useAuth();
 
   if (isLoading) {
     return (
@@ -17,11 +17,11 @@ export default function DashboardPage() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isVerified) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p>Not authenticated. Redirecting...</p>
+          <p>Redirecting...</p>
         </div>
       </div>
     );

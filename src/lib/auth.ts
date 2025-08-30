@@ -4,6 +4,9 @@ import {
   LoginCredentials,
   LoginResponse,
   RefreshResponse,
+  UpdateProfileData,
+  UpdateProfileResponse,
+  UserProfileResponse,
 } from "@/types/auth";
 
 const API_BASE_URL =
@@ -173,4 +176,127 @@ export function getTokenExpiryInfo(token: string, expiresIn: string) {
     shouldRefresh: shouldRefreshToken(expiresIn),
     timeUntilExpiry: apiExp.getTime() - now.getTime(),
   };
+}
+
+/**
+ * Validate token and get detailed info
+ */
+export function validateToken(token: string) {
+  if (!token) {
+    return { isValid: false, error: "Token tidak ditemukan" };
+  }
+
+  try {
+    const decoded = decodeJWT(token);
+    if (!decoded) {
+      return { isValid: false, error: "Token tidak dapat di-decode" };
+    }
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < currentTime) {
+      return { isValid: false, error: "Token sudah kedaluwarsa" };
+    }
+
+    return {
+      isValid: true,
+      decoded,
+      username: decoded.username,
+      verified: decoded.verified,
+      expiresAt: decoded.exp ? new Date(decoded.exp * 1000) : null,
+    };
+  } catch (error) {
+    console.error("Token validation error:", error);
+    return { isValid: false, error: "Token format tidak valid" };
+  }
+}
+
+/**
+ * Update user profile API call
+ */
+export async function updateProfileAPI(
+  profileData: UpdateProfileData,
+  token: string
+): Promise<UpdateProfileResponse> {
+  try {
+    console.log("📤 Making PATCH request to /profile with:", {
+      profileData,
+      tokenPrefix: token?.substring(0, 10) + "...",
+      apiUrl: `${API_BASE_URL}/profile`,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/profile`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    console.log("📥 API Response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ API Error response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+
+      throw new Error(
+        `HTTP error! status: ${response.status} - ${response.statusText}`
+      );
+    }
+
+    const data: UpdateProfileResponse = await response.json();
+    console.log("✅ API Success response:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Update profile API error:", error);
+    throw new Error("Profile update failed");
+  }
+}
+
+/**
+ * Get user profile API call
+ */
+export async function getUserProfileAPI(
+  token: string
+): Promise<UserProfileResponse> {
+  try {
+    console.log("📤 Making GET request to /me with token:", {
+      tokenPrefix: token?.substring(0, 10) + "...",
+      apiUrl: `${API_BASE_URL}/me`,
+    });
+
+    const response = await fetch(`${API_BASE_URL}/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log("📥 API Response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ API Error response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+
+      throw new Error(
+        `HTTP error! status: ${response.status} - ${response.statusText}`
+      );
+    }
+
+    const data: UserProfileResponse = await response.json();
+    console.log("✅ User profile API Success response:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Get user profile API error:", error);
+    throw new Error("Failed to fetch user profile");
+  }
 }

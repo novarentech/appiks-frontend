@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { GraduationCap, Building, Check, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { GraduationCap, Building, Check, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useProfileUpdate } from "@/hooks/useProfileUpdate";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 import {
   Dialog,
@@ -30,28 +33,81 @@ interface ProfileData {
 }
 
 const FillData = () => {
+  const { data: session } = useSession();
+  const { isLoading, error, updateProfile } = useProfileUpdate();
+  const {
+    isLoading: isLoadingProfile,
+    error: profileError,
+    profileData: apiProfileData,
+  } = useUserProfile();
   const [showSaveModal, setShowSaveModal] = useState(false);
 
   const [profileData, setProfileData] = useState<ProfileData>({
-    fullName: "Marsha Bilqis Nasywaa",
-    username: "marsha.bilqis",
-    nisn: "123456",
-    mentor: "Budi Santoso",
-    kelas: "Kelas XI IPA 6",
-    namaSekolah: "SMA Negeri 01 Yogyakarta",
-    noTelp: "088123456",
+    fullName: "",
+    username: "",
+    nisn: "",
+    mentor: "",
+    kelas: "",
+    namaSekolah: "",
+    noTelp: "",
     avatar: "/avatar-placeholder.jpg",
   });
 
   const [editData, setEditData] = useState<ProfileData>(profileData);
 
+  // Update profile data when API data is loaded
+  useEffect(() => {
+    if (apiProfileData) {
+      const updatedData: ProfileData = {
+        fullName: apiProfileData.name || "",
+        username: apiProfileData.username || "",
+        nisn: apiProfileData.identifier || "",
+        mentor: apiProfileData.mentor.name || "", 
+        kelas: apiProfileData.room.name || "", 
+        namaSekolah: apiProfileData.school.name || "",
+        noTelp: apiProfileData.phone || "",
+        avatar: "/avatar-placeholder.jpg",
+      };
+
+      setProfileData(updatedData);
+      setEditData(updatedData);
+      console.log("✅ Profile data updated from API:", updatedData);
+    }
+  }, [apiProfileData]);
+
+  // Update initial data when session is available
+  useEffect(() => {
+    if (session?.user) {
+      const initialData = {
+        fullName: "Marsha Bilqis Nasywaa",
+        username: session.user.username || "",
+        nisn: "123456",
+        mentor: "Budi Santoso",
+        kelas: "Kelas XI IPA 6",
+        namaSekolah: "SMA Negeri 01 Yogyakarta",
+        noTelp: "",
+        avatar: "/avatar-placeholder.jpg",
+      };
+      setProfileData(initialData);
+      setEditData(initialData);
+    }
+  }, [session]);
+
   const handleSaveClick = () => {
     setShowSaveModal(true);
   };
 
-  const handleConfirmSave = () => {
-    setProfileData(editData);
-    setShowSaveModal(false);
+  const handleConfirmSave = async () => {
+    const success = await updateProfile({
+      username: editData.username,
+      phone: editData.noTelp,
+    });
+
+    if (success) {
+      setProfileData(editData);
+      setShowSaveModal(false);
+    }
+    // Error handling is done in the hook
   };
 
   const handleCancelSave = () => {
@@ -73,8 +129,35 @@ const FillData = () => {
       .toUpperCase();
   };
 
-  // Check if there are any changes
+  // Check if there are any changes and if form is valid
   const hasChanges = JSON.stringify(profileData) !== JSON.stringify(editData);
+  const isFormValid =
+    editData.username.trim() !== "" && editData.noTelp.trim() !== "";
+
+  // Show loading state while fetching profile data
+  if (isLoadingProfile) {
+    return (
+      <Card className="p-6">
+        <div className="flex items-center justify-center space-x-2">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Memuat data profil...</span>
+        </div>
+      </Card>
+    );
+  }
+
+  // Show error state if profile fetch failed
+  if (profileError) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-red-600">
+          <X className="w-8 h-8 mx-auto mb-2" />
+          <p className="font-medium">Gagal memuat data profil</p>
+          <p className="text-sm mt-1">{profileError}</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -142,38 +225,70 @@ const FillData = () => {
             {/* Username - Editable */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
-                Username
+                Username *
               </Label>
               <Input
                 value={editData.username}
                 onChange={(e) => handleInputChange("username", e.target.value)}
                 placeholder="Masukkan username"
+                className={
+                  editData.username.trim() === ""
+                    ? "border-red-300 focus:border-red-500"
+                    : ""
+                }
               />
+              {editData.username.trim() === "" && (
+                <p className="text-sm text-red-500">Username wajib diisi</p>
+              )}
             </div>
 
             {/* No Telp - Editable */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
-                No Telp
+                No Telp *
               </Label>
               <Input
                 value={editData.noTelp}
                 onChange={(e) => handleInputChange("noTelp", e.target.value)}
                 placeholder="Masukkan nomor telepon"
                 type="tel"
+                className={
+                  editData.noTelp.trim() === ""
+                    ? "border-red-300 focus:border-red-500"
+                    : ""
+                }
               />
+              {editData.noTelp.trim() === "" && (
+                <p className="text-sm text-red-500">
+                  Nomor telepon wajib diisi
+                </p>
+              )}
             </div>
           </div>
 
           {/* Save Button */}
-          <div className="flex justify-end mt-8">
+          <div className="flex flex-col items-end mt-8">
+            {error && (
+              <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
             <Button
               onClick={handleSaveClick}
               className="bg-blue-500 hover:bg-blue-600"
-              disabled={!hasChanges}
+              disabled={!hasChanges || !isFormValid || isLoading}
             >
-              <Check className="w-4 h-4 mr-2" />
-              Simpan Profil
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Simpan Profil
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
@@ -219,6 +334,7 @@ const FillData = () => {
               variant="outline"
               onClick={handleCancelSave}
               className="flex-1"
+              disabled={isLoading}
             >
               <X className="w-4 h-4 mr-2" />
               Tidak
@@ -227,9 +343,19 @@ const FillData = () => {
               type="button"
               onClick={handleConfirmSave}
               className="flex-1 bg-blue-500 hover:bg-blue-600"
+              disabled={isLoading}
             >
-              <Check className="w-4 h-4 mr-2" />
-              Ya, Simpan
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Ya, Simpan
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
