@@ -136,7 +136,7 @@ export function VideoCard({ video, onPlay, className = "" }: VideoCardProps) {
             <Badge
               key={tagIndex}
               variant="secondary"
-              className="bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-2 py-0.5 transition-colors"
+              className="bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs px-2 py-0.5 transition-colors"
             >
               {tag}
             </Badge>
@@ -144,7 +144,7 @@ export function VideoCard({ video, onPlay, className = "" }: VideoCardProps) {
           {video.tags.length > 3 && (
             <Badge
               variant="secondary"
-              className="bg-indigo-500 text-white text-xs px-2 py-0.5"
+              className="bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs px-2 py-0.5 transition-colors"
             >
               +{video.tags.length - 3}
             </Badge>
