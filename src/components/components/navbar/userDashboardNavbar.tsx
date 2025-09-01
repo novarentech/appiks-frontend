@@ -33,11 +33,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 interface MenuItem {
   title: string;
@@ -49,8 +49,7 @@ interface MenuItem {
 
 interface UserProfile {
   name: string;
-  email: string;
-  avatar?: string;
+  username: string;
   initials: string;
 }
 
@@ -62,8 +61,18 @@ interface NavbarProps {
     title: string;
   };
   menu?: MenuItem[];
-  user?: UserProfile;
 }
+
+// Function to generate initials from a name
+const getInitials = (name: string): string => {
+  if (!name) return "??";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
+};
 
 const NavbarUserDashboard = ({
   logo = {
@@ -87,24 +96,30 @@ const NavbarUserDashboard = ({
       url: "/dashboard/history-report",
     },
   ],
-  user = {
-    name: "Marsha Bilqis",
-    email: "marsha.bilqis@student.sch.id",
-    initials: "MN",
-    avatar: "/avatar-placeholder.jpg"
-  },
 }: NavbarProps) => {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-const isActiveMenu = (url: string) => {
-  // Special handling for Dashboard - only active when exact match
-  if (url === "/dashboard") {
-    return pathname === "/dashboard";
-  }
-  // For other routes, check if pathname starts with the URL
-  return pathname === url || pathname.startsWith(url + '/');
-};
+  // Prevent hydration mismatch by not rendering user content until session is ready
+  const isLoading = status === "loading";
+  const isAuthenticated = status === "authenticated" && session;
+
+  // Get user data from session, with safe fallbacks
+  const user: UserProfile = {
+    name: (isAuthenticated && session?.user?.name) || "Unknown User",
+    username: (isAuthenticated && session?.user?.username) || "",
+    initials: getInitials((isAuthenticated && session?.user?.name) || ""),
+  };
+
+  const isActiveMenu = (url: string) => {
+    // Special handling for Dashboard - only active when exact match
+    if (url === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    // For other routes, check if pathname starts with the URL
+    return pathname === url || pathname.startsWith(url + "/");
+  };
 
   const handleLogout = async () => {
     await signOut({
@@ -122,7 +137,10 @@ const isActiveMenu = (url: string) => {
       <nav className="fixed top-5 left-0 right-0 z-50 hidden justify-between lg:flex border rounded-full py-4 px-10 bg-background/95 backdrop-blur-sm container mx-auto">
         <div className="flex items-center gap-6">
           {/* Logo */}
-          <Link href={logo.url} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link
+            href={logo.url}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
             </div>
@@ -131,7 +149,7 @@ const isActiveMenu = (url: string) => {
             </span>
           </Link>
         </div>
-        
+
         <div className="flex gap-2 items-center">
           <div className="flex items-center">
             <NavigationMenu>
@@ -140,98 +158,52 @@ const isActiveMenu = (url: string) => {
               </NavigationMenuList>
             </NavigationMenu>
           </div>
-          
+
           <Separator
             orientation="vertical"
             className="h-8 w-px bg-gray-200 mx-6"
           />
-          
-          {/* User Profile Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-blue-500/20 transition-all">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-blue-500 text-white font-semibold text-sm">
-                    {user.initials}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64" align="end" sideOffset={4}>
-              <div className="flex items-center gap-2 p-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="bg-blue-500 text-white font-semibold text-sm">
-                    {user.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col space-y-1">
-                  <p className="font-medium text-sm text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile" className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="cursor-pointer text-red-600 focus:text-red-600"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </nav>
 
-      {/* Mobile Menu */}
-      <div className="block lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b shadow-sm">
-        <div className="flex items-center justify-between p-4">
-          {/* Logo */}
-          <Link href={logo.url} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">A</span>
-            </div>
-            <span className="text-lg font-semibold tracking-tighter">
-              {logo.title}
-            </span>
-          </Link>
-          
-          <div className="flex items-center gap-2">
-            {/* User Avatar Mobile */}
+          {/* User Profile Dropdown */}
+          {isLoading ? (
+            <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+          ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="bg-blue-500 text-white text-xs font-semibold">
-                      {user.initials}
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-blue-500/20 transition-all"
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-blue-500 text-white font-semibold text-sm">
+                      {user.initials || "??"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" sideOffset={4}>
+              <DropdownMenuContent className="w-64" align="end" sideOffset={4}>
                 <div className="flex items-center gap-2 p-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="bg-blue-500 text-white text-xs font-semibold">
-                      {user.initials}
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-blue-500 text-white font-semibold text-sm">
+                      {user.initials || "??"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col space-y-1">
-                    <p className="font-medium text-sm text-gray-900">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                    <p className="font-medium text-sm text-gray-900">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-gray-500">{user.username}</p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
                   className="cursor-pointer text-red-600 focus:text-red-600"
                   onClick={handleLogout}
                 >
@@ -240,6 +212,73 @@ const isActiveMenu = (url: string) => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+        </div>
+      </nav>
+
+      {/* Mobile Menu */}
+      <div className="block lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b shadow-sm">
+        <div className="flex items-center justify-between p-4">
+          {/* Logo */}
+          <Link
+            href={logo.url}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xs">A</span>
+            </div>
+            <span className="text-lg font-semibold tracking-tighter">
+              {logo.title}
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            {/* User Avatar Mobile */}
+            {isLoading ? (
+              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse" />
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full p-0"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-blue-500 text-white text-xs font-semibold">
+                        {user.initials || "??"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56"
+                  align="end"
+                  sideOffset={4}
+                >
+                  <div className="flex items-center gap-2 p-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-blue-500 text-white text-xs font-semibold">
+                        {user.initials || "??"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col space-y-1">
+                      <p className="font-medium text-sm text-gray-900">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-gray-500">{user.username}</p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer text-red-600 focus:text-red-600"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
@@ -250,7 +289,11 @@ const isActiveMenu = (url: string) => {
               <SheetContent className="overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>
-                    <Link href={logo.url} className="flex items-center gap-2" onClick={closeSheet}>
+                    <Link
+                      href={logo.url}
+                      className="flex items-center gap-2"
+                      onClick={closeSheet}
+                    >
                       <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-xs">A</span>
                       </div>
@@ -260,33 +303,46 @@ const isActiveMenu = (url: string) => {
                     </Link>
                   </SheetTitle>
                 </SheetHeader>
-                
+
                 <div className="flex flex-col gap-6 p-4">
                   {/* User Info Mobile */}
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback className="bg-blue-500 text-white font-semibold">
-                        {user.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <p className="font-semibold text-gray-900">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
+                  {isLoading ? (
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                      <div className="h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
+                      <div className="flex flex-col gap-2">
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-blue-500 text-white font-semibold">
+                          {user.initials || "??"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <p className="font-semibold text-gray-900">
+                          {user.name}
+                        </p>
+                        <p className="text-sm text-gray-500">{user.username}</p>
+                      </div>
+                    </div>
+                  )}
 
                   <Accordion
                     type="single"
                     collapsible
                     className="flex w-full flex-col gap-4"
                   >
-                    {menu.map((item) => renderMobileMenuItem(item, isActiveMenu, closeSheet))}
+                    {menu.map((item) =>
+                      renderMobileMenuItem(item, isActiveMenu, closeSheet)
+                    )}
                   </Accordion>
 
                   <div className="flex flex-col gap-3 pt-4 border-t">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
                       onClick={() => {
                         closeSheet();
@@ -310,7 +366,10 @@ const isActiveMenu = (url: string) => {
   );
 };
 
-const renderMenuItem = (item: MenuItem, isActiveMenu: (url: string) => boolean) => {
+const renderMenuItem = (
+  item: MenuItem,
+  isActiveMenu: (url: string) => boolean
+) => {
   if (item.items) {
     return (
       <NavigationMenuItem key={item.title}>
@@ -344,8 +403,8 @@ const renderMenuItem = (item: MenuItem, isActiveMenu: (url: string) => boolean) 
 };
 
 const renderMobileMenuItem = (
-  item: MenuItem, 
-  isActiveMenu: (url: string) => boolean, 
+  item: MenuItem,
+  isActiveMenu: (url: string) => boolean,
   closeSheet: () => void
 ) => {
   if (item.items) {
@@ -356,7 +415,11 @@ const renderMobileMenuItem = (
         </AccordionTrigger>
         <AccordionContent className="mt-2">
           {item.items.map((subItem) => (
-            <SubMenuLink key={subItem.title} item={subItem} onClick={closeSheet} />
+            <SubMenuLink
+              key={subItem.title}
+              item={subItem}
+              onClick={closeSheet}
+            />
           ))}
         </AccordionContent>
       </AccordionItem>
@@ -364,14 +427,12 @@ const renderMobileMenuItem = (
   }
 
   return (
-    <Link 
-      key={item.title} 
-      href={item.url} 
+    <Link
+      key={item.title}
+      href={item.url}
       className={cn(
         "text-md font-semibold px-2 py-3 rounded-md transition-colors block",
-        isActiveMenu(item.url) 
-          ? "bg-blue-50 text-blue-700" 
-          : "hover:bg-muted"
+        isActiveMenu(item.url) ? "bg-blue-50 text-blue-700" : "hover:bg-muted"
       )}
       onClick={closeSheet}
     >
@@ -380,11 +441,11 @@ const renderMobileMenuItem = (
   );
 };
 
-const SubMenuLink = ({ 
-  item, 
-  onClick 
-}: { 
-  item: MenuItem; 
+const SubMenuLink = ({
+  item,
+  onClick,
+}: {
+  item: MenuItem;
   onClick?: () => void;
 }) => {
   return (

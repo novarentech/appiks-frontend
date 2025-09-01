@@ -300,3 +300,46 @@ export async function getUserProfileAPI(
     throw new Error("Failed to fetch user profile");
   }
 }
+
+/**
+ * Check mood record API call
+ */
+export async function checkMoodRecordAPI(token: string): Promise<{
+  success: boolean;
+  message: string;
+  data: { can: boolean };
+}> {
+  try {
+    console.log("🔄 Checking mood record...");
+
+    const response = await fetch(`${API_BASE_URL}/mood_record/check`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log("📥 Mood record check response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Mood record check error response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+
+      throw new Error(
+        `HTTP error! status: ${response.status} - ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    console.log("✅ Mood record check success response:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Check mood record API error:", error);
+    throw new Error("Failed to check mood record");
+  }
+}
