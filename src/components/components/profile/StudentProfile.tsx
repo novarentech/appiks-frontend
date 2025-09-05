@@ -22,14 +22,14 @@ interface ProfileData {
   fullName: string;
   username: string;
   nisn: string;
-  mentor: string
+  mentor: string;
   kelas: string;
   namaSekolah: string;
   noTelp: string;
   avatar?: string;
 }
 
-const ProfilePage = () => {
+const ProfileStudent = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
@@ -90,6 +90,12 @@ const ProfilePage = () => {
 
   return (
     <>
+      <div className="text-center mb-18">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2">
+          Profil Saya
+        </h1>
+        <p className="text-muted-foreground">Kelola informasi pribadi mu</p>
+      </div>
       {/* Profile Card */}
       <Card className="relative p-0">
         <CardHeader className="pb-4 p-0">
@@ -284,4 +290,4 @@ const ProfilePage = () => {
   );
 };
 
-export { ProfilePage };
+export { ProfileStudent };
