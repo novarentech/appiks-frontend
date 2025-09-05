@@ -106,7 +106,7 @@ export default function DashboardLihatPolaMoodPage() {
       return;
     }
 
-    if (!isLoading && user && user.role !== "teacher") {
+    if (!isLoading && user && user.role !== "teacher" && user.role !== "counselor") {
       router.push("/dashboard");
       return;
     }
@@ -146,7 +146,7 @@ export default function DashboardLihatPolaMoodPage() {
     );
   }
 
-  if (!isAuthenticated || !isVerified || !user || user.role !== "teacher") {
+  if (!isAuthenticated || !isVerified || !user || (user.role !== "teacher" && user.role !== "counselor")) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

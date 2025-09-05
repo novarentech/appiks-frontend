@@ -180,6 +180,16 @@ const roleBasedNavigation = {
       icon: Home,
     },
     {
+      title: "Data Siswa",
+      url: "/dashboard/data-siswa",
+      icon: Users,
+    },
+    {
+      title: "Curhatan Siswa",
+      url: "/dashboard/curhatan-siswa",
+      icon: MessageCircle,
+    },
+    {
       title: "Student Cases",
       url: "#",
       icon: Users,
