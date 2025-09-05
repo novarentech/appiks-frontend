@@ -223,7 +223,7 @@ export default function ConfidentTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="min-w-[150px]">
+        <div className="min-w-[150px] flex items-center space-x-3">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-sm font-medium text-blue-600">
               {row.original.siswa.nama
