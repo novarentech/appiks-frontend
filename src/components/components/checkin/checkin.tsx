@@ -538,15 +538,6 @@ export default function CheckIn() {
               )}
             </div>
           </div>
-
-          {/* Display API response message if available */}
-          {moodResponse?.data?.pesan && (
-            <div className="mt-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                {moodResponse.data.pesan}
-              </p>
-            </div>
-          )}
         </div>
 
         {renderQuoteCard()}
