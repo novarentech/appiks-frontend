@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FaChalkboardTeacher } from "react-icons/fa";
-import { SessionDebugger } from "@/components/debug/SessionDebugger";
 
 interface ProfileData {
   fullName: string;
@@ -265,11 +264,6 @@ const FillData = () => {
 
   return (
     <>
-      {/* Debug Session Component */}
-      <div className="mb-4">
-        <SessionDebugger />
-      </div>
-
       {/* Profile Card */}
       <Card className="relative p-0">
         <CardHeader className="pb-4 p-0">

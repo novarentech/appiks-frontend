@@ -58,12 +58,6 @@ export default function FillDataPage() {
               sudah benar.
             </p>
           </div>
-
-          {/* Debug component - hapus di production */}
-          <div className="mb-8">
-            <SessionDebug />
-          </div>
-
           <FillData />
         </div>
       </div>
