@@ -308,28 +308,15 @@ export default function ConfidentTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <Badge className={getStatusBadge(row.original.status)}>
-          {row.original.status === "terkirim" ? "Terkirim" : "Dibalas"}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "prioritas",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
-        >
-          Prioritas
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <Badge className={getPrioritasBadge(row.original.prioritas)}>
-          {row.original.prioritas.charAt(0).toUpperCase() +
-            row.original.prioritas.slice(1)}
-        </Badge>
+        <div className="flex items-center space-x-3">
+          <Badge className={getStatusBadge(row.original.status)}>
+            {row.original.status === "terkirim" ? "Terkirim" : "Dibalas"}
+          </Badge>
+          <Badge className={getPrioritasBadge(row.original.prioritas)}>
+            {row.original.prioritas.charAt(0).toUpperCase() +
+              row.original.prioritas.slice(1)}
+          </Badge>
+        </div>
       ),
     },
     {

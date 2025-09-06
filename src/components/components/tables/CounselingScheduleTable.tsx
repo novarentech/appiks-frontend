@@ -214,7 +214,8 @@ const counselingScheduleData: CounselingSchedule[] = [
       guruBK: "Sri Wahyuni, S.Pd, M.Pd",
       ruangan: "Ruang Konseling",
     },
-    hasilKonseling: "Siswa sudah lebih percaya diri dan mulai beradaptasi dengan baik di lingkungan sekolah baru",
+    hasilKonseling:
+      "Siswa sudah lebih percaya diri dan mulai beradaptasi dengan baik di lingkungan sekolah baru",
   },
   {
     id: 9,
@@ -245,7 +246,8 @@ const counselingScheduleData: CounselingSchedule[] = [
     status: "dibatalkan",
     prioritas: "rendah",
     waktuDiajukan: "24/08/2025 13:25",
-    alasanPembatalan: "Siswa sudah merasa lebih baik dan tidak memerlukan konseling lagi",
+    alasanPembatalan:
+      "Siswa sudah merasa lebih baik dan tidak memerlukan konseling lagi",
   },
 ];
 
@@ -484,36 +486,17 @@ export default function CounselingScheduleTable({
       ),
       cell: ({ row }) => (
         <div className="min-w-[150px] flex items-center space-x-3">
-           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-medium text-blue-600">
-                {row.original.siswa.nama
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
-              </span>
-            </div>
-            <span className="font-medium text-gray-900 truncate">
-              {row.original.siswa.nama}
+          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-medium text-blue-600">
+              {row.original.siswa.nama
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
             </span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "siswa.nisn",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
-        >
-          NISN
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <div className="min-w-[120px]">
-          <span className="text-sm text-gray-600">
-            {row.original.siswa.nisn}
+          </div>
+          <span className="font-medium text-gray-900 truncate">
+            <p>{row.original.siswa.nama}</p>
+            <p className="text-xs text-foreground">{row.original.siswa.nisn}</p>
           </span>
         </div>
       ),
@@ -572,28 +555,15 @@ export default function CounselingScheduleTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <Badge className={getStatusBadge(row.original.status)}>
-          {getStatusLabel(row.original.status)}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "prioritas",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
-        >
-          Prioritas
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <Badge className={getPrioritasBadge(row.original.prioritas)}>
-          {row.original.prioritas.charAt(0).toUpperCase() +
-            row.original.prioritas.slice(1)}
-        </Badge>
+        <div className="flex items-center space-x-3">
+          <Badge className={getStatusBadge(row.original.status)}>
+            {getStatusLabel(row.original.status)}
+          </Badge>
+          <Badge className={getPrioritasBadge(row.original.prioritas)}>
+            {row.original.prioritas.charAt(0).toUpperCase() +
+              row.original.prioritas.slice(1)}
+          </Badge>
+        </div>
       ),
     },
     {
