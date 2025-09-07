@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth.config";
 
+const API_BASE_URL = process.env.API_BASE_URL;
+
 interface RedirectResponse {
   redirect: string;
   reason?: string;
@@ -58,16 +60,13 @@ export async function GET(): Promise<NextResponse<RedirectResponse>> {
 
     try {
       console.log("🔄 Calling mood record API...");
-      const moodResponse = await fetch(
-        "https://appiks-be.disyfa.cloud/api/mood_record/check",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
+      const moodResponse = await fetch(`${API_BASE_URL}/mood_record/check`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
 
       console.log("📡 Mood API response status:", moodResponse.status);
 

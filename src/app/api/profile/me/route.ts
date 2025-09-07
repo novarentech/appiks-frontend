@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../../auth";
 
+const API_BASE_URL =  process.env.API_BASE_URL;
+
 export async function GET() {
   try {
     // Get session from NextAuth
@@ -19,7 +21,7 @@ export async function GET() {
     );
 
     // Make request to the backend API
-    const response = await fetch("https://appiks-be.disyfa.cloud/api/me", {
+    const response = await fetch(`${API_BASE_URL}/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

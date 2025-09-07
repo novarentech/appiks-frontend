@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../auth";
 
-const API_BASE_URL =
-  process.env.API_BASE_URL || "https://appiks-be.disyfa.cloud/api";
+const API_BASE_URL =  process.env.API_BASE_URL;
 
 export async function GET(request: NextRequest) {
   try {

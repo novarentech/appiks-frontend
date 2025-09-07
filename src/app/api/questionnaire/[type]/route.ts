@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const EXTERNAL_API_BASE_URL = "https://appiks-be.disyfa.cloud/api";
+const EXTERNAL_API_BASE_URL =  process.env.API_BASE_URL ;
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { type: string } }
+  { params }: { params: Promise<{ type: string }> }
 ) {
   try {
-    const { type } = params;
+    const { type } = await params;
 
     // Validate type parameter
     if (!type || !["secure", "insecure"].includes(type)) {
@@ -100,10 +100,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { type: string } }
+  { params }: { params: Promise<{ type: string }> }
 ) {
   try {
-    const { type } = params;
+    const { type } = await params;
 
     // Validate type parameter
     if (!type || !["secure", "insecure"].includes(type)) {

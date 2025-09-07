@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../auth";
 
+const API_BASE_URL =  process.env.API_BASE_URL;
+
 export async function PATCH(request: Request) {
   const session = await auth(); // sekarang valid ✅
 
@@ -20,7 +22,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const backendUrl = "https://appiks-be.disyfa.cloud/api/profile";
+  const backendUrl = `${API_BASE_URL}/profile`;
 
   const response = await fetch(backendUrl, {
     method: "PATCH",
