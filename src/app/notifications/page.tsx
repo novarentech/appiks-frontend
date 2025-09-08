@@ -26,8 +26,6 @@ export default function NotificationsPage() {
     return notification.type === filter;
   });
 
-  const unreadCount = allNotifications.filter((n) => n.isNew).length;
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
