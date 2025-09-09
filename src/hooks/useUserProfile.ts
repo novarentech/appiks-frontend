@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { getUserProfileAPI } from "@/lib/auth";
 import type { UserProfileResponse } from "@/types/auth";
 
 interface UseUserProfileReturn {
@@ -32,13 +31,27 @@ export function useUserProfile(): UseUserProfileReturn {
 
     try {
       console.log("🔄 Fetching user profile...");
-      const response = await getUserProfileAPI(session.user.token);
+      
+      // ✅ Gunakan API route internal instead of direct backend call
+      const response = await fetch("/api/profile/me", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-      if (response.success) {
-        setProfileData(response.data);
-        console.log("✅ Profile data loaded:", response.data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Gagal mengambil data profil");
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setProfileData(data.data);
+        console.log("✅ Profile data loaded:", data.data);
       } else {
-        setError(response.message || "Gagal mengambil data profil");
+        setError(data.message || "Gagal mengambil data profil");
       }
     } catch (error) {
       console.error("❌ Profile fetch error:", error);
