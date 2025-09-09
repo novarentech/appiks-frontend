@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.API_BASE_URL;
 
 export async function GET(
   request: Request,
-  { params }: { params: { type: string } }
+  { params }: { params: Promise<{ type: string }> }
 ) {
   try {
     // Get session from NextAuth
@@ -18,7 +18,7 @@ export async function GET(
       );
     }
 
-    const { type } = params;
+    const { type } = await params;
 
     console.log(
       "🔄 Proxying quote request for type:",
