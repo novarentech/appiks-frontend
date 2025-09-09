@@ -23,9 +23,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variables
-ENV NEXT_TELEMETRY_DISABLED 1
-
 # Build application
 RUN \
   if [ -f yarn.lock ]; then yarn build; \
