@@ -7,7 +7,8 @@ import type { UserProfileResponse } from "@/types/auth";
 interface UseUserProfileReturn {
   isLoading: boolean;
   error: string | null;
-  profileData: UserProfileResponse["data"] | null;
+  profileData: UserProfileResponse["data"] | 
+  null;
   refetch: () => Promise<void>;
 }
 
@@ -31,7 +32,7 @@ export function useUserProfile(): UseUserProfileReturn {
 
     try {
       console.log("🔄 Fetching user profile...");
-      
+
       // ✅ Gunakan API route internal instead of direct backend call
       const response = await fetch("/api/profile/me", {
         method: "GET",
@@ -46,7 +47,7 @@ export function useUserProfile(): UseUserProfileReturn {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setProfileData(data.data);
         console.log("✅ Profile data loaded:", data.data);
