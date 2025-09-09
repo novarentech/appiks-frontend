@@ -59,16 +59,15 @@ async function checkStudentMoodRecord(token: string): Promise<boolean> {
     }
 
     console.log("🔄 Middleware - Checking mood record...");
-    const response = await fetch(
-      "https://appiks-be.disyfa.cloud/api/mood_record/check",
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const apiBaseUrl =
+      process.env.API_BASE_URL ;
+    const response = await fetch(`${apiBaseUrl}/mood_record/check`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     console.log("📡 Middleware - Mood API response status:", response.status);
 

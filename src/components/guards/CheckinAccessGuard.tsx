@@ -46,16 +46,15 @@ export function CheckinAccessGuard({ children }: CheckinAccessGuardProps) {
         console.log("🎓 Client-side: Checking student checkin access");
 
         try {
-          const response = await fetch(
-            "https://appiks-be.disyfa.cloud/api/mood_record/check",
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${user.token}`,
-              },
-            }
-          );
+          const apiBaseUrl =
+            process.env.API_BASE_URL;
+          const response = await fetch(`${apiBaseUrl}/mood_record/check`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          });
 
           if (response.ok) {
             const data = await response.json();

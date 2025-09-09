@@ -31,16 +31,16 @@ export function StudentRedirectGuard({ children }: StudentRedirectGuardProps) {
         console.log("🎓 Client-side: Checking student access to dashboard");
 
         try {
-          const response = await fetch(
-            "https://appiks-be.disyfa.cloud/api/mood_record/check",
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${user.token}`,
-              },
-            }
-          );
+          const apiBaseUrl =
+            process.env.NEXT_PUBLIC_API_BASE_URL ||
+            "https://appiks-be.disyfa.cloud/api";
+          const response = await fetch(`${apiBaseUrl}/mood_record/check`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          });
 
           if (response.ok) {
             const data = await response.json();
