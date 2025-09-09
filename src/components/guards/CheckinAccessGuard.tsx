@@ -46,13 +46,11 @@ export function CheckinAccessGuard({ children }: CheckinAccessGuardProps) {
         console.log("🎓 Client-side: Checking student checkin access");
 
         try {
-          const apiBaseUrl =
-            process.env.API_BASE_URL;
-          const response = await fetch(`${apiBaseUrl}/mood_record/check`, {
+          // ✅ Use internal API route instead of direct backend call
+          const response = await fetch("/api/mood-record/check", {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${user.token}`,
             },
           });
 
