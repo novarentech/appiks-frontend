@@ -32,8 +32,7 @@ export function StudentRedirectGuard({ children }: StudentRedirectGuardProps) {
 
         try {
           const apiBaseUrl =
-            process.env.NEXT_PUBLIC_API_BASE_URL ||
-            "https://appiks-be.disyfa.cloud/api";
+            process.env.API_BASE_URL;
           const response = await fetch(`${apiBaseUrl}/mood_record/check`, {
             method: "GET",
             headers: {
