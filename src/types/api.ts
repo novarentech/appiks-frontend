@@ -19,3 +19,18 @@ export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
 }
+
+// Quote API types
+export interface Quote {
+  id: number;
+  school_id: number;
+  text: string;
+  author: string;
+  type: string;
+}
+
+export interface QuoteResponse {
+  success: boolean;
+  message: string;
+  data: Quote[];
+}
