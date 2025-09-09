@@ -11,6 +11,7 @@ import {
   Calendar,
   UserCog,
   BookText,
+  File,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -96,79 +97,22 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       icon: Calendar,
     }
   ],
-  head_teacher: [
+  headteacher: [
     {
       title: "Dashboard",
       url: "/dashboard",
       icon: Home,
     },
     {
-      title: "School Overview",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "School Analytics",
-          url: "/dashboard/school-analytics",
-        },
-        {
-          title: "Performance Metrics",
-          url: "/dashboard/performance",
-        },
-        {
-          title: "Student Welfare",
-          url: "/dashboard/student-welfare",
-        },
-      ],
+      title: "Data Sekolah",
+      url: "/dashboard/school-data",
+      icon: UserCog,
     },
     {
-      title: "Staff Management",
-      url: "#",
-      icon: Users,
-      items: [
-        {
-          title: "Teaching Staff",
-          url: "/dashboard/teaching-staff",
-        },
-        {
-          title: "Performance Reviews",
-          url: "/dashboard/staff-reviews",
-        },
-        {
-          title: "Professional Development",
-          url: "/dashboard/staff-development",
-        },
-      ],
-    },
-    {
-      title: "Academic Management",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Curriculum Oversight",
-          url: "/dashboard/curriculum-oversight",
-        },
-        {
-          title: "Assessment Results",
-          url: "/dashboard/assessments",
-        },
-        {
-          title: "Academic Standards",
-          url: "/dashboard/standards",
-        },
-      ],
-    },
-    {
-      title: "Reports",
-      url: "/dashboard/head-teacher-reports",
-      icon: BarChart3,
-    },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings,
-    },
+      title: "Data Laporan",
+      url: "/dashboard/report-data",
+      icon: File,
+    }
   ],
   super: [
     {

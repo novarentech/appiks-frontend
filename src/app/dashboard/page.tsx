@@ -44,7 +44,7 @@ export default function DashboardPage() {
         return <TeacherDashboard />;
       case "counselor":
         return <CounselorDashboard />;
-      case "head_teacher":
+      case "headteacher":
         return <HeadTeacherDashboard />;
       case "super":
         return <SuperDashboard />;
