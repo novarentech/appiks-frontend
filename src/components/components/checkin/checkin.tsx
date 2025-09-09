@@ -284,6 +284,16 @@ export default function CheckIn() {
     const route = currentRoutes[selectedRec];
     if (!route) return;
 
+    // Set session storage flag if navigating to quote page
+    if (route === "/quote") {
+      try {
+        sessionStorage.setItem("quote_access_from_checkin", "true");
+        console.log("✅ Quote access flag set from checkin");
+      } catch (error) {
+        console.error("❌ Failed to set quote access flag:", error);
+      }
+    }
+
     // Reset state
     setMood(null);
     setSelectedRec(null);
