@@ -4,8 +4,10 @@ import { RefreshCw, Sparkle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import Image from "next/image";
+import { useDailyQuotes } from "@/hooks/useDailyQuotes";
 
-const quotes = [
+// Fallback quotes in case API fails
+const fallbackQuotes = [
   {
     text: "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",
     author: "Steve Jobs",
@@ -31,16 +33,48 @@ const quotes = [
 export function QuoteCard() {
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { quotes, isLoading, error, refetch } = useDailyQuotes();
+
+  // Use API quotes if available, otherwise fallback
+  const availableQuotes = quotes.length > 0 ? quotes : fallbackQuotes;
 
   const refreshQuote = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setCurrentQuoteIndex((prev) => (prev + 1) % quotes.length);
-      setIsRefreshing(false);
-    }, 300);
+    if (quotes.length > 0) {
+      // If we have API quotes, try to refetch new data
+      setIsRefreshing(true);
+      refetch().finally(() => {
+        setTimeout(() => {
+          setCurrentQuoteIndex((prev) => (prev + 1) % availableQuotes.length);
+          setIsRefreshing(false);
+        }, 300);
+      });
+    } else {
+      // If using fallback quotes, just cycle through them
+      setIsRefreshing(true);
+      setTimeout(() => {
+        setCurrentQuoteIndex((prev) => (prev + 1) % availableQuotes.length);
+        setIsRefreshing(false);
+      }, 300);
+    }
   };
 
-  const currentQuote = quotes[currentQuoteIndex];
+  const currentQuote = availableQuotes[currentQuoteIndex];
+
+  // Show loading state
+  if (isLoading && quotes.length === 0) {
+    return (
+      <motion.div
+        className="bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-800 text-white p-4 sm:p-6 rounded-2xl shadow-xl relative overflow-hidden"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="flex items-center justify-center h-40">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          <span className="ml-2 text-white/70">Memuat quote...</span>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -166,9 +200,21 @@ export function QuoteCard() {
         <div className="flex-1 relative z-10 text-center sm:text-left">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
-            <h3 className="text-base sm:text-lg font-semibold">
-              Quote of the Day
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <h3 className="text-base sm:text-lg font-semibold">
+                Quote of the Day
+              </h3>
+              {error && (
+                <span className="text-xs text-red-200 opacity-75">
+                  (offline mode)
+                </span>
+              )}
+              {quotes.length > 0 && (
+                <span className="text-xs text-green-200 opacity-75">
+                  (live)
+                </span>
+              )}
+            </div>
             <motion.button
               onClick={refreshQuote}
               className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/20 self-center sm:self-auto"
@@ -206,7 +252,7 @@ export function QuoteCard() {
 
           {/* Quote indicator dots */}
           <div className="flex justify-center space-x-2 mt-3 sm:mt-4">
-            {quotes.map((_, index) => (
+            {availableQuotes.map((_, index: number) => (
               <motion.button
                 key={index}
                 className={`w-2 h-2 rounded-full transition-colors ${
