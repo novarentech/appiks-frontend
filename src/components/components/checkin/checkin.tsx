@@ -274,10 +274,6 @@ export default function CheckIn() {
     setSelectedRec(recId);
   }, []);
 
-  const handleRefreshQuote = useCallback(() => {
-    alert("refresh");
-  }, []);
-
   const handleFinish = useCallback(() => {
     if (!selectedRec) return;
 
@@ -392,72 +388,6 @@ export default function CheckIn() {
     </div>
   );
 
-  const renderQuoteCard = () => {
-    // If no API message, show default quote
-    if (!moodResponse?.data?.pesan) {
-      return (
-        <div className="mt-6 sm:mt-8">
-          <div className="mx-auto rounded-xl border p-4 sm:p-6 bg-gradient-to-br from-yellow-50/70 to-orange-100/60 dark:from-yellow-950/30 dark:to-orange-950/30 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
-              <div className="size-25 rounded-lg bg-yellow-100 dark:bg-yellow-900/60 flex items-center justify-center flex-shrink-0 shadow">
-                <span className="text-3xl">⭐</span>
-              </div>
-              <div className="flex-1 md:text-left">
-                <div className="text-lg font-semibold">Quote of the Day</div>
-                <blockquote className="text-sm text-muted-foreground leading-relaxed">
-                  <q>
-                    The only way to do great work is to love what you do. If you
-                    haven&apos;t found it yet, keep looking. Don&apos;t settle.
-                  </q>
-                </blockquote>
-                <cite className="text-xs text-muted-foreground italic">
-                  — Steve Jobs
-                </cite>
-              </div>
-              <button
-                className="ml-auto sm:ml-4 p-2 text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-background/60"
-                aria-label="Refresh quote"
-                title="Refresh quote"
-                onClick={handleRefreshQuote}
-              >
-                <span className="text-xl">↻</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-6 sm:mt-8">
-        <div className="mx-auto rounded-xl border p-4 sm:p-6 bg-gradient-to-br from-yellow-50/70 to-orange-100/60 dark:from-yellow-950/30 dark:to-orange-950/30 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-center md:items-start gap-4">
-            <div className="size-25 rounded-lg bg-yellow-100 dark:bg-yellow-900/60 flex items-center justify-center flex-shrink-0 shadow">
-              <span className="text-3xl">⭐</span>
-            </div>
-            <div className="flex-1 md:text-left">
-              <div className="text-lg font-semibold">Quote of the Day</div>
-              <blockquote className="text-sm text-muted-foreground leading-relaxed">
-                <q>{moodResponse.data.pesan}</q>
-              </blockquote>
-              <cite className="text-xs text-muted-foreground italic">
-                — Steve Jobs
-              </cite>
-            </div>
-            <button
-              className="ml-auto sm:ml-4 p-2 text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-background/60"
-              aria-label="Refresh quote"
-              title="Refresh quote"
-              onClick={handleRefreshQuote}
-            >
-              <span className="text-xl">↻</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderRecommendations = () => (
     <div className="mt-6 sm:mt-8 text-left">
       <h4 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-center sm:text-left">
@@ -549,8 +479,6 @@ export default function CheckIn() {
             </div>
           </div>
         </div>
-
-        {renderQuoteCard()}
         {renderRecommendations()}
       </div>
     );
