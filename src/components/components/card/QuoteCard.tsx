@@ -33,7 +33,7 @@ const fallbackQuotes = [
 export function QuoteCard() {
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const { quotes, isLoading, error, refetch } = useDailyQuotes();
+  const { quotes, isLoading, refetch } = useDailyQuotes();
 
   // Use API quotes if available, otherwise fallback
   const availableQuotes = quotes.length > 0 ? quotes : fallbackQuotes;
@@ -204,16 +204,6 @@ export function QuoteCard() {
               <h3 className="text-base sm:text-lg font-semibold">
                 Quote of the Day
               </h3>
-              {error && (
-                <span className="text-xs text-red-200 opacity-75">
-                  (offline mode)
-                </span>
-              )}
-              {quotes.length > 0 && (
-                <span className="text-xs text-green-200 opacity-75">
-                  (live)
-                </span>
-              )}
             </div>
             <motion.button
               onClick={refreshQuote}
