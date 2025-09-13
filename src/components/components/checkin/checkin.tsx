@@ -262,12 +262,25 @@ export default function CheckIn() {
   }, [currentStep, mood, selectedRec]);
 
   // Event handlers
-  const handleMoodSelect = useCallback((moodKey: MoodKey) => {
+  const handleMoodSelect = useCallback(async (moodKey: MoodKey) => {
     setMood(moodKey);
-    // Reset selected recommendation when mood changes
     setSelectedRec(null);
-    // Clear any previous errors
     setError(null);
+    setIsLoading(true);
+    try {
+      const apiStatus = MOOD_TO_API_STATUS[moodKey];
+      const response = await recordMood(apiStatus);
+      setMoodResponse(response);
+      if (!response.success) {
+        throw new Error(response.message || "Failed to record mood");
+      }
+      // Setelah mood dipilih dan respons diterima, langsung ke step 2
+      setCurrentStep(2);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to record mood");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleRecSelect = useCallback((recId: number) => {
@@ -299,44 +312,14 @@ export default function CheckIn() {
     router.push(route);
   }, [selectedRec, router, currentRoutes]);
 
-  const goNext = useCallback(async () => {
-    if (currentStep === 1 && !mood) return;
+  const goNext = useCallback(() => {
     if (currentStep === 2 && !selectedRec) return;
-
     if (currentStep >= STEPS.length) {
       handleFinish();
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Record mood when moving from step 1 to step 2
-      if (currentStep === 1 && mood) {
-        const apiStatus = MOOD_TO_API_STATUS[mood];
-        console.log("Recording mood:", { mood, apiStatus });
-
-        const response = await recordMood(apiStatus);
-        console.log("Mood API response:", response);
-
-        setMoodResponse(response);
-
-        if (!response.success) {
-          throw new Error(response.message || "Failed to record mood");
-        }
-      }
-
-      setTimeout(() => {
-        setCurrentStep((s) => Math.min(s + 1, STEPS.length));
-        setIsLoading(false);
-      }, 500);
-    } catch (err) {
-      console.error("Error recording mood:", err);
-      setError(err instanceof Error ? err.message : "Failed to record mood");
-      setIsLoading(false);
-    }
-  }, [currentStep, mood, selectedRec, handleFinish]);
+    setCurrentStep((s) => Math.min(s + 1, STEPS.length));
+  }, [currentStep, selectedRec, handleFinish]);
 
   // Render components
   const renderMoodSelection = () => (
