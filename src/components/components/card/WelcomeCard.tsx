@@ -22,7 +22,7 @@ export function WelcomeCard() {
         {/* Header */}
         <div className="mb-4 sm:mb-6">
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 drop-shadow-sm leading-tight">
-            Halo, {user?.name || user?.username || "Marsha Bilqis"}!
+            Halo, {user?.name || user?.username || "Username"}!
           </h2>
           <p className="text-indigo-100 text-base sm:text-lg">
             Bagaimana perasaanmu hari ini?

@@ -50,5 +50,5 @@ export default function SurveyPage() {
     );
   }
 
-  return <Survey type={surveyType} />;
+  return <Survey />;
 }

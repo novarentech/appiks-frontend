@@ -75,7 +75,7 @@ export function SurveyWalkthrough() {
   };
 
   return (
-    <div className="">
+    <div>
       {/* Walkthrough Content */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full max-w-2xl lg:max-w-4xl mx-auto min-h-[500px]">
         {/* Header */}

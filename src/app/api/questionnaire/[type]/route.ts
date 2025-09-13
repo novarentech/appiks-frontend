@@ -1,209 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const EXTERNAL_API_BASE_URL =  process.env.API_BASE_URL ;
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ type: string }> }
-) {
-  try {
-    const { type } = await params;
-
-    // Validate type parameter
-    if (!type || !["secure", "insecure"].includes(type)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid type parameter. Must be 'secure' or 'insecure'",
-          data: null,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Get authorization token from request headers
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : authHeader;
-
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Authorization token is required",
-          data: null,
-        },
-        { status: 401 }
-      );
-    }
-
-    // Fetch data from external API
-    const externalApiUrl = `${EXTERNAL_API_BASE_URL}/questionnaire/${type}`;
-
-    const response = await fetch(externalApiUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-cache",
-    });
-
-    if (!response.ok) {
-      console.error(
-        `External API error: ${response.status} ${response.statusText}`
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Failed to fetch questionnaire data: ${response.statusText}`,
-          data: null,
-        },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-
-    // Return the data in the same format as expected
-    return NextResponse.json({
-      success: true,
-      message: "Success",
-      data: data.data || data, // Handle different response formats
-    });
-  } catch (error) {
-    console.error("Error fetching questionnaire:", error);
-
-    // Check if it's a network error
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Failed to connect to questionnaire service",
-          data: null,
-        },
-        { status: 503 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Internal server error",
-        data: null,
-      },
-      { status: 500 }
-    );
-  }
+interface SubmitSurveyBody {
+  answers: string[];
 }
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ type: string }> }
+  req: NextRequest,
+  { params }: { params: { type: string } }
 ) {
   try {
-    const { type } = await params;
+    // Get token from Authorization header
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.replace("Bearer ", "");
 
-    // Validate type parameter
-    if (!type || !["secure", "insecure"].includes(type)) {
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const { type } = params;
+
+    // Validate type
+    if (type !== "secure" && type !== "insecure") {
       return NextResponse.json(
         {
           success: false,
           message: "Invalid type parameter. Must be 'secure' or 'insecure'",
-          data: null,
         },
         { status: 400 }
-      );
-    }
-
-    // Get authorization token from request headers
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : authHeader;
-
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Authorization token is required",
-          data: null,
-        },
-        { status: 401 }
       );
     }
 
     // Parse request body
-    const body = await request.json();
+    const body: SubmitSurveyBody = await req.json();
 
     if (!body.answers || !Array.isArray(body.answers)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Answers array is required",
-          data: null,
+          message: "Invalid request body. 'answers' must be an array",
         },
         { status: 400 }
       );
     }
 
-    // Submit data to external API
-    const externalApiUrl = `${EXTERNAL_API_BASE_URL}/questionnaire/${type}`;
-
-    const response = await fetch(externalApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        answers: body.answers,
-      }),
-    });
+    // Submit to external API
+    const response = await fetch(
+      `https://api.appiks.id/api/questionnaire/${type}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     if (!response.ok) {
-      console.error(
-        `External API error: ${response.status} ${response.statusText}`
-      );
+      throw new Error(`External API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
       return NextResponse.json(
         {
           success: false,
-          message: `Failed to submit questionnaire: ${response.statusText}`,
-          data: null,
+          message: data.message || "Failed to submit questionnaire",
         },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
-
-    // Return the data in the same format as expected
     return NextResponse.json({
       success: true,
-      message: "Success",
-      data: data.data || data, // Handle different response formats
+      message: data.message || "Survey submitted successfully",
+      data: data.data,
     });
   } catch (error) {
-    console.error("Error submitting questionnaire:", error);
-
-    // Check if it's a network error
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Failed to connect to questionnaire service",
-          data: null,
-        },
-        { status: 503 }
-      );
-    }
-
+    console.error("Submit questionnaire API error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Internal server error",
-        data: null,
+        message:
+          error instanceof Error ? error.message : "Internal server error",
       },
       { status: 500 }
     );

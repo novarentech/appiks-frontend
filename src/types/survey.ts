@@ -53,12 +53,51 @@ export interface SurveyResultMissionChallenge {
   mission_2: string;
 }
 
-export interface SurveyResultData {
-  archetype: SurveyResultArchetype;
-  summary: SurveyResultSummary;
+// Secure Survey Result (Navigator)
+export interface SecureSurveyResultData {
+  archetype: {
+    primary: string;
+    secondary: string;
+    name: string;
+  };
+  summary: {
+    "Kompas Nilai": string;
+    "Peralatan Andalan": string;
+    "Medan Ideal": string;
+    "Path Karir": string;
+  };
   description: string;
   mission_challenge: SurveyResultMissionChallenge;
   note: string;
+}
+
+// Insecure Survey Result (Pahlawan)
+export interface InsecureSurveyResultData {
+  title: string;
+  hero_name: string;
+  super_strength: string;
+  learning_mode: string;
+  motivation_fuel: string;
+  mission_challenge: SurveyResultMissionChallenge;
+  note: string;
+}
+
+// Union type for both result formats
+export type SurveyResultData =
+  | SecureSurveyResultData
+  | InsecureSurveyResultData;
+
+// Type guards to distinguish between the two
+export function isSecureResult(
+  data: SurveyResultData
+): data is SecureSurveyResultData {
+  return "archetype" in data;
+}
+
+export function isInsecureResult(
+  data: SurveyResultData
+): data is InsecureSurveyResultData {
+  return "title" in data;
 }
 
 export interface SurveyResultResponse {

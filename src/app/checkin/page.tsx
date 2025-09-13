@@ -1,7 +1,6 @@
 "use client";
 
 import CheckIn from "@/components/components/checkin/checkin";
-import SplashWrapper from "@/components/components/splashscreen/SplashWrapper";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckinAccessGuard } from "@/components/guards/CheckinAccessGuard";
 
@@ -31,9 +30,7 @@ export default function CheckInPage() {
 
   return (
     <CheckinAccessGuard>
-      <SplashWrapper>
         <CheckIn />
-      </SplashWrapper>
     </CheckinAccessGuard>
   );
 }

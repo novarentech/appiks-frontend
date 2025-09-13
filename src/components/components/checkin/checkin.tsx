@@ -274,6 +274,24 @@ export default function CheckIn() {
       if (!response.success) {
         throw new Error(response.message || "Failed to record mood");
       }
+
+      // Save isSafe value to sessionStorage for other components to use
+      try {
+        sessionStorage.setItem(
+          "mood_is_safe",
+          JSON.stringify(response.data.isSafe)
+        );
+        console.log(
+          "✅ Mood isSafe value saved to sessionStorage:",
+          response.data.isSafe
+        );
+      } catch (storageError) {
+        console.error(
+          "❌ Failed to save isSafe to sessionStorage:",
+          storageError
+        );
+      }
+
       // Setelah mood dipilih dan respons diterima, langsung ke step 2
       setCurrentStep(2);
     } catch (err) {

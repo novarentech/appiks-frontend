@@ -11,10 +11,10 @@ import { Question } from "@/types/survey";
 import { useAuthData } from "@/hooks/useAuth";
 
 interface SurveyProps {
-  type?: "secure" | "insecure";
+  className?: string;
 }
 
-export function Survey({ type = "secure" }: SurveyProps) {
+export function Survey({}: SurveyProps = {}) {
   const router = useRouter();
   const { token } = useAuthData();
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -25,6 +25,22 @@ export function Survey({ type = "secure" }: SurveyProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [surveyType, setSurveyType] = useState<"secure" | "insecure">("secure");
+
+  // Get survey type from sessionStorage based on isSafe value
+  useEffect(() => {
+    try {
+      const isSafeStr = sessionStorage.getItem("mood_is_safe");
+      if (isSafeStr !== null) {
+        const isSafe = JSON.parse(isSafeStr);
+        setSurveyType(isSafe ? "secure" : "insecure");
+      }
+    } catch (error) {
+      console.error("Failed to parse isSafe from sessionStorage:", error);
+      // Default to secure if parsing fails
+      setSurveyType("secure");
+    }
+  }, []);
 
   const fetchQuestions = useCallback(async () => {
     if (!token) {
@@ -37,7 +53,7 @@ export function Survey({ type = "secure" }: SurveyProps) {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/questionnaire/${type}`, {
+      const response = await fetch(`/api/questionnaire?type=${surveyType}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -68,7 +84,7 @@ export function Survey({ type = "secure" }: SurveyProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [token, type]);
+  }, [token, surveyType]);
 
   useEffect(() => {
     fetchQuestions();
@@ -122,7 +138,7 @@ export function Survey({ type = "secure" }: SurveyProps) {
         }
       }
 
-      const response = await fetch(`/api/questionnaire/${type}`, {
+      const response = await fetch(`/api/questionnaire/${surveyType}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
