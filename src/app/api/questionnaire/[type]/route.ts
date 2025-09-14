@@ -6,7 +6,7 @@ interface SubmitSurveyBody {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { type: string } }
+  { params }: { params: Promise<{ type: string }> }
 ) {
   try {
     // Get token from Authorization header
@@ -20,7 +20,7 @@ export async function POST(
       );
     }
 
-    const { type } = params;
+    const { type } = await params;
 
     // Validate type
     if (type !== "secure" && type !== "insecure") {
