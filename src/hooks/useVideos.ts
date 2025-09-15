@@ -5,6 +5,7 @@ import {
   TagsResponse,
   VideosResponse,
   VideosByTagResponse,
+  VideoDetailResponse,
 } from "@/types/video";
 
 interface UseApiState<T> {
@@ -182,6 +183,48 @@ export function useVideosByTags(tagIds: number[]): UseApiState<Video[]> {
 
     fetchVideosByTags();
   }, [tagIds]);
+
+  return state;
+}
+
+export function useVideoDetail(videoId: string | null): UseApiState<Video> {
+  const [state, setState] = useState<UseApiState<Video>>({
+    data: null,
+    loading: false,
+    error: null,
+  });
+
+  useEffect(() => {
+    if (!videoId) {
+      setState({ data: null, loading: false, error: null });
+      return;
+    }
+
+    const fetchVideoDetail = async () => {
+      try {
+        setState({ data: null, loading: true, error: null });
+        const response = await fetch(`/api/video/${videoId}`);
+        const result: VideoDetailResponse = await response.json();
+
+        if (result.success) {
+          setState({ data: result.data, loading: false, error: null });
+        } else {
+          setState({ data: null, loading: false, error: result.message });
+        }
+      } catch (error) {
+        setState({
+          data: null,
+          loading: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch video details",
+        });
+      }
+    };
+
+    fetchVideoDetail();
+  }, [videoId]);
 
   return state;
 }

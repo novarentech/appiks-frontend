@@ -251,7 +251,7 @@ export default function CheckIn() {
   );
 
   const buttonText = useMemo(
-    () => (currentStep === STEPS.length ? "Selesai" : "Lanjutkan"),
+    () => (currentStep === STEPS.length ? "Lanjutkan" : "Lanjutkan"),
     [currentStep]
   );
 

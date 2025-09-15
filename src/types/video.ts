@@ -25,3 +25,4 @@ export interface ApiResponse<T> {
 export type TagsResponse = ApiResponse<Tag[]>;
 export type VideosResponse = ApiResponse<Video[]>;
 export type VideosByTagResponse = ApiResponse<Video[]>;
+export type VideoDetailResponse = ApiResponse<Video>;

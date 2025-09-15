@@ -5,7 +5,7 @@ export function VideoCardSkeleton() {
   return (
     <Card className="group overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-300 pt-0 pb-2">
       {/* Thumbnail Skeleton */}
-      <div className="relative aspect-video bg-gray-100 overflow-hidden w-md">
+      <div className="relative aspect-video bg-gray-100 overflow-hidden">
         <Skeleton className="w-full h-full" />
         {/* Category badge skeleton */}
         <Skeleton className="absolute top-3 left-3 w-20 h-6 rounded-full" />

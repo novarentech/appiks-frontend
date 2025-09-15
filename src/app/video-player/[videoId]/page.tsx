@@ -6,37 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  ChevronLeft,
-  ThumbsUp,
-  ThumbsDown,
-  Calendar,
-  Clock,
-} from "lucide-react";
-
-// Mock data - dalam implementasi nyata, ambil dari API berdasarkan videoId
-const videoData = {
-  ZToicYcHIOU: {
-    title: "Mengapa Self Awareness Penting untuk Kesehatan Mental?",
-    description:
-      "Self awareness atau kesadaran diri adalah kemampuan untuk memahami diri sendiri secara mendalam. Video ini membahas mengapa self awareness sangat penting untuk kesehatan mental dan bagaimana cara mengembangkannya dalam kehidupan sehari-hari.",
-    category: "Self-Awareness",
-    subcategory: "Kesehatan Mental",
-    tags: ["Edukasi"],
-    publishDate: "24 Oct 2021",
-    duration: "8:45",
-  },
-  inpok4MKVLM: {
-    title: "Mengatasi Stres Harian",
-    description:
-      "Cara efektif mengelola stres dalam kehidupan sehari-hari dengan teknik pernapasan yang mudah dipraktikkan.",
-    category: "Stress Relief",
-    subcategory: "Manajemen Stres",
-    tags: ["Relaksasi"],
-    publishDate: "15 Sep 2021",
-    duration: "5:12",
-  },
-};
+import { useVideoDetail } from "@/hooks/useVideos";
+import { ChevronLeft, ThumbsUp, ThumbsDown, Clock, Eye } from "lucide-react";
 
 export default function VideoPlayerPage() {
   const params = useParams();
@@ -44,11 +15,31 @@ export default function VideoPlayerPage() {
   const { isLoading, isAuthenticated, isVerified } = useAuth();
   const videoId = params.videoId as string;
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [feedback, setFeedback] = useState<"helpful" | "not-helpful" | null>(
+    null
+  );
 
-  const video = videoData[videoId as keyof typeof videoData];
+  // Fetch video details from API
+  const {
+    data: video,
+    loading: videoLoading,
+    error: videoError,
+  } = useVideoDetail(videoId);
+
+  // Handle feedback selection (local state only)
+  const handleFeedback = (isHelpful: boolean) => {
+    const feedbackType = isHelpful ? "helpful" : "not-helpful";
+
+    // Toggle feedback - if same feedback is clicked, remove it
+    if (feedback === feedbackType) {
+      setFeedback(null);
+    } else {
+      setFeedback(feedbackType);
+    }
+  };
 
   // Auth check
-  if (isLoading) {
+  if (isLoading || videoLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -69,6 +60,22 @@ export default function VideoPlayerPage() {
     );
   }
 
+  if (videoError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Terjadi kesalahan
+          </h2>
+          <p className="text-gray-600 mb-4">{videoError}</p>
+          <Button onClick={() => router.push("/videos")}>
+            Kembali ke Video
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!video) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -79,8 +86,8 @@ export default function VideoPlayerPage() {
           <p className="text-gray-600 mb-4">
             Video yang Anda cari tidak tersedia.
           </p>
-          <Button onClick={() => router.push("/video-recommendations")}>
-            Kembali ke Video Rekomendasi
+          <Button onClick={() => router.push("/videos")}>
+            Kembali ke Video
           </Button>
         </div>
       </div>
@@ -88,7 +95,7 @@ export default function VideoPlayerPage() {
   }
 
   return (
-    <div className="min-h-screen max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-10 sm:py-16 lg:py-20">
+    <div className="min-h-screen max-w-6xl container mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-10 sm:py-16 lg:py-20">
       {/* Back Button */}
       <div className="mb-6">
         <Button
@@ -113,20 +120,22 @@ export default function VideoPlayerPage() {
                   variant="outline"
                   className="bg-blue-50 text-blue-700 border-blue-200"
                 >
-                  {video.category}
+                  {video.channel}
                 </Badge>
                 <Badge
                   variant="outline"
                   className="bg-purple-50 text-purple-700 border-purple-200"
                 >
-                  {video.subcategory}
+                  {video.school}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className="bg-green-50 text-green-700 border-green-200"
-                >
-                  {video.tags[0]}
-                </Badge>
+                {video.tags && video.tags.length > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="bg-green-50 text-green-700 border-green-200"
+                  >
+                    {video.tags[0].title}
+                  </Badge>
+                )}
               </div>
 
               {/* Title */}
@@ -137,8 +146,8 @@ export default function VideoPlayerPage() {
               {/* Meta Info */}
               <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600 pb-4 border-b border-gray-200">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>{video.publishDate}</span>
+                  <Eye className="w-4 h-4" />
+                  <span>{video.views.toLocaleString()} views</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
@@ -150,7 +159,7 @@ export default function VideoPlayerPage() {
                 <iframe
                   width="100%"
                   height="100%"
-                  src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1`}
+                  src={`https://www.youtube.com/embed/${video.video_id}?autoplay=0&rel=0&modestbranding=1`}
                   title={video.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -194,18 +203,30 @@ export default function VideoPlayerPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-white hover:bg-green-50 hover:border-green-300 hover:text-green-700 transition-colors"
+                  onClick={() => handleFeedback(true)}
+                  className={`bg-white transition-colors ${
+                    feedback === "helpful"
+                      ? "bg-green-50 border-green-300 text-green-700"
+                      : "hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                  }`}
                 >
                   <ThumbsUp className="w-4 h-4 mr-2" />
-                  Bermanfaat
+                  {feedback === "helpful" ? "Bermanfaat " : "Bermanfaat"}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-white hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors"
+                  onClick={() => handleFeedback(false)}
+                  className={`bg-white transition-colors ${
+                    feedback === "not-helpful"
+                      ? "bg-red-50 border-red-300 text-red-700"
+                      : "hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+                  }`}
                 >
                   <ThumbsDown className="w-4 h-4 mr-2" />
-                  Tidak Bermanfaat
+                  {feedback === "not-helpful"
+                    ? "Tidak Bermanfaat "
+                    : "Tidak Bermanfaat"}
                 </Button>
               </div>
             </CardContent>
