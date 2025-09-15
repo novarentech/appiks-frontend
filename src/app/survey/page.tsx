@@ -3,13 +3,11 @@
 import { Survey } from "@/components/components/survey/Survey";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function SurveyPage() {
   const router = useRouter();
   const { isLoading, isAuthenticated, isVerified, user } = useAuth();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [surveyType, setSurveyType] = useState<"secure" | "insecure">("secure");
 
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || !isVerified)) {

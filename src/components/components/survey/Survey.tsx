@@ -231,11 +231,12 @@ export function Survey({}: SurveyProps = {}) {
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Isi Angket
+            {surveyType === "secure" ? "Navigator Masa Depan" : "Ekspedisi Menemu Jati Diri"}
           </h1>
           <p className="text-gray-600 text-base max-w-2xl mx-auto">
-            Respons mu menunjukkan eksplorasi karier yang sehat dan perencanaan
-            masa depan yang positif.
+            {surveyType === "secure"
+              ? "Respons mu menunjukkan eksplorasi karier yang sehat dan perencanaan masa depan yang positif."
+              : "Respons mu menunjukkan eksplorasi karier yang sehat dan perencanaan masa depan yang positif."}
           </p>
         </div>
 

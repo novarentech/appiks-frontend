@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function SurveyWalkthroughPage() {
   const router = useRouter();
   const { isLoading, isAuthenticated, isVerified, user } = useAuth();
+  const [surveyType, setSurveyType] = useState<"secure" | "insecure">("secure");
 
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || !isVerified)) {
@@ -22,6 +23,21 @@ export default function SurveyWalkthroughPage() {
       return;
     }
   }, [isLoading, isAuthenticated, isVerified, user, router]);
+
+  // Get survey type from sessionStorage based on isSafe value
+  useEffect(() => {
+    try {
+      const isSafeStr = sessionStorage.getItem("mood_is_safe");
+      if (isSafeStr !== null) {
+        const isSafe = JSON.parse(isSafeStr);
+        setSurveyType(isSafe ? "secure" : "insecure");
+      }
+    } catch (error) {
+      console.error("Failed to parse isSafe from sessionStorage:", error);
+      // Default to secure if parsing fails
+      setSurveyType("secure");
+    }
+  }, []);
 
   // Auth check
   if (isLoading) {
@@ -66,11 +82,12 @@ export default function SurveyWalkthroughPage() {
         {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Isi Angket
+            {surveyType === "secure" ? "Navigator Masa Depan" : "Ekspedisi Menemu Jati Diri"}
           </h1>
           <p className="text-gray-600 text-base max-w-xl mx-auto">
-            Respons mu menunjukkan eksplorasi karier yang sehat dan perencanaan
-            masa depan yang positif.
+            {surveyType === "secure"
+              ? "Respons mu menunjukkan eksplorasi karier yang sehat dan perencanaan masa depan yang positif."
+              : "Respons mu menunjukkan eksplorasi karier yang sehat dan perencanaan masa depan yang positif."}
           </p>
         </div>
       </div>

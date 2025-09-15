@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 interface WalkthroughSlide {
@@ -16,8 +16,24 @@ interface WalkthroughSlide {
 export function SurveyWalkthrough() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [surveyType, setSurveyType] = useState<"secure" | "insecure">("secure");
 
-  const slides: WalkthroughSlide[] = [
+  // Get survey type from sessionStorage based on isSafe value
+  useEffect(() => {
+    try {
+      const isSafeStr = sessionStorage.getItem("mood_is_safe");
+      if (isSafeStr !== null) {
+        const isSafe = JSON.parse(isSafeStr);
+        setSurveyType(isSafe ? "secure" : "insecure");
+      }
+    } catch (error) {
+      console.error("Failed to parse isSafe from sessionStorage:", error);
+      // Default to secure if parsing fails
+      setSurveyType("secure");
+    }
+  }, []);
+
+  const secureSlides: WalkthroughSlide[] = [
     {
       title: "SIAP MENJELAJAH ?",
       subtitle: "Hai, Navigator!",
@@ -54,6 +70,47 @@ export function SurveyWalkthrough() {
       image: "/icon/ico-walk-5.webp",
     },
   ];
+
+  const insecureSlides: WalkthroughSlide[] = [
+    {
+      title: "SIAP BERPETUALANG ?",
+      subtitle: "Halo, Petualang!",
+      description:
+        "Terima kasih telah mempercayai kami. Mari kita mulai percakapan yang aman dan mendukung untuk membantu memahami perasaanmu saat ini.",
+      image: "/icon/ico-walk-1.webp",
+    },
+    {
+      title: "MARI EKSPLORASI",
+      subtitle: "Kekuatan Supermu",
+      description:
+        "Setiap orang memiliki kekuatan unik yang membuatnya istimewa. Mari kita temukan talenta dan kemampuan luar biasa yang ada dalam dirimu.",
+      image: "/icon/ico-walk-6.webp",
+    },
+    {
+      title: "MARI EKSPLORASI",
+      subtitle: "Mode Belajarmu",
+      description:
+        "Tidak ada cara belajar yang salah! Mari kita identifikasi gaya belajar yang paling cocok untukmu agar proses mengenal diri menjadi lebih efektif.",
+      image: "/icon/ico-walk-7.webp",
+    },
+    {
+      title: "MARI EKSPLORASI",
+      subtitle: "Bahan Bakar Motivasi",
+      description:
+        "Setiap petualang membutuhkan energi untuk melanjutkan perjalanan. Kita akan menemukan hal-hal yang paling memotivasi dan menginspirasimu.",
+      image: "/icon/ico-walk-8.webp",
+    },
+    {
+      title: "MARI MULAI",
+      subtitle: "Mulai Sekarang !",
+      description:
+        "Tidak ada jawaban benar atau salah. Jawablah dengan jujur sesuai dengan dirimu yang sesungguhnya. Selamat berpetualang!",
+      image: "/icon/ico-walk-5.webp",
+    },
+  ];
+
+  const slides: WalkthroughSlide[] =
+    surveyType === "secure" ? secureSlides : insecureSlides;
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
@@ -141,7 +198,9 @@ export function SurveyWalkthrough() {
               onClick={handleNext}
               className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-6 py-2 sm:px-8 sm:py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base mb-4"
             >
-              Mulai Kuis Sekarang
+              {surveyType === "secure"
+                ? "Mulai Kuis Sekarang"
+                : "Mulai Berbagi Cerita"}
             </Button>
           )}
           {/* Progress Dots */}
