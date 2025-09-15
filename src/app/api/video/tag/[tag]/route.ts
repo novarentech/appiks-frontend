@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.API_BASE_URL;
 
 export async function GET(
   request: Request,
-  { params }: { params: { tag: string } }
+  { params }: { params: Promise<{ tag: string }> }
 ) {
   try {
     // Get session from NextAuth
@@ -18,7 +18,8 @@ export async function GET(
       );
     }
 
-    const tagId = params.tag;
+    const { tag } = await params;
+    const tagId = tag;
 
     // Make request to the backend API
     const response = await fetch(`${API_BASE_URL}/video/tag/${tagId}`, {
