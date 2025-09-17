@@ -104,7 +104,7 @@ export default function SensoryRelaxationCard() {
                     />
                     <span className="text-base leading-snug">{act.label}</span>
                   </div>
-                  <span className="text-foreground text-sm shrink-0">
+                  <span className="text-sm shrink-0">
                     {act.type}
                   </span>
                 </button>
