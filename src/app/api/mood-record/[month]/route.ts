@@ -1,4 +1,3 @@
-// app/api/mood-record/[month]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../../../../../auth";
 
@@ -6,10 +5,10 @@ const API_BASE_URL = process.env.API_BASE_URL;
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { month: string } }
+  { params }: { params: Promise<{ month: string }> }
 ) {
   try {
-    const { month } = params;
+    const { month } = await params;
 
     // Get session from NextAuth
     const session = await auth();
