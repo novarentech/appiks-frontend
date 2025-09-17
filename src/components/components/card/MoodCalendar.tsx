@@ -214,7 +214,9 @@ export function MoodCalendar() {
                 <motion.button
                   className={`w-full h-full flex flex-col items-center justify-center text-sm relative rounded-lg sm:rounded-xl transition-all duration-200 border-2 ${
                     moodData[day]
-                      ? `${moodConfig[moodData[day]].hoverColor} ${moodConfig[moodData[day]].color}`
+                      ? `${moodConfig[moodData[day]].hoverColor} ${
+                          moodConfig[moodData[day]].color
+                        }`
                       : "hover:bg-gray-50 border-transparent text-gray-700"
                   }`}
                   onClick={() => setHoveredDay(hoveredDay === day ? null : day)}
@@ -244,6 +246,7 @@ export function MoodCalendar() {
                         src={moodConfig[moodData[day]].emoji}
                         alt={moodConfig[moodData[day]].label}
                         fill
+                        sizes="32px"
                         className="object-contain"
                       />
                     </motion.div>
@@ -279,6 +282,7 @@ export function MoodCalendar() {
                     src={config.emoji}
                     alt={config.label}
                     fill
+                    sizes="32px"
                     className="object-contain"
                   />
                 </span>

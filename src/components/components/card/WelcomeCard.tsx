@@ -46,12 +46,12 @@ export function WelcomeCard() {
 
   const getMoodIcon = (type: string) => {
     const iconMap = {
-      happy: '/icon/ico-happy.svg',
-      neutral: '/icon/ico-neutral.svg',
-      sad: '/icon/ico-sad.svg',
-      angry: '/icon/ico-angry.svg'
+      happy: '/icon/ico-happy.webp',
+      neutral: '/icon/ico-neutral.webp',
+      sad: '/icon/ico-sad.webp',
+      angry: '/icon/ico-angry.webp'
     };
-    return iconMap[type as keyof typeof iconMap] || '/icon/ico-happy.svg';
+    return iconMap[type as keyof typeof iconMap] || '/icon/ico-happy.webp';
   };
 
   const getStatusColor = (status: string) => {

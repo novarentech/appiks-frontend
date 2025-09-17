@@ -116,16 +116,16 @@ const MOOD_OPTIONS = [
     key: "gembira",
     label: "Gembira",
     emoji: "😄",
-    icon: "/icon/ico-happy.svg",
+    icon: "/icon/ico-happy.webp",
   },
   {
     key: "netral",
     label: "Netral",
     emoji: "🙂",
-    icon: "/icon/ico-neutral.svg",
+    icon: "/icon/ico-neutral.webp",
   },
-  { key: "sedih", label: "Sedih", emoji: "😢", icon: "/icon/ico-sad.svg" },
-  { key: "marah", label: "Marah", emoji: "😡", icon: "/icon/ico-angry.svg" },
+  { key: "sedih", label: "Sedih", emoji: "😢", icon: "/icon/ico-sad.webp" },
+  { key: "marah", label: "Marah", emoji: "😡", icon: "/icon/ico-angry.webp" },
 ] as const;
 
 // Mapping from mood keys to API status values
@@ -457,7 +457,7 @@ export default function CheckIn() {
           <Image
             width="64"
             height="64"
-            src={selectedMoodData?.iconPath || "/icon/ico-happy.svg"}
+            src={selectedMoodData?.iconPath || "/icon/ico-happy.webp"}
             alt={selectedMoodData?.title || "Mood icon"}
             className="w-16 h-16 sm:w-20 sm:h-20"
           />
