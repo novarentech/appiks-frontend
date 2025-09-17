@@ -58,7 +58,10 @@ export async function GET(
     const data = await response.json();
     console.log("✅ Mood record response:", data);
 
-    return NextResponse.json(data);
+    return NextResponse.json(
+        data,
+        { headers: { "Cache-Control": "public, max-age=120" } }
+    );
   } catch (error) {
     console.error("❌ API route error:", error);
     return NextResponse.json(
