@@ -38,6 +38,7 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
+import Image from "next/image";
 
 interface MenuItem {
   title: string;
@@ -77,8 +78,8 @@ const getInitials = (name: string): string => {
 const NavbarUserDashboard = ({
   logo = {
     url: "/",
-    src: "/logo.svg",
-    alt: "logo",
+    src: "/logo.webp",
+    alt: "Appiks-logo",
     title: "Appiks",
   },
   menu = [
@@ -133,10 +134,14 @@ const NavbarUserDashboard = ({
             href={logo.url}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">A</span>
-            </div>
-            <span className="text-lg font-semibold tracking-tighter">
+            <Image
+              src={logo.src}
+              width={100}
+              height={100}
+              className="max-h-10 max-w-10 dark:invert"
+              alt={logo.alt}
+            />
+            <span className="text-lg font-semibold tracking-tighter text-[#4F46E5]">
               {logo.title}
             </span>
           </Link>
@@ -216,10 +221,14 @@ const NavbarUserDashboard = ({
             href={logo.url}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs">A</span>
-            </div>
-            <span className="text-lg font-semibold tracking-tighter">
+            <Image
+              src={logo.src}
+              width={100}
+              height={100}
+              className="max-h-10 max-w-10 dark:invert"
+              alt={logo.alt}
+            />
+            <span className="text-lg font-semibold tracking-tighter text-[#4F46E5]">
               {logo.title}
             </span>
           </Link>
@@ -286,10 +295,14 @@ const NavbarUserDashboard = ({
                       className="flex items-center gap-2"
                       onClick={closeSheet}
                     >
-                      <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">A</span>
-                      </div>
-                      <span className="text-lg font-semibold tracking-tighter">
+                      <Image
+                        src={logo.src}
+                        width={100}
+                        height={100}
+                        className="max-h-10 max-w-10 dark:invert"
+                        alt={logo.alt}
+                      />
+                      <span className="text-lg font-semibold tracking-tighter text-[#4F46E5]">
                         {logo.title}
                       </span>
                     </Link>

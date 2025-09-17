@@ -30,6 +30,8 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NavUser } from "./components/profile/nav-user";
+import Image from "next/image";
+import { Separator } from "./ui/separator";
 
 // Type definitions
 interface NavigationSubItem {
@@ -61,7 +63,7 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       title: "Kelola Konten",
       url: "/dashboard/content-management",
       icon: BookText,
-    }
+    },
   ],
   teacher: [
     {
@@ -73,7 +75,7 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       title: "Data Siswa",
       url: "/dashboard/data-siswa",
       icon: Users,
-    }
+    },
   ],
   counselor: [
     {
@@ -95,7 +97,7 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       title: "Jadwal Konseling",
       url: "/dashboard/counseling-schedule",
       icon: Calendar,
-    }
+    },
   ],
   headteacher: [
     {
@@ -112,7 +114,7 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       title: "Data Laporan",
       url: "/dashboard/report-data",
       icon: File,
-    }
+    },
   ],
   super: [
     {
@@ -219,24 +221,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="/dashboard">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <GalleryVerticalEnd className="size-4" />
+                <div className="bg-gradient-to-tl from-violet-500 via-indigo-500 to-indigo-900 text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg">
+                  <Image
+                    src="/logo-white.webp"
+                    width={100}
+                    height={100}
+                    className="max-h-8 max-w-8 dark:invert"
+                    alt="Appiks Logo"
+                  />
                 </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Appiks</span>
-                  <span className="">
-                    {user?.role
-                      ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(
-                          1
-                        )} Panel`
-                      : "Dashboard"}
-                  </span>
-                </div>
+                <span className="font-semibold text-xl text-indigo-500">Appiks</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+      <Separator orientation="horizontal" className="my-2"/>
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>

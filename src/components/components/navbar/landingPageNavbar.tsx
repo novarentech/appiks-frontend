@@ -53,8 +53,8 @@ interface NavbarProps {
 const NavbarLandingPage = ({
   logo = {
     url: "/",
-    src: "/",
-    alt: "logo",
+    src: "/logo.webp",
+    alt: "Appiks-logo",
     title: "Appiks",
   },
   menu = [
@@ -123,12 +123,12 @@ const NavbarLandingPage = ({
           <Link href={logo.url} className="flex items-center gap-2">
             <Image
               src={logo.src}
-              width={32}
-              height={32}
-              className="max-h-8 dark:invert"
+              width={100}
+              height={100}
+              className="max-h-10 max-w-10 dark:invert"
               alt={logo.alt}
             />
-            <span className="text-lg font-semibold tracking-tighter">
+            <span className="text-lg font-semibold tracking-tighter text-[#4F46E5]">
               {logo.title}
             </span>
           </Link>
@@ -152,17 +152,20 @@ const NavbarLandingPage = ({
       </nav>
 
       {/* Mobile Menu */}
-      <div className="block md:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b">
+      <div className="block lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between p-4">
           {/* Logo */}
           <Link href={logo.url} className="flex items-center gap-2">
             <Image
               src={logo.src}
-              width={32}
-              height={32}
-              className="max-h-8 dark:invert"
+              width={100}
+              height={100}
+              className="max-h-10 max-w-10 dark:invert"
               alt={logo.alt}
             />
+            <span className="text-lg font-semibold tracking-tighter text-[#4F46E5]">
+              {logo.title}
+            </span>
           </Link>
           <Sheet>
             <SheetTrigger asChild>
@@ -176,11 +179,14 @@ const NavbarLandingPage = ({
                   <Link href={logo.url} className="flex items-center gap-2">
                     <Image
                       src={logo.src}
-                      width={32}
-                      height={32}
-                      className="max-h-8 dark:invert"
+                      width={100}
+                      height={100}
+                      className="max-h-10 max-w-10 dark:invert text-[#4F46E5]"
                       alt={logo.alt}
                     />
+                    <span className="text-lg font-semibold tracking-tighter text-[#4F46E5]">
+                      {logo.title}
+                    </span>
                   </Link>
                 </SheetTitle>
               </SheetHeader>
