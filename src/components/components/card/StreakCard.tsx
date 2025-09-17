@@ -3,9 +3,34 @@
 import { Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+
+interface StreaksData {
+  streak: number;
+}
 
 export function StreakCard() {
-  const streakDays = 7;
+  const [streakData, setStreakData] = useState<StreaksData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchStreakData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/mood-record/streaks');
+      const result = await response.json();
+      if (result.success) {
+        setStreakData(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching streak data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStreakData();
+  }, []);
 
   return (
     <motion.div
@@ -45,7 +70,11 @@ export function StreakCard() {
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             >
-              {streakDays} hari!
+              {loading ? "Memuat..." : streakData ? (
+                <>{streakData?.streak} hari!</>
+              ) : (
+                <>0 Hari!</>
+              )}
             </motion.div>
             <p className="text-xs sm:text-sm leading-relaxed px-2 sm:px-0">
               Konsistensi adalah kunci untuk memahami pola emosionalmu
