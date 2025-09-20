@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Save, X, Upload } from "lucide-react";
-import { Editor } from "@/components/blocks/editor-00/Editor";
+import { Editor } from "@/components/blocks/editor-00/editor";
 import { EditorState, SerializedEditorState } from "lexical";
 import Image from "next/image";
 import { toast } from "sonner";

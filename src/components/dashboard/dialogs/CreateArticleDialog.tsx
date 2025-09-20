@@ -18,7 +18,7 @@ import { EditorState, SerializedEditorState } from "lexical";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ContentItem } from "../ContentManagementTable";
-import { Editor } from "@/components/blocks/editor-00/Editor";
+import { Editor } from "@/components/blocks/editor-00/editor";
 
 interface CreateArticleDialogProps {
   open: boolean;

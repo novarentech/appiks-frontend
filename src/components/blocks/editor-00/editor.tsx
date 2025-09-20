@@ -9,9 +9,9 @@ import { EditorState, SerializedEditorState } from "lexical"
 
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-import { nodes } from "./Nodes"
-import { Plugins } from "./Plugins"
 import { editorTheme } from "@/components/editor/themes/EditorTheme"
+import { nodes } from "./nodes"
+import { Plugins } from "./plugins"
 
 const editorConfig: InitialConfigType = {
   namespace: "Editor",
