@@ -36,13 +36,13 @@ import {
   Search,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { CreateArticleDialog } from "./dialogs/create-article-dialog";
-import { CreateVideoDialog } from "./dialogs/create-video-dialog";
-import { CreateQuoteDialog } from "./dialogs/create-quote-dialog";
-import { EditArticleDialog } from "./dialogs/edit-article-dialog";
-import { EditVideoDialog } from "./dialogs/edit-video-dialog";
-import { EditQuoteDialog } from "./dialogs/edit-quote-dialog";
-import { DeleteContentDialog } from "./dialogs/delete-content-dialog";
+import { CreateArticleDialog } from "./dialogs/CreateArticleDialog";
+import { CreateVideoDialog } from "./dialogs/CreateVideoDialog";
+import { CreateQuoteDialog } from "./dialogs/CreateQuoteDialog";
+import { EditArticleDialog } from "./dialogs/EditArticleDialog";
+import { EditVideoDialog } from "./dialogs/EditVideoDialog";
+import { DeleteContentDialog } from "./dialogs/DeleteContentDialog";
+import { EditQuoteDialog } from "./dialogs/EditQuoteDialog";
 
 // Type definitions
 export interface ContentItem {
