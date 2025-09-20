@@ -24,7 +24,7 @@ import { FormatBulletedList } from "@/components/editor/plugins/toolbar/block-fo
 import { FormatCheckList } from "@/components/editor/plugins/toolbar/block-format/format-check-list";
 import { FormatQuote } from "@/components/editor/plugins/toolbar/block-format/format-quote";
 import { ToolbarPlugin } from "@/components/editor/plugins/toolbar/toolbar-plugin";
-import { ContentEditable } from "@/components/editor/editor-ui/content-editable";
+import { ContentEditable } from "@/components/editor/ui/content-editable";
 import { editorTheme } from "@/components/editor/themes/editor-theme";
 import { FontFormatToolbarPlugin } from "@/components/editor/plugins/toolbar/font-format-toolbar-plugin";
 import { HistoryToolbarPlugin } from "@/components/editor/plugins/toolbar/history-toolbar-plugin";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Survey } from "@/components/components/survey/Survey";
+import { Survey } from "@/components/features/survey/Survey";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

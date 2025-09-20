@@ -1,6 +1,6 @@
 "use client";
 
-import BreathingSelect from "@/components/components/self-help/BreathingSelect";
+import BreathingSelect from "@/components/features/self-help/BreathingSelect";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

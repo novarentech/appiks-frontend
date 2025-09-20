@@ -1,8 +1,9 @@
 "use client";
 
-import TeacherPanel from "../components/panel/teacher-panel";
-import AverageStudentMood from "../components/chart/AverageStudentMood";
-import DailyMoodReport from "../components/chart/DailyMoodReport";
+import AverageStudentMood from "../data-display/charts/AverageStudentMood";
+import DailyMoodReport from "../data-display/charts/DailyMoodReport";
+import TeacherPanel from "./panels/TeacherPanel";
+
 
 export function TeacherDashboard() {
   return (

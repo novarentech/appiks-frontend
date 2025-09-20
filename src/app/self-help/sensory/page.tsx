@@ -1,6 +1,6 @@
 "use client";
 
-import SensoryRelaxationCard from "@/components/components/self-help/sensoryCard";
+import SensoryRelaxationCard from "@/components/features/self-help/SensoryCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

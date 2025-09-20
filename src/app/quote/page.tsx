@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuote } from "@/hooks/useQuote";
-import { QuoteAccessGuard } from "@/components/guards/QuoteAccessGuard";
+import { QuoteAccessGuard } from "@/components/auth/guards/QuoteAccessGuard";
 
 export default function QuotePage() {
   const [visible, setVisible] = useState(false);

@@ -15,17 +15,16 @@ import {
 import { Search } from "lucide-react";
 import { UserRole } from "@/types/auth";
 
-// Import components
-import { AddAccountDropdown } from "@/components/dashboard/account-management/add-account-dropdown";
 import {
   UserDataTable,
   User,
 } from "@/components/dashboard/account-management/user-table";
-import { AddEditUserDialog } from "@/components/dashboard/account-management/add-edit-user-dialog";
+import { AccountManagementPanelStats } from "@/components/dashboard/account-management/AccountManagementPanelStats";
+import { AddAccountDropdown } from "@/components/dashboard/account-management/AddAccountDropdown";
+import { AddEditUserDialog } from "@/components/dashboard/account-management/AddEditUserDialog";
 import { ViewUserDialog } from "@/components/dashboard/account-management/view-user-dialog";
-import { DeleteUserDialog } from "@/components/dashboard/account-management/delete-user-dialog";
-import { BulkImportDialog } from "@/components/dashboard/account-management/bulk-import-dialog";
-import { AccountManagementPanelStats } from "@/components/dashboard/account-management/account-management-panel-stats";
+import { DeleteUserDialog } from "@/components/dashboard/account-management/DeleteUserDialog";
+import { BulkImportDialog } from "@/components/dashboard/account-management/BulkImportDialog";
 
 // Mock data for demonstration
 const mockUsers: User[] = [

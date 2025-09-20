@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import NavbarUserDashboard from "@/components/components/navbar/userDashboardNavbar";
-import { AppSidebar } from "@/components/app-sidebar";
+import NavbarUserDashboard from "@/components/layout/DashboardNavbar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,7 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import SplashWrapper from "@/components/components/splashscreen/SplashWrapper";
+import SplashWrapper from "@/components/features/splashscreen/SplashWrapper";
 
 export default function DashboardLayout({
   children,

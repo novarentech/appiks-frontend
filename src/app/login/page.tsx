@@ -1,6 +1,6 @@
 "use client";
 
-import { LoginForm } from "@/components/components/auth/login-form-wrapper";
+import { LoginForm } from "@/components/auth/LoginFormWrapper";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 export default function LoginPage() {

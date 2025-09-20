@@ -1,7 +1,7 @@
 "use client";
 
-import CounselingSchedulePanel from "@/components/components/panel/councelingSchedulePanel";
-import CounselingScheduleTable from "@/components/components/tables/CounselingScheduleTable";
+import CounselingSchedulePanel from "@/components/dashboard/panels/CouncelingSchedulePanel";
+import CounselingScheduleTable from "@/components/data-display/tables/CounselingScheduleTable";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

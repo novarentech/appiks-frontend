@@ -1,7 +1,7 @@
 "use client";
 
-import { ProfileStudent } from "@/components/components/profile/StudentProfile";
-import Profile from "@/components/components/profile/Profile";
+import { ProfileStudent } from "@/components/features/profile/StudentProfile";
+import Profile from "@/components/features/profile/Profile";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function ProfilePageComponent() {

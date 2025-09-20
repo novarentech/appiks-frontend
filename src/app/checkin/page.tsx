@@ -1,8 +1,8 @@
 "use client";
 
-import CheckIn from "@/components/components/checkin/checkin";
 import { useAuth } from "@/hooks/useAuth";
-import { CheckinAccessGuard } from "@/components/guards/CheckinAccessGuard";
+import { CheckinAccessGuard } from "@/components/auth/guards/CheckinAccessGuard";
+import CheckIn from "@/components/features/checkin/Checkin";
 
 export default function CheckInPage() {
   const { isLoading, isAuthenticated, isVerified } = useAuth();

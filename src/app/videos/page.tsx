@@ -1,6 +1,6 @@
 "use client";
 
-import { VideoRecommendations } from "@/components/components/videos/video-recomendation";
+import { VideoRecommendations } from "@/components/features/videos/video-recomendation";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function VideoPage() {

@@ -1,6 +1,6 @@
 "use client";
 
-import GroundingCard from "@/components/components/self-help/groundingCard";
+import GroundingCard from "@/components/features/self-help/GroundingCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

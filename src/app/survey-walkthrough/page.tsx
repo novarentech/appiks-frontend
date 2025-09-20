@@ -1,6 +1,6 @@
 "use client";
 
-import { SurveyWalkthrough } from "@/components/components/survey/SurveyWalkthrough";
+import { SurveyWalkthrough } from "@/components/features/survey/SurveyWalkthrough";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

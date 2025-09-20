@@ -1,10 +1,10 @@
 "use client";
 
 import { Card, CardContent } from "../ui/card";
-import AdminPanel from "../components/panel/adminPanel";
 import { Edit3, UserPlus } from "lucide-react";
-import NewContentCard from "../components/card/newContent";
-import NewUserCard from "../components/card/newUser";
+import AdminPanel from "./panels/AdminPanel";
+import NewContentCard from "../data-display/cards/NewContent";
+import NewUserCard from "../data-display/cards/NewUser";
 
 const quickActions = [
   {

@@ -3,9 +3,9 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import TeacherPanel from "@/components/components/panel/teacher-panel";
-import TeacherStudentData from "@/components/components/tables/TeacherStudentData";
-import CounselorStudentData from "@/components/components/tables/CounselorStudentData";
+import TeacherStudentData from "@/components/data-display/tables/TeacherStudentData";
+import CounselorStudentData from "@/components/data-display/tables/CounselorStudentData";
+import TeacherPanel from "@/components/dashboard/panels/TeacherPanel";
 
 interface Student {
   id: number;

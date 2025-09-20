@@ -4,7 +4,7 @@ import { Bell, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { NotificationGroup } from "@/components/notifications/NotificationGroup";
+import { NotificationGroup } from "@/components/features/notifications/NotificationGroup";
 import { Notification, GroupConfig } from "@/types/notifications";
 import { sampleNotifications } from "@/data/notifications";
 

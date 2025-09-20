@@ -1,6 +1,6 @@
 "use client";
 
-import { EduContent } from "@/components/components/edu-content/edu-content";
+import { EduContent } from "@/components/features/edu-content/EduContent";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function EduContentPage() {

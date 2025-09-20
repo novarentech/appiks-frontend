@@ -1,10 +1,11 @@
-import { Footer7 } from "@/components/components/landingpage/footer";
-import { NavbarLandingPage } from "@/components/components/navbar/landingPageNavbar";
-import { Feature } from "@/components/components/landingpage/feature";
-import { Hero } from "@/components/components/landingpage/hero";
-import { Stats } from "@/components/components/landingpage/stats";
-import { Cta } from "@/components/components/landingpage/cta";
-import { Testimonial } from "@/components/components/landingpage/testimonial";
+import { Cta } from "@/components/features/landing-page/Cta";
+import { Feature } from "@/components/features/landing-page/Feature";
+import { Footer7 } from "@/components/features/landing-page/Footer";
+import { Hero } from "@/components/features/landing-page/Hero";
+import { Stats } from "@/components/features/landing-page/Stats";
+import { Testimonial } from "@/components/features/landing-page/Testimonial";
+import { NavbarLandingPage } from "@/components/layout/LandingPageNavbar";
+
 
 export default function Home() {
   return (

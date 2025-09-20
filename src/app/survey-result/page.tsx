@@ -3,22 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Confetti, type ConfettiRef } from "@/components/magicui/confetti";
+import { Confetti, type ConfettiRef } from "@/components/utils/magicui/Confetti";
 import {
   SurveyResultData,
   isSecureResult,
   isInsecureResult,
 } from "@/types/survey";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  LoadingState,
-  EmptyState,
-  ErrorState,
-  SurveyHeader,
-  SecureResultCard,
-  InsecureResultCard,
-  BackButton,
-} from "@/components/survey-result";
+import { BackButton, EmptyState, ErrorState, InsecureResultCard, LoadingState, SecureResultCard, SurveyHeader } from "@/components/features/survey-result";
 
 export default function SurveyResultPage() {
   const router = useRouter();

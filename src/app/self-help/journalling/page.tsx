@@ -1,6 +1,6 @@
 "use client";
 
-import DailyJournallingCard from "@/components/components/self-help/dailyJournallingCard";
+import DailyJournallingCard from "@/components/features/self-help/DailyJournallingCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

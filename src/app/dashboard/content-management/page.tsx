@@ -1,7 +1,7 @@
 "use client";
 
-import ContentManagementPanel from "@/components/components/panel/contentManagementPanel";
-import { ContentManagementTable } from "@/components/dashboard/content-management-table";
+import { ContentManagementTable } from "@/components/dashboard/ContentManagementTable";
+import ContentManagementPanel from "@/components/dashboard/panels/ContentManagementPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

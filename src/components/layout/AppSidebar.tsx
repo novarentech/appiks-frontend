@@ -28,9 +28,9 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { NavUser } from "./components/profile/nav-user";
+import { NavUser } from "@/components/features/profile/NavUser";
 import Image from "next/image";
-import { Separator } from "./ui/separator";
+import { Separator } from "@/components/ui/separator";
 
 // Type definitions
 interface NavigationSubItem {

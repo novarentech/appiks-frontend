@@ -1,7 +1,7 @@
 "use client";
 
-import HeadTeacherPanel from "@/components/components/panel/headTeacherPanel";
-import SchoolDataTable from "@/components/components/tables/SchoolDataTable";
+import HeadTeacherPanel from "@/components/dashboard/panels/HeadTeacherPanel";
+import SchoolDataTable from "@/components/data-display/tables/SchoolDataTable";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

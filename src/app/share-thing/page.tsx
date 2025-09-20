@@ -1,7 +1,7 @@
 "use client";
 
-import ShareThingCard from "@/components/components/share-thing/ShareThingCard";
-import ShareThingDialog from "@/components/components/share-thing/ShareThingDialog";
+import ShareThingCard from "@/components/features/share-thing/ShareThingCard";
+import ShareThingDialog from "@/components/features/share-thing/ShareThingDialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

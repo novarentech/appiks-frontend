@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { SelfHelpCard } from "./selfHelpCard";
+import { SelfHelpCard } from "./SelfHelpCard";
 
 export function SelfHelp() {
   const router = useRouter();

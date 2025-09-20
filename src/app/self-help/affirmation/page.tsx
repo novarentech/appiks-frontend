@@ -1,6 +1,6 @@
 "use client";
 
-import AffirmationSelect from "@/components/components/self-help/AffirmationSelect";
+import AffirmationSelect from "@/components/features/self-help/AffirmationSelect";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

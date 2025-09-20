@@ -1,6 +1,6 @@
 "use client";
 
-import ButterflyHugCard from "@/components/components/self-help/butterflyHugCard";
+import ButterflyHugCard from "@/components/features/self-help/ButterflyHugCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

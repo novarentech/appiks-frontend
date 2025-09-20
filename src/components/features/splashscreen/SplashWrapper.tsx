@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import SplashScreen from "./splashscreen";
+import SplashScreen from "./Splashscreen";
 
 type Props = {
   children: React.ReactNode;

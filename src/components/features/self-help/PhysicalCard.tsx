@@ -96,7 +96,7 @@ export default function PhysicalActivityDetail() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [running]);
+  }, [running, timer]);
 
   // Format timer mm:ss
   const formatTime = (sec: number) => {

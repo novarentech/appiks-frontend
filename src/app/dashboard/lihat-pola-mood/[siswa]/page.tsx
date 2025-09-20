@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import MoodPatternAnalysis from "@/components/components/analysis/MoodPatternAnalysis";
+import MoodPatternAnalysis from "@/components/features/analysis/MoodPatternAnalysis";
 
 // Sample students data to find the selected student
 const studentsData = [

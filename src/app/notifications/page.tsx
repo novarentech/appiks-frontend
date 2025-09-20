@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { NotificationItem } from "@/components/notifications/NotificationItem";
+import { NotificationItem } from "@/components/features/notifications/NotificationItem";
 import { allNotifications } from "@/data/notifications";
 import { useAuth } from "@/hooks/useAuth";
 

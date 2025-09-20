@@ -1,6 +1,6 @@
 "use client";
 
-import PhysicalActivitySelect from "@/components/components/self-help/PhysicalSelect";
+import PhysicalActivitySelect from "@/components/features/self-help/PhysicalSelect";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

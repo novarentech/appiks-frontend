@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 
 import { useToolbarContext } from "@/components/editor/context/toolbar-context"
-import { useUpdateToolbarHandler } from "@/components/editor/editor-hooks/use-update-toolbar"
+import { useUpdateToolbarHandler } from "@/components/editor/hooks/use-update-toolbar"
 import { getSelectedNode } from "@/components/editor/utils/get-selected-node"
 import { Separator } from "@/components/ui/separator"
 import {

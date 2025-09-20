@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 
 import { useToolbarContext } from "@/components/editor/context/toolbar-context"
-import { useUpdateToolbarHandler } from "@/components/editor/editor-hooks/use-update-toolbar"
+import { useUpdateToolbarHandler } from "@/components/editor/hooks/use-update-toolbar"
 import { Toggle } from "@/components/ui/toggle"
 
 const Icons: Partial<Record<TextFormatType, React.ElementType>> = {

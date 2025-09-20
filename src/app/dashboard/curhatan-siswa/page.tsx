@@ -1,7 +1,7 @@
 "use client";
 
-import CouncelorPanel from "@/components/components/panel/councelor-panel";
-import ConfidentTable from "@/components/components/tables/ConfidentTable";
+import CouncelorPanel from "@/components/dashboard/panels/CouncelorPanel";
+import ConfidentTable from "@/components/data-display/tables/ConfidentTable";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -62,7 +62,7 @@ export default function DashboardDataSiswaPage() {
       </div>
 
       {/* Panel Statistik */}
-      <CouncelorPanel />
+      <CounselorPanel />
 
       {/* Table Curhatan Siswa */}
       <ConfidentTable onResponseSubmit={handleResponseSubmit} />

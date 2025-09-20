@@ -1,6 +1,6 @@
 "use client";
 
-import GratitudeCard from "@/components/components/self-help/gratitudeCard";
+import GratitudeCard from "@/components/features/self-help/GratitudeCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft } from "lucide-react";

@@ -1,8 +1,9 @@
 "use client";
 
-import DailyMoodReport from "../components/chart/DailyMoodReport";
-import CouncelorPanel from "../components/panel/councelor-panel";
-import CounfidenceAndCounceling from "../components/chart/CounfidenceAndCounceling";
+import CounfidenceAndCounceling from "../data-display/charts/CounfidenceAndCounceling";
+import DailyMoodReport from "../data-display/charts/DailyMoodReport";
+import CouncelorPanel from "./panels/CouncelorPanel";
+
 
 export function CounselorDashboard() {
   return (

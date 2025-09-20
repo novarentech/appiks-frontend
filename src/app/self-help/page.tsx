@@ -1,6 +1,6 @@
 "use client";
 
-import { SelfHelp } from "@/components/components/self-help/selfHelp";
+import { SelfHelp } from "@/components/features/self-help/SelfHelp";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function SelfHelpPage() {

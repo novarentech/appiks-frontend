@@ -1,13 +1,13 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { StudentRedirectGuard } from "@/components/guards/StudentRedirectGuard";
-import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
-import { TeacherDashboard } from "@/components/dashboards/TeacherDashboard";
-import { CounselorDashboard } from "@/components/dashboards/CounselorDashboard";
-import { HeadTeacherDashboard } from "@/components/dashboards/HeadTeacherDashboard";
-import { SuperDashboard } from "@/components/dashboards/SuperDashboard";
-import { StudentDashboard } from "@/components/dashboards/StudentDashboard";
+import { StudentRedirectGuard } from "@/components/auth/guards/StudentRedirectGuard";
+import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
+import { TeacherDashboard } from "@/components/dashboard/TeacherDashboard";
+import { CounselorDashboard } from "@/components/dashboard/CounselorDashboard";
+import { HeadTeacherDashboard } from "@/components/dashboard/HeadTeacherDashboard";
+import { SuperDashboard } from "@/components/dashboard/SuperDashboard";
+import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
 
 export default function DashboardPage() {
   const { isLoading, isAuthenticated, isVerified, user } = useAuth();

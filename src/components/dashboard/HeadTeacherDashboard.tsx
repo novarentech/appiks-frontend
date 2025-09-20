@@ -1,8 +1,8 @@
 "use client";
 
-import CounfidenceAndCounceling from "../components/chart/CounfidenceAndCounceling";
-import DailyMoodReport from "../components/chart/DailyMoodReport";
-import HeadTeacherPanel from "../components/panel/headTeacherPanel";
+import CounfidenceAndCounceling from "../data-display/charts/CounfidenceAndCounceling";
+import DailyMoodReport from "../data-display/charts/DailyMoodReport";
+import HeadTeacherPanel from "./panels/HeadTeacherPanel";
 
 export function HeadTeacherDashboard() {
   return (
