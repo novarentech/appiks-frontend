@@ -22,6 +22,7 @@ import { Eye, Edit, Trash2, Plus, Search, Home, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogFooter,
   DialogClose,
@@ -305,8 +306,8 @@ export default function ClassDataTable() {
           if (isEdit) handleEdit();
         }}
       >
-        <div className="mb-2">
-          <DialogTitle className="flex items-center gap-2 text-xl mb-6">
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-xl">
             {isTambah ? (
               <>
                 <Home className="h-6 w-6 text-[#6C63FF]" />
@@ -324,8 +325,8 @@ export default function ClassDataTable() {
               </>
             )}
           </DialogTitle>
-        </div>
-        <div className="space-y-6">
+        </DialogHeader>
+        <div className="space-y-6 py-4">
           <div>
             <label className="text-sm font-medium mb-1 block">
               Pilih Sekolah
@@ -350,7 +351,10 @@ export default function ClassDataTable() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="text-sm font-medium mb-1 block">
-                Nama Kelas{(isTambah || isEdit) && <span className="text-red-500">*</span>}
+                Nama Kelas
+                {(isTambah || isEdit) && (
+                  <span className="text-red-500">*</span>
+                )}
               </label>
               <Input
                 placeholder="Nama Kelas"
@@ -363,7 +367,10 @@ export default function ClassDataTable() {
             </div>
             <div className="flex-1">
               <label className="text-sm font-medium mb-1 block">
-                Tingkat{(isTambah || isEdit) && <span className="text-red-500">*</span>}
+                Tingkat
+                {(isTambah || isEdit) && (
+                  <span className="text-red-500">*</span>
+                )}
               </label>
               <Select
                 value={form.tingkat || ""}
@@ -385,18 +392,13 @@ export default function ClassDataTable() {
           </div>
         </div>
         {(isTambah || isEdit) && (
-          <DialogFooter className="gap-3 mt-8 ">
+          <DialogFooter className="pt-4 border-t gap-3">
             <DialogClose asChild>
-              <Button
-                type="button"
-                variant="outline"
-              >
+              <Button type="button" variant="outline">
                 Batal
               </Button>
             </DialogClose>
-            <Button
-              type="submit"
-            >
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
               {isTambah ? (
                 <>
                   <Plus className="w-4 h-4 mr-1" />
@@ -418,18 +420,22 @@ export default function ClassDataTable() {
   function DialogLihat() {
     return (
       <div className="w-full">
-        <DialogTitle className="flex items-center gap-2 text-2xl font-bold text-[#37364F] mb-6">
-          <Eye className="h-7 w-7 text-[#6C63FF]" />
-          Detail Kelas
-        </DialogTitle>
-        <div className="space-y-6">
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-2xl font-bold text-[#37364F]">
+            <Eye className="h-7 w-7 text-[#6C63FF]" />
+            Detail Kelas
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
           <div>
             <label className="text-sm font-medium mb-1 block">Sekolah</label>
             <Input value={form.sekolah || ""} disabled className="h-12" />
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">Nama Kelas</label>
+              <label className="text-sm font-medium mb-1 block">
+                Nama Kelas
+              </label>
               <Input value={form.kelas || ""} disabled className="h-12" />
             </div>
             <div className="flex-1">
@@ -438,6 +444,16 @@ export default function ClassDataTable() {
             </div>
           </div>
         </div>
+        <DialogFooter className="pt-4 border-t flex flex-row gap-4">
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="outline"
+            >
+              Batal
+            </Button>
+          </DialogClose>
+        </DialogFooter>
       </div>
     );
   }
@@ -445,32 +461,32 @@ export default function ClassDataTable() {
   function DialogHapus() {
     return (
       <div className="w-full">
-        <div className="flex flex-col items-center mb-6">
-          <span className="rounded-full bg-[#ffeaea] p-3 mb-2">
-            <Trash2 className="w-8 h-8 text-[#FF5A5F]" />
-          </span>
-          <DialogTitle className="text-2xl font-bold text-center text-[#37364F]">
-            Hapus Kelas
-          </DialogTitle>
-        </div>
-        <div className="text-center mb-8">
+        <DialogHeader className="pb-4 border-b text-center">
+          <div className="flex flex-col items-center">
+            <span className="rounded-full bg-[#ffeaea] p-3 mb-2">
+              <Trash2 className="w-8 h-8 text-[#FF5A5F]" />
+            </span>
+            <DialogTitle className="text-2xl font-bold text-center text-[#37364F]">
+              Hapus Kelas
+            </DialogTitle>
+          </div>
+        </DialogHeader>
+        <div className="text-center py-4">
           <p>
             Yakin ingin menghapus kelas <b>{openDialog?.row?.kelas}</b>?
           </p>
         </div>
-        <DialogFooter className="flex flex-row gap-4">
+        <DialogFooter className="pt-4 border-t flex flex-row gap-4">
           <DialogClose asChild>
             <Button
               type="button"
               variant="outline"
-              className="flex-1 border-[#6C63FF] text-[#6C63FF] hover:bg-[#f4f4ff]"
             >
               Batal
             </Button>
           </DialogClose>
           <Button
             type="button"
-            className="flex-1 bg-[#FF5A5F] hover:bg-[#e14a4e] text-white"
             onClick={handleDelete}
           >
             Hapus
@@ -564,7 +580,7 @@ export default function ClassDataTable() {
 
       {/* Dialogs */}
       <Dialog open={!!openDialog} onOpenChange={() => setOpenDialog(null)}>
-        <DialogContent className="max-w-xl rounded-2xl">
+        <DialogContent className="max-w-xl rounded-2xl max-h-[90vh] overflow-y-auto">
           {openDialog?.type === "tambah" && <DialogForm type="tambah" />}
           {openDialog?.type === "edit" && <DialogForm type="edit" />}
           {openDialog?.type === "lihat" && <DialogLihat />}

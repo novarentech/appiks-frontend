@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Eye } from "lucide-react";
 
@@ -55,8 +56,8 @@ export default function UserDetailDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="text-lg font-semibold text-gray-700 flex items-center gap-2">
             <Eye className="w-5 h-5 text-blue-600" />
             {getDetailTitle(user.peran)}
@@ -180,14 +181,14 @@ export default function UserDetailDialog({
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <DialogFooter className="pt-4 border-t">
           <Button
             onClick={onClose}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2"
           >
             Tutup
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -29,8 +29,8 @@ export function DeleteContentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Trash2 className="h-6 w-6 text-red-600" />
             Hapus Konten
@@ -56,7 +56,7 @@ export function DeleteContentDialog({
           </p>
         </div>
 
-        <DialogFooter className="gap-3">
+        <DialogFooter className="pt-4 border-t gap-3">
           <Button
             type="button"
             variant="outline"

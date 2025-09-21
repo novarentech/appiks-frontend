@@ -38,7 +38,7 @@ export default function ShareThingDialog() {
       <DialogTitle asChild>
         <VisuallyHidden>Tema Curhat yang Bisa Kamu Sampaikan</VisuallyHidden>
       </DialogTitle>
-      <DialogContent size="xl" className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* DialogTitle for accessibility */}
         <div className="p-6 sm:p-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-2">

@@ -61,14 +61,14 @@ export default function CurhatReplyDialog({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-blue-600" />
             <DialogTitle>Balas Curhat</DialogTitle>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto py-4">
           <div className="space-y-6 px-1">
             <div className="bg-gray-50 p-6 rounded-lg">
               <h4 className="font-semibold text-xl mb-3">{curhat.judul}</h4>
@@ -96,7 +96,7 @@ export default function CurhatReplyDialog({
           </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0 border-t pt-4 mt-4">
+        <DialogFooter className="flex-shrink-0 pt-4 border-t">
           <Button variant="outline" onClick={handleClose}>
             <X className="w-4 h-4 mr-2" />
             Batal

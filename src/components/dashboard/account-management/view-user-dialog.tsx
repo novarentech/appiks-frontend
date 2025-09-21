@@ -74,7 +74,7 @@ export function ViewUserDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-full">
               <UserIcon className="w-4 h-4 text-blue-600" />
@@ -83,7 +83,7 @@ export function ViewUserDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 py-4">
           {/* Profile Section */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
             <Avatar className="h-20 w-20 mx-auto sm:mx-0 border-2 border-blue-200">

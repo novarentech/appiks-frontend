@@ -156,7 +156,7 @@ export function CreateArticleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="xl" className="max-h-[95vh] overflow-y-auto">
+      <DialogContent size="lg" className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center gap-3 text-2xl font-semibold">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -166,7 +166,7 @@ export function CreateArticleDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-8">
+        <div className="space-y-6 py-4">
           {/* Basic Information Section */}
           <div className="space-y-6">
             {/* Image Upload */}
@@ -352,7 +352,7 @@ export function CreateArticleDialog({
           </div>
         </div>
 
-        <DialogFooter className="pt-6 border-t gap-3">
+        <DialogFooter className="pt-4 border-t gap-3">
           <Button
             type="button"
             variant="outline"

@@ -43,8 +43,8 @@ export function DeleteUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[460px]">
-        <DialogHeader className="text-center space-y-4">
+      <DialogContent className="sm:max-w-[460px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b text-center space-y-4">
           <div className="mx-auto p-4 bg-red-100 rounded-full w-fit">
             <AlertTriangle className="h-8 w-8 text-red-600" />
           </div>

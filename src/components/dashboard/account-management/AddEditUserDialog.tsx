@@ -166,7 +166,7 @@ export function AddEditUserDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center space-x-3 text-lg">
             <div className="p-2 bg-blue-100 rounded-full">
               {isEdit ? (
@@ -181,7 +181,7 @@ export function AddEditUserDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 py-4">
           {/* Basic Information */}
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

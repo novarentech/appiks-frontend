@@ -108,15 +108,15 @@ export function CreateVideoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Play className="h-6 w-6 text-green-600" />
             Buat Video
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 py-4">
           {/* YouTube URL Input */}
           <div>
             <Label htmlFor="youtube-url" className="text-sm font-medium">
@@ -180,14 +180,14 @@ export function CreateVideoDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-3">
+        <DialogFooter className="pt-4 border-t gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={handleCancel}
             disabled={isSubmitting}
           >
-            Tutup
+            Batal
           </Button>
           <Button
             type="button"

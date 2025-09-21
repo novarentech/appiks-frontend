@@ -143,7 +143,7 @@ export function BulkImportDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-full">
               <Upload className="w-4 h-4 text-blue-600" />
@@ -152,7 +152,7 @@ export function BulkImportDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 py-4">
           {/* Info Section */}
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
             <div className="flex items-start space-x-3">

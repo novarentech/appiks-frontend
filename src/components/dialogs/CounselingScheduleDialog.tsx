@@ -219,15 +219,15 @@ export default function CounselingScheduleDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
           <div className="flex items-center gap-2">
             {getDialogIcon()}
             <DialogTitle>{getDialogTitle()}</DialogTitle>
           </div>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 py-4">
           {/* Student Info */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="font-semibold text-lg mb-2">
@@ -388,7 +388,7 @@ export default function CounselingScheduleDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="pt-4 border-t">
           <Button variant="outline" onClick={handleClose}>
             Batal
           </Button>

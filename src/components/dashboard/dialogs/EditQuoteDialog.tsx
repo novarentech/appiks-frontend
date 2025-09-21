@@ -109,15 +109,15 @@ export function EditQuoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Quote className="h-6 w-6 text-purple-600" />
             Edit Quote
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 py-4">
           {/* Quote Content */}
           <div>
             <Label htmlFor="edit-quote-content" className="text-sm font-medium">
@@ -169,7 +169,7 @@ export function EditQuoteDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-3">
+        <DialogFooter className="pt-4 border-t gap-3">
           <Button
             type="button"
             variant="outline"
@@ -187,7 +187,7 @@ export function EditQuoteDialog({
               !author.trim() ||
               !publicationTarget
             }
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-blue-600 hover:bg-blue-700"
           >
             {isSubmitting ? (
               <>

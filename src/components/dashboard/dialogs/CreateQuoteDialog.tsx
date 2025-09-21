@@ -94,15 +94,15 @@ export function CreateQuoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Quote className="h-6 w-6 text-purple-600" />
             Buat Quote
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 py-4">
           {/* Quote Content */}
           <div>
             <Label htmlFor="quote-content" className="text-sm font-medium">
@@ -154,14 +154,14 @@ export function CreateQuoteDialog({
           </div>
         </div>
 
-        <DialogFooter className="gap-3">
+        <DialogFooter className="pt-4 border-t gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={handleCancel}
             disabled={isSubmitting}
           >
-            Tutup
+            Batal
           </Button>
           <Button
             type="button"
