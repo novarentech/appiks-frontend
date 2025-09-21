@@ -123,7 +123,7 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       icon: Home,
     },
     {
-      title: "Data Sekolah",
+      title: "Monitor Sekolah",
       url: "/dashboard/school-monitor",
       icon: University,
     },
