@@ -68,11 +68,6 @@ export interface ClassItem {
   waktu: string;
 }
 
-const SCHOOL_OPTIONS = [
-  { value: "Magelang", label: "Magelang" },
-  // Tambah sekolah lain jika ada
-];
-
 const TINGKAT_OPTIONS = [
   { value: "X", label: "X" },
   { value: "XI", label: "XI" },
@@ -82,7 +77,7 @@ const TINGKAT_OPTIONS = [
 export default function ClassDataTable() {
   const [data, setData] = useState<ClassItem[]>(sampleData);
   const [searchQuery, setSearchQuery] = useState("");
-  const [schoolFilter, setSchoolFilter] = useState("all");
+  const [schoolFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [pageSize, setPageSize] = useState(10);
 
@@ -327,68 +322,41 @@ export default function ClassDataTable() {
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
-          <div>
+          <div className="flex-1">
             <label className="text-sm font-medium mb-1 block">
-              Pilih Sekolah
+              Nama Kelas
+              {(isTambah || isEdit) && <span className="text-red-500">*</span>}
+            </label>
+            <Input
+              placeholder="Nama Kelas"
+              value={form.kelas || ""}
+              onChange={(e) => handleFormChange("kelas", e.target.value)}
+              disabled={readOnly}
+              className=""
+              required={isTambah || isEdit}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-sm font-medium mb-1 block">
+              Tingkat
+              {(isTambah || isEdit) && <span className="text-red-500">*</span>}
             </label>
             <Select
-              value={form.sekolah || ""}
-              onValueChange={(v) => handleFormChange("sekolah", v)}
+              value={form.tingkat || ""}
+              onValueChange={(v) => handleFormChange("tingkat", v)}
               disabled={readOnly}
             >
               <SelectTrigger className="w-full h-12">
-                <SelectValue placeholder="Pilih Sekolah" />
+                <SelectValue placeholder="Pilih Tingkat" />
               </SelectTrigger>
               <SelectContent>
-                {SCHOOL_OPTIONS.map((opt) => (
+                {TINGKAT_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">
-                Nama Kelas
-                {(isTambah || isEdit) && (
-                  <span className="text-red-500">*</span>
-                )}
-              </label>
-              <Input
-                placeholder="Nama Kelas"
-                value={form.kelas || ""}
-                onChange={(e) => handleFormChange("kelas", e.target.value)}
-                disabled={readOnly}
-                className=""
-                required={isTambah || isEdit}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">
-                Tingkat
-                {(isTambah || isEdit) && (
-                  <span className="text-red-500">*</span>
-                )}
-              </label>
-              <Select
-                value={form.tingkat || ""}
-                onValueChange={(v) => handleFormChange("tingkat", v)}
-                disabled={readOnly}
-              >
-                <SelectTrigger className="w-full h-12">
-                  <SelectValue placeholder="Pilih Tingkat" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TINGKAT_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </div>
         {(isTambah || isEdit) && (
@@ -496,26 +464,17 @@ export default function ClassDataTable() {
               className="pl-9 w-full sm:w-48"
             />
           </div>
-          <Select value={schoolFilter} onValueChange={setSchoolFilter}>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Pilih Sekolah" />
+              <SelectValue placeholder="Pilih Tingkat" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Sekolah</SelectItem>
-              {SCHOOL_OPTIONS.map((opt) => (
+              <SelectItem value="all">Semua Tingkat</SelectItem>
+              {TINGKAT_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Pilih Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Status</SelectItem>
-              {/* Tambah status lain jika ada */}
             </SelectContent>
           </Select>
         </div>
