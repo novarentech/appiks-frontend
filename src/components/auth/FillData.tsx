@@ -87,6 +87,19 @@ const FillData = () => {
     };
   };
 
+  // Phone validation function
+  const validatePhone = (phone: string) => {
+    const digitsOnly = phone.replace(/\D/g, "");
+    const isValidLength = digitsOnly.length >= 9 && digitsOnly.length <= 13;
+    const startsWithValidDigit = /^[8-9]/.test(digitsOnly);
+
+    return {
+      isValidLength,
+      startsWithValidDigit,
+      isValid: isValidLength && startsWithValidDigit,
+    };
+  };
+
   const [profileData, setProfileData] = useState<ProfileData>({
     fullName: "",
     username: "",
@@ -112,7 +125,9 @@ const FillData = () => {
         mentor: apiProfileData.mentor.name || "",
         kelas: apiProfileData.room.name || "",
         namaSekolah: apiProfileData.school.name || "",
-        noTelp: apiProfileData.phone || "",
+        noTelp: apiProfileData.phone
+          ? apiProfileData.phone.replace(/^\+62/, "")
+          : "",
         password: "",
         verifyPassword: "",
         avatar: "/avatar-placeholder.jpg",
@@ -158,14 +173,23 @@ const FillData = () => {
       return;
     }
 
+    // Format phone number with country code
+    const formattedPhone = editData.noTelp ? `+62${editData.noTelp}` : "";
+
     const success = await updateProfile({
       username: editData.username,
-      phone: editData.noTelp,
+      phone: formattedPhone,
       password: editData.password,
     });
 
     if (success) {
-      setProfileData(editData);
+      // Update the profile data with formatted phone number
+      const updatedEditData = {
+        ...editData,
+        noTelp: formattedPhone,
+      };
+      setProfileData(updatedEditData);
+      setEditData(updatedEditData);
       setShowSaveModal(false);
     }
     // Error handling is done in the hook
@@ -227,12 +251,14 @@ const FillData = () => {
   const passwordsMatch = editData.password === editData.verifyPassword;
   const passwordValidation = validatePassword(editData.password);
   const usernameValidation = validateUsername(editData.username);
+  const phoneValidation = validatePhone(editData.noTelp);
   const isFormValid =
     editData.username.trim() !== "" &&
     editData.noTelp.trim() !== "" &&
     editData.password.trim() !== "" &&
     editData.verifyPassword.trim() !== "" &&
     usernameValidation.isValid &&
+    phoneValidation.isValid &&
     passwordValidation.isValid &&
     passwordsMatch &&
     (!usernameChanged || (isUsernameAvailable === true && !usernameError)); // Username must be available if changed
@@ -492,20 +518,67 @@ const FillData = () => {
               <Label className="text-sm font-medium text-gray-700">
                 No Telp *
               </Label>
-              <Input
-                value={editData.noTelp}
-                onChange={(e) => handleInputChange("noTelp", e.target.value)}
-                placeholder="Masukkan nomor telepon"
-                type="tel"
-                className={
-                  editData.noTelp.trim() === ""
-                    ? "border-red-300 focus:border-red-500"
-                    : ""
-                }
-              />
+              <div className="flex">
+                <div className="flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                  +62
+                </div>
+                <Input
+                  value={editData.noTelp}
+                  onChange={(e) => {
+                    // Remove any non-digit characters
+                    let value = e.target.value.replace(/\D/g, "");
+                    // Remove leading zero if present
+                    if (value.startsWith("0")) {
+                      value = value.substring(1);
+                    }
+                    handleInputChange("noTelp", value);
+                  }}
+                  placeholder="812-3456-7890"
+                  type="tel"
+                  className={
+                    editData.noTelp.trim() === ""
+                      ? "border-red-300 focus:border-red-500 rounded-l-none"
+                      : "rounded-l-none"
+                  }
+                />
+              </div>
               {editData.noTelp.trim() === "" && (
                 <p className="text-sm text-red-500">
                   Nomor telepon wajib diisi
+                </p>
+              )}
+              {editData.noTelp.trim() !== "" && !phoneValidation.isValid && (
+                <div className="text-xs">
+                  <p className="text-red-500 font-medium mb-1">
+                    Nomor telepon harus memenuhi kriteria berikut:
+                  </p>
+                  <ul className="space-y-1">
+                    <li
+                      className={
+                        phoneValidation.isValidLength
+                          ? "text-green-600"
+                          : "text-red-500"
+                      }
+                    >
+                      9-13 digit (tanpa +62){" "}
+                      {phoneValidation.isValidLength ? "✓" : "✗"}
+                    </li>
+                    <li
+                      className={
+                        phoneValidation.startsWithValidDigit
+                          ? "text-green-600"
+                          : "text-red-500"
+                      }
+                    >
+                      Dimulai dengan 8 atau 9{" "}
+                      {phoneValidation.startsWithValidDigit ? "✓" : "✗"}
+                    </li>
+                  </ul>
+                </div>
+              )}
+              {editData.noTelp.trim() !== "" && phoneValidation.isValid && (
+                <p className="text-sm text-gray-500">
+                  Format: +62{editData.noTelp}
                 </p>
               )}
             </div>
@@ -665,7 +738,7 @@ const FillData = () => {
                 )}
                 {profileData.noTelp !== editData.noTelp && (
                   <div>
-                    • No Telp: {profileData.noTelp} → {editData.noTelp}
+                    • No Telp: {profileData.noTelp} → +62{editData.noTelp}
                   </div>
                 )}
                 {profileData.password !== editData.password &&
