@@ -1,15 +1,14 @@
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import {
   Home,
   Users,
-  BookOpen,
   MessageCircle,
-  Settings,
-  BarChart3,
-  Shield,
   Calendar,
   UserCog,
   BookText,
+  ShieldUserIcon,
+  University,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -31,6 +30,8 @@ import { NavUser } from "@/components/features/profile/NavUser";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { FaChalkboardTeacher } from "react-icons/fa";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 // Type definitions
 interface NavigationSubItem {
@@ -122,96 +123,42 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       icon: Home,
     },
     {
-      title: "Multi-School Management",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "All Schools",
-          url: "/dashboard/schools",
-        },
-        {
-          title: "School Performance",
-          url: "/dashboard/school-performance",
-        },
-        {
-          title: "Resource Allocation",
-          url: "/dashboard/resources",
-        },
-      ],
+      title: "Data Sekolah",
+      url: "/dashboard/school-monitor",
+      icon: University,
     },
     {
-      title: "Platform Administration",
-      url: "#",
-      icon: Shield,
-      items: [
-        {
-          title: "System Settings",
-          url: "/dashboard/system-settings",
-        },
-        {
-          title: "Feature Management",
-          url: "/dashboard/features",
-        },
-        {
-          title: "Global Configurations",
-          url: "/dashboard/global-config",
-        },
-      ],
-    },
-    {
-      title: "User Administration",
-      url: "#",
-      icon: Users,
-      items: [
-        {
-          title: "All Users",
-          url: "/dashboard/all-users",
-        },
-        {
-          title: "Role Management",
-          url: "/dashboard/role-management",
-        },
-        {
-          title: "Access Control",
-          url: "/dashboard/access-control",
-        },
-      ],
-    },
-    {
-      title: "Analytics & Reports",
-      url: "#",
-      icon: BarChart3,
-      items: [
-        {
-          title: "Platform Analytics",
-          url: "/dashboard/platform-analytics",
-        },
-        {
-          title: "Usage Statistics",
-          url: "/dashboard/usage-stats",
-        },
-        {
-          title: "Performance Metrics",
-          url: "/dashboard/performance-metrics",
-        },
-      ],
-    },
-    {
-      title: "System Management",
-      url: "/dashboard/system-management",
-      icon: Settings,
+      title: "Data TU",
+      url: "/dashboard/admin-data",
+      icon: ShieldUserIcon,
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
+  const pathname = usePathname();
   const userRole = user?.role || "admin";
 
   const navigation: NavigationItem[] =
     roleBasedNavigation[userRole as keyof typeof roleBasedNavigation] ||
     roleBasedNavigation.admin;
+
+  // Fungsi untuk mengecek apakah item navigasi aktif
+  const isActive = (url: string) => {
+    if (url === "#") return false;
+    // Untuk dashboard, cek apakah path tepat /dashboard
+    if (url === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    // Untuk item lain, cek apakah pathname dimulai dengan url
+    return pathname.startsWith(url);
+  };
+
+  // Fungsi untuk mengecek apakah sub-item navigasi aktif
+  const isSubActive = (url: string) => {
+    return pathname === url;
+  };
 
   return (
     <Sidebar {...props}>
@@ -219,7 +166,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/dashboard">
+              <Link href="/dashboard">
                 <div className="bg-gradient-to-tl from-violet-500 via-indigo-500 to-indigo-900 text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg">
                   <Image
                     src="/logo-white.webp"
@@ -232,7 +179,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <span className="font-semibold text-xl text-indigo-500">
                   Appiks
                 </span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -243,20 +190,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             {navigation.map((item) => {
               const Icon = item.icon;
+              const active = isActive(item.url);
+              const hasActiveSubItem = item.items?.some((subItem) =>
+                isSubActive(subItem.url)
+              );
+
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="font-medium">
+                    <Link
+                      href={item.url}
+                      className={cn(
+                        "font-medium",
+                        (active || hasActiveSubItem) &&
+                          "bg-sidebar-accent text-sidebar-accent-foreground"
+                      )}
+                    >
                       <Icon className="size-4" />
                       {item.title}
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                   {item.items?.length ? (
                     <SidebarMenuSub>
                       {item.items.map((subItem: NavigationSubItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>{subItem.title}</a>
+                            <a
+                              href={subItem.url}
+                              className={cn(
+                                isSubActive(subItem.url) &&
+                                  "bg-sidebar-accent text-sidebar-accent-foreground"
+                              )}
+                            >
+                              {subItem.title}
+                            </a>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
