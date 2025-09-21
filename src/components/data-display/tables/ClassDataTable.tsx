@@ -446,10 +446,7 @@ export default function ClassDataTable() {
         </div>
         <DialogFooter className="pt-4 border-t flex flex-row gap-4">
           <DialogClose asChild>
-            <Button
-              type="button"
-              variant="outline"
-            >
+            <Button type="button" variant="outline">
               Batal
             </Button>
           </DialogClose>
@@ -461,16 +458,10 @@ export default function ClassDataTable() {
   function DialogHapus() {
     return (
       <div className="w-full">
-        <DialogHeader className="pb-4 border-b text-center">
-          <div className="flex flex-col items-center">
-            <span className="rounded-full bg-[#ffeaea] p-3 mb-2">
-              <Trash2 className="w-8 h-8 text-[#FF5A5F]" />
-            </span>
-            <DialogTitle className="text-2xl font-bold text-center text-[#37364F]">
-              Hapus Kelas
-            </DialogTitle>
-          </div>
-        </DialogHeader>
+        <DialogTitle className="flex items-center gap-2 text-xl border-b pb-4">
+          <Trash2 className="w-8 h-8 text-[#FF5A5F]" />
+          Hapus Kelas
+        </DialogTitle>
         <div className="text-center py-4">
           <p>
             Yakin ingin menghapus kelas <b>{openDialog?.row?.kelas}</b>?
@@ -478,17 +469,11 @@ export default function ClassDataTable() {
         </div>
         <DialogFooter className="pt-4 border-t flex flex-row gap-4">
           <DialogClose asChild>
-            <Button
-              type="button"
-              variant="outline"
-            >
+            <Button type="button" variant="outline">
               Batal
             </Button>
           </DialogClose>
-          <Button
-            type="button"
-            onClick={handleDelete}
-          >
+          <Button type="button" onClick={handleDelete}>
             Hapus
           </Button>
         </DialogFooter>
