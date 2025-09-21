@@ -31,6 +31,7 @@ import {
 import { NavUser } from "@/components/features/profile/NavUser";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
+import { FaChalkboardTeacher } from "react-icons/fa";
 
 // Type definitions
 interface NavigationSubItem {
@@ -62,6 +63,11 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       title: "Kelola Konten",
       url: "/dashboard/content-management",
       icon: BookText,
+    },
+    {
+      title: "Data Kelas",
+      url: "/dashboard/class-data",
+      icon: FaChalkboardTeacher,
     },
   ],
   teacher: [
@@ -229,13 +235,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     alt="Appiks Logo"
                   />
                 </div>
-                <span className="font-semibold text-xl text-indigo-500">Appiks</span>
+                <span className="font-semibold text-xl text-indigo-500">
+                  Appiks
+                </span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <Separator orientation="horizontal" className="my-2"/>
+      <Separator orientation="horizontal" className="my-2" />
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
