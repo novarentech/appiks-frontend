@@ -3,7 +3,6 @@
 import { EduContent } from "@/components/features/edu-content/EduContent";
 import { useAuth } from "@/hooks/useAuth";
 
-
 export default function EduContentPage() {
   const { isLoading, isAuthenticated, isVerified } = useAuth();
 
@@ -30,7 +29,7 @@ export default function EduContentPage() {
   }
 
   return (
-    <div className="min-h-screen max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-10 sm:py-16 lg:py-20">
+    <div className="min-h-screen container max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-10 sm:py-16 lg:py-20">
       <EduContent />
     </div>
   );
