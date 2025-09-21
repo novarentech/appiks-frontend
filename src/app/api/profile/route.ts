@@ -4,7 +4,7 @@ import { auth } from "../../../../auth";
 const API_BASE_URL =  process.env.API_BASE_URL;
 
 export async function PATCH(request: Request) {
-  const session = await auth(); // sekarang valid ✅
+  const session = await auth();
 
   if (!session?.user?.token) {
     return NextResponse.json(

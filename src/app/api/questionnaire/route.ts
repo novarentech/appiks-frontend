@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const API_BASE_URL =  process.env.API_BASE_URL;
+
 export async function GET(req: NextRequest) {
   try {
     // Get token from Authorization header
@@ -13,7 +15,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const response = await fetch("https://api.appiks.id/api/questionnaire", {
+    const response = await fetch(`${API_BASE_URL}/api/questionnaire`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
