@@ -14,7 +14,6 @@ import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState, useEffect } from "react";
 import { Eye, ArrowUpDown } from "lucide-react";
-import Link from "next/link";
 import { getDashboardStudent } from "@/lib/api";
 import { Student as ApiStudent, DashboardStudentResponse } from "@/types/api";
 import { getInitials } from "@/lib/utils";
@@ -244,12 +243,10 @@ export default function CounselorStudentData({
             variant="outline"
             size="sm"
             className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-3 py-1 h-8"
-            asChild
+            onClick={() => onStudentSelect && onStudentSelect(student)}
           >
-            <Link href={`/dashboard/mood-detail/${student.username}`}>
-              <Eye className="w-3 h-3 mr-1" />
-              Lihat Pola Mood
-            </Link>
+            <Eye className="w-3 h-3 mr-1" />
+            Lihat Pola Mood
           </Button>
         );
       },

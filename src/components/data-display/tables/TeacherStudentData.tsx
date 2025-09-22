@@ -332,13 +332,11 @@ export default function TeacherStudentData({
               variant="outline"
               size="sm"
               className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-3 py-1 h-8"
-              asChild
+              onClick={() => onStudentSelect && onStudentSelect(student)}
             >
-              <Link href={`/dashboard/mood-detail/${student.username}`}>
-                <Eye className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Lihat Pola Mood</span>
-                <span className="sm:hidden">Detail</span>
-              </Link>
+              <Eye className="w-3 h-3 mr-1" />
+              <span className="hidden sm:inline">Lihat Pola Mood</span>
+              <span className="sm:hidden">Detail</span>
             </Button>
           </div>
         );
