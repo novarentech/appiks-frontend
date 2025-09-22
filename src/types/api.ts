@@ -56,6 +56,54 @@ export interface DashboardMoodGraphResponse {
   };
 }
 
+// Interface untuk LastMoodRes
+export interface LastMoodRes {
+  recorded: string;
+  status: string;
+}
+
+// Interface untuk Room
+export interface Room {
+  id: number;
+  name: string;
+  code: string;
+  school_id: number;
+}
+
+// Interface untuk Mentor
+export interface Mentor {
+  name: string;
+  phone: string;
+  username: string;
+  identifier: string;
+  verified: boolean;
+  role: string;
+  mentor_id: string | null;
+  counselor_id: string | null;
+  room_id: number | null;
+  school_id: number;
+}
+
+// Interface untuk Student
+export interface Student {
+  name: string;
+  phone: string;
+  username: string;
+  identifier: string;
+  verified: boolean;
+  role: string;
+  room: Room;
+  mentor: Mentor;
+  lastmoodres: LastMoodRes | null;
+}
+
+// Interface untuk response API dashboard student
+export interface DashboardStudentResponse {
+  success: boolean;
+  message: string;
+  data: Student[];
+}
+
 export interface BulkImportResponse {
   success: boolean;
   message: string;

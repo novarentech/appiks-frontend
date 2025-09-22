@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -178,6 +178,14 @@ export async function getDashboardReportGraph(): Promise<DashboardReportGraphRes
  */
 export async function getDashboardMoodGraph(): Promise<DashboardMoodGraphResponse> {
   const response = await authGet("/dashboard/mood-graph");
+  return response;
+}
+
+/**
+ * Get dashboard student data
+ */
+export async function getDashboardStudent(): Promise<DashboardStudentResponse> {
+  const response = await authGet("/dashboard/student");
   return response;
 }
 

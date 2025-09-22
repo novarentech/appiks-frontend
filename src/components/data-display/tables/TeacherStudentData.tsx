@@ -16,82 +16,9 @@ import { useState, useEffect } from "react";
 import { Eye, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { FaWhatsapp } from "react-icons/fa";
-
-// Sample student data
-const studentsData = [
-  {
-    id: 1,
-    name: "Alex Allan",
-    nisn: "THD-64651",
-    kelas: "X IPA 1",
-    statusMood: "Aman",
-    detailMood: "Gembira",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 2,
-    name: "Anna Vincenti",
-    nisn: "WTC-78415",
-    kelas: "X IPA 1",
-    statusMood: "Aman",
-    detailMood: "Gembira",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 3,
-    name: "Astrid Andersen",
-    nisn: "FHW-65127",
-    kelas: "X IPA 1",
-    statusMood: "Aman",
-    detailMood: "Netral",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    nisn: "MBQ-39617",
-    kelas: "X IPA 1",
-    statusMood: "Aman",
-    detailMood: "Gembira",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 5,
-    name: "Diego Mendoza",
-    nisn: "ZWP-45885",
-    kelas: "X IPA 1",
-    statusMood: "Tidak Aman",
-    detailMood: "Sedih",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 6,
-    name: "Falon Al-Sayed",
-    nisn: "XCU-35036",
-    kelas: "X IPA 1",
-    statusMood: "Aman",
-    detailMood: "Gembira",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 7,
-    name: "Hiroshi Yamamoto",
-    nisn: "LZN-37419",
-    kelas: "X IPA 1",
-    statusMood: "Tidak Aman",
-    detailMood: "Marah",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 8,
-    name: "Lena Müller",
-    nisn: "MHY-52314",
-    kelas: "X IPA 1",
-    statusMood: "Aman",
-    detailMood: "Netral",
-    aksi: "Lihat Pola Mood",
-  },
-];
+import { getDashboardStudent } from "@/lib/api";
+import { Student as ApiStudent, DashboardStudentResponse } from "@/types/api";
+import { getInitials } from "@/lib/utils";
 
 interface Student {
   id: number;
@@ -101,6 +28,8 @@ interface Student {
   statusMood: string;
   detailMood: string;
   aksi: string;
+  phone: string; // Added for WhatsApp integration
+  username: string;
 }
 
 interface StudentDataTableProps {
@@ -145,8 +74,48 @@ export default function TeacherStudentData({
   const [kelasFilter, setKelasFilter] = useState("all");
   const [statusMoodFilter, setStatusMoodFilter] = useState("all");
   const [detailMoodFilter, setDetailMoodFilter] = useState("all");
-  const [filteredData, setFilteredData] = useState(studentsData);
+  const [studentsData, setStudentsData] = useState<Student[]>([]);
+  const [filteredData, setFilteredData] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPageSize, setCurrentPageSize] = useState(10);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchStudentsData = async () => {
+      try {
+        setLoading(true);
+        const response: DashboardStudentResponse = await getDashboardStudent();
+        
+        // Transform API data to component format
+        const transformedData: Student[] = response.data.map((student: ApiStudent, index: number) => {
+          const moodStatus = student.lastmoodres?.status || "neutral";
+          const isSafeMood = moodStatus === "happy" || moodStatus === "neutral";
+          
+          return {
+            id: index + 1,
+            name: student.name,
+            nisn: student.identifier,
+            kelas: student.room.name,
+            statusMood: isSafeMood ? "Aman" : "Tidak Aman",
+            detailMood: getMoodLabel(moodStatus),
+            aksi: "Lihat Pola Mood",
+            phone: student.phone,
+            username: student.username,
+          };
+        });
+        
+        setStudentsData(transformedData);
+        setFilteredData(transformedData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch student data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudentsData();
+  }, []);
 
   // Get unique values for filter options
   const uniqueKelas = [
@@ -177,7 +146,23 @@ export default function TeacherStudentData({
       );
     });
     setFilteredData(filtered);
-  }, [searchTerm, kelasFilter, statusMoodFilter, detailMoodFilter]);
+  }, [searchTerm, kelasFilter, statusMoodFilter, detailMoodFilter, studentsData]);
+
+  // Helper function to get mood label in Indonesian
+  const getMoodLabel = (mood: string) => {
+    switch (mood.toLowerCase()) {
+      case "happy":
+        return "Gembira";
+      case "neutral":
+        return "Netral";
+      case "sad":
+        return "Sedih";
+      case "angry":
+        return "Marah";
+      default:
+        return "Netral";
+    }
+  };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -217,10 +202,7 @@ export default function TeacherStudentData({
           <div className="flex items-center space-x-3 min-w-[150px]">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-medium text-blue-600">
-                {student.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
+                {getInitials(student.name)}
               </span>
             </div>
             <span className="font-medium text-gray-900 truncate">
@@ -332,6 +314,7 @@ export default function TeacherStudentData({
       header: "Aksi",
       cell: ({ row }) => {
         const student = row.original;
+        const whatsappNumber = formatPhoneForWhatsApp(student.phone);
         return (
           <div className="flex flex-col sm:flex-row gap-2 min-w-[200px]">
             <Button
@@ -340,7 +323,7 @@ export default function TeacherStudentData({
               className="text-white bg-teal-500 hover:bg-teal-600 text-xs px-3 py-1 h-8"
               asChild
             >
-              <Link href="https://wa.me/+628156508128" className="flex items-center justify-center">
+              <Link href={`https://wa.me/${whatsappNumber}`} className="flex items-center justify-center">
                 <FaWhatsapp className="w-3 h-3 mr-1" />
                 Chat WA
               </Link>
@@ -349,17 +332,51 @@ export default function TeacherStudentData({
               variant="outline"
               size="sm"
               className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-3 py-1 h-8"
-              onClick={() => onStudentSelect && onStudentSelect(student)}
+              asChild
             >
-              <Eye className="w-3 h-3 mr-1" />
-              <span className="hidden sm:inline">Lihat Pola Mood</span>
-              <span className="sm:hidden">Detail</span>
+              <Link href={`/dashboard/mood-detail/${student.username}`}>
+                <Eye className="w-3 h-3 mr-1" />
+                <span className="hidden sm:inline">Lihat Pola Mood</span>
+                <span className="sm:hidden">Detail</span>
+              </Link>
             </Button>
           </div>
         );
       },
     },
   ];
+
+  // Format phone number for WhatsApp
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    // If starts with 0, replace with 62
+    if (cleaned.startsWith('0')) {
+      return `62${cleaned.substring(1)}`;
+    }
+    // If starts with 62, return as is
+    if (cleaned.startsWith('62')) {
+      return cleaned;
+    }
+    // Default case
+    return cleaned;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <p className="text-gray-500">Memuat data siswa...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

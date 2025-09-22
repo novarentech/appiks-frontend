@@ -14,82 +14,10 @@ import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState, useEffect } from "react";
 import { Eye, ArrowUpDown } from "lucide-react";
-
-// Sample student data
-const studentsData = [
-  {
-    id: 1,
-    name: "Alex Allan",
-    nisn: "THD-64651",
-    kelas: "X IPA 1",
-    noTelp: "081234567890",
-    guruWali: "Bu Sari",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 2,
-    name: "Anna Vincenti",
-    nisn: "WTC-78415",
-    kelas: "X IPA 1",
-    noTelp: "081234567891",
-    guruWali: "Bu Sari",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 3,
-    name: "Astrid Andersen",
-    nisn: "FHW-65127",
-    kelas: "X IPA 1",
-    noTelp: "081234567892",
-    guruWali: "Bu Sari",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    nisn: "MBQ-39617",
-    kelas: "X IPA 2",
-    noTelp: "081234567893",
-    guruWali: "Pak Budi",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 5,
-    name: "Diego Mendoza",
-    nisn: "ZWP-45885",
-    kelas: "X IPA 2",
-    noTelp: "081234567894",
-    guruWali: "Pak Budi",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 6,
-    name: "Falon Al-Sayed",
-    nisn: "XCU-35036",
-    kelas: "XI IPS 1",
-    noTelp: "081234567895",
-    guruWali: "Bu Ani",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 7,
-    name: "Hiroshi Yamamoto",
-    nisn: "LZN-37419",
-    kelas: "XI IPS 1",
-    noTelp: "081234567896",
-    guruWali: "Bu Ani",
-    aksi: "Lihat Pola Mood",
-  },
-  {
-    id: 8,
-    name: "Lena Müller",
-    nisn: "MHY-52314",
-    kelas: "XII IPA 1",
-    noTelp: "081234567897",
-    guruWali: "Pak Dodi",
-    aksi: "Lihat Pola Mood",
-  },
-];
+import Link from "next/link";
+import { getDashboardStudent } from "@/lib/api";
+import { Student as ApiStudent, DashboardStudentResponse } from "@/types/api";
+import { getInitials } from "@/lib/utils";
 
 interface Student {
   id: number;
@@ -99,6 +27,7 @@ interface Student {
   noTelp: string;
   guruWali: string;
   aksi: string;
+  username: string;
 }
 
 interface StudentDataTableProps {
@@ -111,8 +40,44 @@ export default function CounselorStudentData({
   const [searchTerm, setSearchTerm] = useState("");
   const [kelasFilter, setKelasFilter] = useState("all");
   const [guruWaliFilter, setGuruWaliFilter] = useState("all");
-  const [filteredData, setFilteredData] = useState(studentsData);
+  const [studentsData, setStudentsData] = useState<Student[]>([]);
+  const [filteredData, setFilteredData] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPageSize, setCurrentPageSize] = useState(10);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchStudentsData = async () => {
+      try {
+        setLoading(true);
+        const response: DashboardStudentResponse = await getDashboardStudent();
+        
+        // Transform API data to component format
+        const transformedData: Student[] = response.data.map((student: ApiStudent, index: number) => {
+          return {
+            id: index + 1,
+            name: student.name,
+            nisn: student.identifier,
+            kelas: student.room.name,
+            noTelp: student.phone,
+            guruWali: student.mentor.name,
+            aksi: "Lihat Pola Mood",
+            username: student.username,
+          };
+        });
+        
+        setStudentsData(transformedData);
+        setFilteredData(transformedData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch student data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudentsData();
+  }, []);
 
   // Get unique values for filter options
   const uniqueKelas = [
@@ -136,7 +101,7 @@ export default function CounselorStudentData({
       return matchesSearch && matchesKelas && matchesGuruWali;
     });
     setFilteredData(filtered);
-  }, [searchTerm, kelasFilter, guruWaliFilter]);
+  }, [searchTerm, kelasFilter, guruWaliFilter, studentsData]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -172,10 +137,7 @@ export default function CounselorStudentData({
           <div className="flex items-center space-x-3 min-w-[150px]">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-medium text-blue-600">
-                {student.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
+                {getInitials(student.name)}
               </span>
             </div>
             <span className="font-medium text-gray-900 truncate">
@@ -282,15 +244,33 @@ export default function CounselorStudentData({
             variant="outline"
             size="sm"
             className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-3 py-1 h-8"
-            onClick={() => onStudentSelect && onStudentSelect(student)}
+            asChild
           >
-            <Eye className="w-3 h-3 mr-1" />
-            Lihat Pola Mood
+            <Link href={`/dashboard/mood-detail/${student.username}`}>
+              <Eye className="w-3 h-3 mr-1" />
+              Lihat Pola Mood
+            </Link>
           </Button>
         );
       },
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <p className="text-gray-500">Memuat data siswa...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

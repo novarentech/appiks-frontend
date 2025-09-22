@@ -7,6 +7,8 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import MoodPatternAnalysis from "@/components/features/analysis/MoodPatternAnalysis";
+import { getDashboardStudent } from "@/lib/api";
+import { Student as ApiStudent, DashboardStudentResponse } from "@/types/api";
 
 // Sample students data to find the selected student
 const studentsData = [
@@ -99,6 +101,7 @@ export default function DashboardLihatPolaMoodPage() {
   const router = useRouter();
   const params = useParams();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || !isVerified)) {
@@ -112,30 +115,73 @@ export default function DashboardLihatPolaMoodPage() {
     }
 
     // Find student based on URL parameter
-    if (params.siswa) {
-      const studentSlug = Array.isArray(params.siswa)
-        ? params.siswa[0]
-        : params.siswa;
-      const decodedName = decodeURIComponent(studentSlug).replace(/-/g, " ");
+    const fetchStudentData = async () => {
+      try {
+        setLoading(true);
+        if (params.siswa) {
+          const username = Array.isArray(params.siswa) ? params.siswa[0] : params.siswa;
+          
+          // Get all students from API
+          const response: DashboardStudentResponse = await getDashboardStudent();
+          
+          // Find student by username
+          const apiStudent = response.data.find(
+            (student: ApiStudent) => student.username === username
+          );
 
-      const student = studentsData.find(
-        (s) => s.name.toLowerCase() === decodedName.toLowerCase()
-      );
-
-      if (student) {
-        setSelectedStudent(student);
-      } else {
-        // If student not found, redirect back to data-siswa
+          if (apiStudent) {
+            // Transform API student to our Student interface
+            const moodStatus = apiStudent.lastmoodres?.status || "neutral";
+            const isSafeMood = moodStatus === "happy" || moodStatus === "neutral";
+            
+            const student: Student = {
+              id: 1, // We don't need the actual ID from the list
+              name: apiStudent.name,
+              nisn: apiStudent.identifier,
+              kelas: apiStudent.room.name,
+              statusMood: isSafeMood ? "Aman" : "Tidak Aman",
+              detailMood: getMoodLabel(moodStatus),
+              aksi: "Lihat Pola Mood",
+            };
+            
+            setSelectedStudent(student);
+          } else {
+            // If student not found, redirect back to data-siswa
+            router.push("/dashboard/data-siswa");
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching student data:", error);
         router.push("/dashboard/data-siswa");
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchStudentData();
   }, [isLoading, isAuthenticated, isVerified, user, router, params.siswa]);
+
+  // Helper function to get mood label in Indonesian
+  const getMoodLabel = (mood: string) => {
+    switch (mood.toLowerCase()) {
+      case "happy":
+        return "Gembira";
+      case "neutral":
+        return "Netral";
+      case "sad":
+        return "Sedih";
+      case "angry":
+        return "Marah";
+      default:
+        return "Netral";
+    }
+  };
 
   const handleBackToDataSiswa = () => {
     router.push("/dashboard/data-siswa");
   };
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
