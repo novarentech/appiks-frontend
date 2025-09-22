@@ -7,90 +7,12 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  ReferenceLine,
   Tooltip,
+  CartesianGrid,
 } from "recharts";
-import { useState } from "react";
-
-// Data untuk chart Curhat & Konseling sepanjang tahun 2025
-const curhatKonselingData = [
-  {
-    month: "Jan",
-    Curhat: 15,
-    Konseling: 10,
-    details:
-      "Januari: Awal tahun dengan aktivitas curhat dan konseling yang stabil.",
-  },
-  {
-    month: "Feb",
-    Curhat: 25,
-    Konseling: 18,
-    details: "Februari: Peningkatan aktivitas setelah adaptasi semester baru.",
-  },
-  {
-    month: "Mar",
-    Curhat: 40,
-    Konseling: 55,
-    details: "Maret: Lonjakan signifikan aktivitas konseling siswa.",
-  },
-  {
-    month: "Apr",
-    Curhat: 55,
-    Konseling: 45,
-    details:
-      "April: Aktivitas curhat mencapai puncak, konseling sedikit menurun.",
-  },
-  {
-    month: "May",
-    Curhat: 85,
-    Konseling: 110,
-    details: "Mei: Puncak aktivitas karena tekanan ujian tengah semester.",
-  },
-  {
-    month: "Jun",
-    Curhat: 75,
-    Konseling: 85,
-    details: "Juni: Aktivitas masih tinggi menjelang ujian akhir semester.",
-  },
-  {
-    month: "Jul",
-    Curhat: 70,
-    Konseling: 90,
-    details:
-      "Juli: Konseling lebih aktif untuk persiapan liburan dan evaluasi.",
-  },
-  {
-    month: "Aug",
-    Curhat: 95,
-    Konseling: 70,
-    details:
-      "Agustus: Banyak curhat karena kecemasan menghadapi semester baru.",
-  },
-  {
-    month: "Sep",
-    Curhat: 65,
-    Konseling: 50,
-    details: "September: Aktivitas menurun setelah adaptasi semester baru.",
-  },
-  {
-    month: "Oct",
-    Curhat: 50,
-    Konseling: 40,
-    details: "Oktober: Kondisi lebih stabil, aktivitas kembali normal.",
-  },
-  {
-    month: "Nov",
-    Curhat: 45,
-    Konseling: 35,
-    details: "November: Aktivitas menurun menjelang akhir tahun.",
-  },
-  {
-    month: "Dec",
-    Curhat: 35,
-    Konseling: 25,
-    details: "Desember: Aktivitas rendah karena fokus pada liburan.",
-  },
-];
+import { useState, useEffect } from "react";
+import { getDashboardReportGraph } from "@/lib/api";
+import { DashboardReportGraphResponse } from "@/types/api";
 
 // Types
 interface CurhatKonselingData {
@@ -99,6 +21,60 @@ interface CurhatKonselingData {
   Konseling: number;
   details: string;
 }
+
+// Fungsi untuk mengubah format data dari API
+const transformApiData = (
+  apiData: DashboardReportGraphResponse
+): CurhatKonselingData[] => {
+  const { report, sharing } = apiData.data;
+
+  // Daftar semua bulan dalam setahun
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  // Mendapatkan tahun dari data yang ada di API
+  const allKeys = [...Object.keys(report), ...Object.keys(sharing)];
+  let year = "2025"; // Default tahun
+  
+  if (allKeys.length > 0) {
+    // Ambil tahun dari key pertama yang ditemukan
+    const firstKey = allKeys[0];
+    const extractedYear = firstKey.split('-')[0];
+    if (extractedYear && /^\d{4}$/.test(extractedYear)) {
+      year = extractedYear;
+    }
+  }
+
+  // Membuat data untuk semua bulan, termasuk yang tidak ada di API
+  return monthNames.map((monthName, index) => {
+    // Format bulan untuk mencocokkan dengan format API (2025-01, 2025-02, dst)
+    const monthKey = `${year}-${String(index + 1).padStart(2, "0")}`;
+
+    // Membuat detail deskripsi berdasarkan data
+    const reportCount = report[monthKey] || 0;
+    const sharingCount = sharing[monthKey] || 0;
+    const details = `${monthName}: ${reportCount} laporan, ${sharingCount} sesi berbagi.`;
+
+    return {
+      month: monthName,
+      Curhat: reportCount,
+      Konseling: sharingCount,
+      details,
+    };
+  });
+};
 
 interface TooltipProps {
   active?: boolean;
@@ -134,6 +110,50 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
 export default function CounfidenceAndCounceling() {
   const [selectedPoint, setSelectedPoint] =
     useState<CurhatKonselingData | null>(null);
+  const [chartData, setChartData] = useState<CurhatKonselingData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [year, setYear] = useState<string>("2025"); // Default tahun
+
+  // Fetch data dari API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const apiData: DashboardReportGraphResponse =
+          await getDashboardReportGraph();
+
+        if (apiData.success) {
+          // Mendapatkan tahun dari data yang ada di API
+          const { report, sharing } = apiData.data;
+          const allKeys = [...Object.keys(report), ...Object.keys(sharing)];
+          let extractedYear = "2025"; // Default tahun
+          
+          if (allKeys.length > 0) {
+            // Ambil tahun dari key pertama yang ditemukan
+            const firstKey = allKeys[0];
+            const yearFromKey = firstKey.split('-')[0];
+            if (yearFromKey && /^\d{4}$/.test(yearFromKey)) {
+              extractedYear = yearFromKey;
+            }
+          }
+          
+          setYear(extractedYear);
+          const transformedData = transformApiData(apiData);
+          setChartData(transformedData);
+        } else {
+          setError(apiData.message || "Gagal mengambil data");
+        }
+      } catch (err) {
+        setError("Terjadi kesalahan saat mengambil data");
+        console.error("Error fetching chart data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChartClick = (data: any) => {
@@ -148,62 +168,68 @@ export default function CounfidenceAndCounceling() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-700">
-            Laporan Curhat & Konseling 2025
+            Laporan Curhat & Konseling {year}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={curhatKonselingData} onClick={handleChartClick}>
-                {/* Horizontal dotted grid lines */}
-                <ReferenceLine y={50} stroke="#d1d5db" strokeDasharray="2 2" />
-                <ReferenceLine y={100} stroke="#d1d5db" strokeDasharray="2 2" />
-                <ReferenceLine y={150} stroke="#d1d5db" strokeDasharray="2 2" />
-                <ReferenceLine y={200} stroke="#d1d5db" strokeDasharray="2 2" />
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">Memuat data...</p>
+              </div>
+            ) : error ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-red-500">{error}</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} onClick={handleChartClick}>
+                  <CartesianGrid  strokeDasharray="3 3" vertical={false} />
 
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: "#6b7280" }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: "#6b7280" }}
-                  domain={[0, 200]}
-                />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
+                    domain={[0, 200]}
+                  />
 
-                <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} />
 
-                <Line
-                  type="linear"
-                  dataKey="Curhat"
-                  stroke="#6366F1"
-                  strokeWidth={2}
-                  dot={{
-                    fill: "#6366F1",
-                    strokeWidth: 2,
-                    r: 3,
-                    cursor: "pointer",
-                  }}
-                  activeDot={{ r: 5, stroke: "#6366F1", strokeWidth: 2 }}
-                />
-                <Line
-                  type="linear"
-                  dataKey="Konseling"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  dot={{
-                    fill: "#10B981",
-                    strokeWidth: 2,
-                    r: 3,
-                    cursor: "pointer",
-                  }}
-                  activeDot={{ r: 5, stroke: "#10B981", strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+                  <Line
+                    type="linear"
+                    dataKey="Curhat"
+                    stroke="#6366F1"
+                    strokeWidth={2}
+                    dot={{
+                      fill: "#6366F1",
+                      strokeWidth: 2,
+                      r: 3,
+                      cursor: "pointer",
+                    }}
+                    activeDot={{ r: 5, stroke: "#6366F1", strokeWidth: 2 }}
+                  />
+                  <Line
+                    type="linear"
+                    dataKey="Konseling"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    dot={{
+                      fill: "#10B981",
+                      strokeWidth: 2,
+                      r: 3,
+                      cursor: "pointer",
+                    }}
+                    activeDot={{ r: 5, stroke: "#10B981", strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Detail Information when point is clicked */}

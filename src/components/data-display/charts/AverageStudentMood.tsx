@@ -7,8 +7,8 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  ReferenceLine,
   Tooltip,
+  CartesianGrid,
 } from "recharts";
 import { useState } from "react";
 
@@ -174,11 +174,7 @@ export default function AverageStudentMood() {
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={yearlyMoodData} onClick={handleChartClick}>
-                {/* Horizontal dotted grid lines */}
-                <ReferenceLine y={1} stroke="#d1d5db" strokeDasharray="2 2" />
-                <ReferenceLine y={2} stroke="#d1d5db" strokeDasharray="2 2" />
-                <ReferenceLine y={3} stroke="#d1d5db" strokeDasharray="2 2" />
-                <ReferenceLine y={4} stroke="#d1d5db" strokeDasharray="2 2" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
                 <XAxis
                   dataKey="month"

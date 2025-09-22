@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -153,6 +153,21 @@ export async function uploadBulkImportFile(file: File): Promise<BulkImportRespon
 
   if (!response.ok) {
     throw new Error(`POST /user/bulk failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get dashboard report graph data
+ */
+export async function getDashboardReportGraph(): Promise<DashboardReportGraphResponse> {
+  const response = await authenticatedFetch(`/dashboard/report-graph`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET /api/dashboard/report-graph failed with status ${response.status}`);
   }
 
   return response.json();

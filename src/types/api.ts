@@ -49,3 +49,14 @@ export interface BulkImportResponse {
   message: string;
   data: string;
 }
+
+// Interface untuk response API dashboard report graph
+export interface DashboardReportGraphResponse {
+  success: boolean;
+  message: string;
+  data: {
+    report: Record<string, number>;
+    sharing: Record<string, number>;
+  };
+}
+
