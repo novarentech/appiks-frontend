@@ -22,7 +22,7 @@ import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 
 // --- VALIDATION FUNCTIONS (SAMA DENGAN FillData) ---
 const validateUsername = (username: string) => {
-  const minLength = username.length >= 8;
+  const minLength = username.length >= 3;
   const maxLength = username.length <= 20;
   const validChars = /^[a-zA-Z0-9_]+$/.test(username);
   const notStartWithNumber = !/^\d/.test(username);
@@ -438,7 +438,7 @@ const StudentProfile = () => {
                             : "text-red-500"
                         }
                       >
-                        Minimal 8 karakter{" "}
+                        Minimal 3 karakter{" "}
                         {usernameValidation.minLength ? "✓" : "✗"}
                       </li>
                       <li

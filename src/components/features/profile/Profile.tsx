@@ -23,8 +23,8 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -67,7 +67,6 @@ const validatePhone = (phone: string) => {
 // --- END VALIDATION FUNCTIONS ---
 
 export default function Profile() {
-  const { user } = useAuth();
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,19 +83,45 @@ export default function Profile() {
     null
   );
 
-  // Initialize profile data (in real app, this would come from the user object)
+  // Get user profile data
+  const {
+    isLoading: isLoadingProfile,
+    error: profileError,
+    profileData: apiProfileData,
+  } = useUserProfile();
+
+  // Initialize profile data
   const [profileData, setProfileData] = useState<ProfileData>({
-    name: user?.name || "Septi Winarti",
-    username: user?.username || "septi_wali",
-    email: user?.email || "septiWinarti@gmail.com",
-    phone: "08123456",
-    nip: "12345",
-    role: user?.role || "teacher",
+    name: "",
+    username: "",
+    email: "",
+    phone: "",
+    nip: "",
+    role: "",
   });
 
   const [editData, setEditData] = useState<ProfileData>(profileData);
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+  // Update profile data from API
+  useEffect(() => {
+    if (apiProfileData) {
+      const updatedData: ProfileData = {
+        name: apiProfileData.name || "",
+        username: apiProfileData.username || "",
+        email: session?.user?.email || "",
+        phone: apiProfileData.phone
+          ? apiProfileData.phone.replace(/^\+62/, "")
+          : "",
+        nip: apiProfileData.identifier || "",
+        role: apiProfileData.role || "",
+      };
+
+      setProfileData(updatedData);
+      setEditData(updatedData);
+    }
+  }, [apiProfileData, session?.user?.email]);
 
   const getRoleDisplayName = (role: string) => {
     const roleMap: { [key: string]: string } = {
@@ -278,6 +303,41 @@ export default function Profile() {
     usernameValidation.isValid &&
     phoneValidation.isValid &&
     (!usernameChanged || (isUsernameAvailable === true && !usernameError));
+
+  // Show loading state while fetching profile data
+  if (isLoadingProfile) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Profil Anda</h1>
+        </div>
+        <Card className="p-6">
+          <div className="flex items-center justify-center space-x-2">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span>Memuat data profil...</span>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if profile fetch failed
+  if (profileError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Profil Anda</h1>
+        </div>
+        <Card className="p-6">
+          <div className="text-center text-red-600">
+            <X className="w-8 h-8 mx-auto mb-2" />
+            <p className="font-medium">Gagal memuat data profil</p>
+            <p className="text-sm mt-1">{profileError}</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
