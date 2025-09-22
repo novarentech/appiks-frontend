@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -171,6 +171,14 @@ export async function getDashboardReportGraph(): Promise<DashboardReportGraphRes
   }
 
   return response.json();
+}
+
+/**
+ * Get dashboard mood graph data
+ */
+export async function getDashboardMoodGraph(): Promise<DashboardMoodGraphResponse> {
+  const response = await authGet("/dashboard/mood-graph");
+  return response;
 }
 
 /**

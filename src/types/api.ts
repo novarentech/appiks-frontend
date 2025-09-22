@@ -44,6 +44,18 @@ export interface BulkTemplateResponse {
   };
 }
 
+// Interface untuk response API dashboard mood graph
+export interface DashboardMoodGraphResponse {
+  success: boolean;
+  message: string;
+  data: {
+    neutral: number;
+    sad: number;
+    happy: number;
+    angry: number;
+  };
+}
+
 export interface BulkImportResponse {
   success: boolean;
   message: string;

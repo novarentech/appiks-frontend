@@ -1,32 +1,104 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getDashboardMoodGraph } from "@/lib/api";
+import { DashboardMoodGraphResponse } from "@/types/api";
 
 // Data untuk chart mood hari ini
-const todayMoodData = [
+const moodDataConfig = [
   {
+    key: "happy",
     name: "Siswa merasa senang dan bersemangat.",
-    value: 70,
     color: "#10b981", // green - Gembira
   },
   {
+    key: "neutral",
     name: "Siswa dalam kondisi biasa",
-    value: 10,
     color: "#374151", // gray - Netral
   },
   {
+    key: "sad",
     name: "Siswa sedang mengalami masalah.",
-    value: 50,
     color: "#3b82f6", // blue - Sedih
   },
   {
+    key: "angry",
     name: "Siswa sedang dalam kondisi emosi tinggi",
-    value: 20,
     color: "#ef4444", // red - Marah
   },
 ];
 
 export default function DailyMoodReport() {
+  const [moodData, setMoodData] = useState<DashboardMoodGraphResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMoodData = async () => {
+      try {
+        setLoading(true);
+        const response = await getDashboardMoodGraph();
+        setMoodData(response);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch mood data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMoodData();
+  }, []);
+
+  // Transform API data to chart format
+  const getChartData = () => {
+    if (!moodData) return [];
+    
+    const total = Object.values(moodData.data).reduce((sum, count) => sum + count, 0);
+    
+    return moodDataConfig.map(config => ({
+      ...config,
+      value: moodData.data[config.key as keyof typeof moodData.data],
+      percentage: total > 0 ? (moodData.data[config.key as keyof typeof moodData.data] / total) * 100 : 0
+    }));
+  };
+
+  const chartData = getChartData();
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-700">
+            Laporan Mood Siswa Hari Ini
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center h-40">
+            <p className="text-gray-500">Memuat data...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-700">
+            Laporan Mood Siswa Hari Ini
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center items-center h-40">
+            <p className="text-red-500">Error: {error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -58,10 +130,16 @@ export default function DailyMoodReport() {
 
           {/* Horizontal bars representation */}
           <div className="flex h-6 rounded overflow-hidden">
-            <div className="bg-green-500" style={{ width: "46.7%" }}></div>
-            <div className="bg-gray-800" style={{ width: "6.7%" }}></div>
-            <div className="bg-blue-500" style={{ width: "33.3%" }}></div>
-            <div className="bg-red-500" style={{ width: "13.3%" }}></div>
+            {chartData.map((item, index) => (
+              <div
+                key={index}
+                className="h-full"
+                style={{
+                  width: `${item.percentage}%`,
+                  backgroundColor: item.color
+                }}
+              ></div>
+            ))}
           </div>
         </div>
 
@@ -71,23 +149,23 @@ export default function DailyMoodReport() {
             Keterangan :
           </h4>
           <div className="space-y-3">
-            {todayMoodData.map((item, index) => (
+            {chartData.map((item, index) => (
               <div
-            key={index}
-            className={`flex items-center justify-between ${
-              index !== todayMoodData.length - 1 ? "border-b border-gray-200 pb-3" : ""
-            }`}
+                key={index}
+                className={`flex items-center justify-between ${
+                  index !== chartData.length - 1 ? "border-b border-gray-200 pb-3" : ""
+                }`}
               >
-            <div className="flex items-center space-x-3">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: item.color }}
-              ></div>
-              <span className="text-sm text-gray-600">{item.name}</span>
-            </div>
-            <span className="text-lg font-semibold text-gray-700">
-              {item.value}
-            </span>
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  ></div>
+                  <span className="text-sm text-gray-600">{item.name}</span>
+                </div>
+                <span className="text-lg font-semibold text-gray-700">
+                  {item.value}
+                </span>
               </div>
             ))}
           </div>
