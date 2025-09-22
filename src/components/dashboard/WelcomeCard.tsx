@@ -1,11 +1,44 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useMoodRecordToday } from "@/hooks/useMoodRecordToday";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
 export function WelcomeCard() {
   const { user } = useAuth();
+  const { data: moodRecord, loading } = useMoodRecordToday();
+
+  // Fungsi untuk memetakan type mood ke teks
+  const getMoodText = (type: string) => {
+    switch (type) {
+      case "angry": return "Marah";
+      case "sad": return "Sedih";
+      case "happy": return "Gembira";
+      case "neutral": return "Netral";
+      default: return "Belum ada data";
+    }
+  };
+
+  // Fungsi untuk memetakan status
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "secure": return "Aman";
+      case "insecure": return "Tidak Aman";
+      default: return "Belum dicek";
+    }
+  };
+
+  // Fungsi untuk mendapatkan ikon mood
+  const getMoodIcon = (type: string) => {
+    switch (type) {
+      case "angry": return "/icon/ico-angry.svg";
+      case "sad": return "/icon/ico-sad.svg";
+      case "happy": return "/icon/ico-happy.svg";
+      case "neutral": return "/icon/ico-neutral.svg";
+      default: return "/icon/ico-happy.svg";
+    }
+  };
 
   return (
     <motion.div
@@ -44,8 +77,8 @@ export function WelcomeCard() {
                 className="flex-shrink-0"
               >
                 <Image
-                  src="/icon/ico-happy.svg"
-                  alt="Happy Emoji"
+                  src={getMoodIcon(moodRecord?.type || "")}
+                  alt="Mood Emoji"
                   width={32}
                   height={32}
                   className="sm:w-10 sm:h-10"
@@ -55,19 +88,24 @@ export function WelcomeCard() {
                 <h3 className="font-semibold text-sm sm:text-lg truncate">
                   Mood Check-in Hari Ini
                 </h3>
-                <p className="text-indigo-100 text-xs sm:text-sm">Gembira</p>
+                <p className="text-indigo-100 text-xs sm:text-sm">
+                  {loading ? "Memuat..." : getMoodText(moodRecord?.type || "")}
+                </p>
               </div>
             </div>
             <div className="text-center flex-shrink-0">
               <p className="text-indigo-100 text-xs sm:text-sm">Status Kamu</p>
               <motion.div
-                className="bg-green-500 px-2 sm:px-3 py-1 rounded-full"
+                className={`px-2 sm:px-3 py-1 rounded-full ${
+                  moodRecord?.status === "secure" ? "bg-green-500" :
+                  moodRecord?.status === "insecure" ? "bg-red-500" : "bg-gray-500"
+                }`}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.3, duration: 0.3 }}
               >
                 <p className="font-semibold text-white text-xs sm:text-sm">
-                  Aman
+                  {loading ? "..." : getStatusText(moodRecord?.status || "")}
                 </p>
               </motion.div>
             </div>
