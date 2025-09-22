@@ -73,7 +73,7 @@ const FillData = () => {
 
   // Username validation function
   const validateUsername = (username: string) => {
-    const minLength = username.length >= 3;
+    const minLength = username.length >= 8;
     const maxLength = username.length <= 20;
     const validChars = /^[a-zA-Z0-9_]+$/.test(username);
     const notStartWithNumber = !/^\d/.test(username);
@@ -475,7 +475,7 @@ const FillData = () => {
                             : "text-red-500"
                         }
                       >
-                        Minimal 3 karakter{" "}
+                        Minimal 8 karakter{" "}
                         {usernameValidation.minLength ? "✓" : "✗"}
                       </li>
                       <li

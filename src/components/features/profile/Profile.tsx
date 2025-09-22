@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +14,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { Edit, User, Mail, Shield, CheckCircle, Check, X } from "lucide-react";
+import { Edit, User, Mail, Shield, CheckCircle, Check, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useUsernameCheck } from "@/hooks/useUsernameCheck";
+import { Label } from "@/components/ui/label";
 
 interface ProfileData {
   name: string;
@@ -25,8 +28,50 @@ interface ProfileData {
   role: string;
 }
 
+// --- VALIDATION FUNCTIONS (SAMA DENGAN FillData) ---
+const validateUsername = (username: string) => {
+  const minLength = username.length >= 8;
+  const maxLength = username.length <= 20;
+  const validChars = /^[a-zA-Z0-9_]+$/.test(username);
+  const notStartWithNumber = !/^\d/.test(username);
+
+  return {
+    minLength,
+    maxLength,
+    validChars,
+    notStartWithNumber,
+    isValid: minLength && maxLength && validChars && notStartWithNumber,
+  };
+};
+
+const validatePhone = (phone: string) => {
+  const digitsOnly = phone.replace(/\D/g, "");
+  const isValidLength = digitsOnly.length >= 9 && digitsOnly.length <= 13;
+  const startsWithValidDigit = /^[8-9]/.test(digitsOnly);
+
+  return {
+    isValidLength,
+    startsWithValidDigit,
+    isValid: isValidLength && startsWithValidDigit,
+  };
+};
+// --- END VALIDATION FUNCTIONS ---
+
 export default function Profile() {
   const { user } = useAuth();
+  const { data: session } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Username check hook
+  const {
+    isChecking,
+    isAvailable: isUsernameAvailable,
+    error: usernameError,
+    checkUsername,
+    clearCheck,
+  } = useUsernameCheck();
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Initialize profile data (in real app, this would come from the user object)
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -95,26 +140,110 @@ export default function Profile() {
     }
   };
 
+  // Handle username input with debounce and check
+  const handleUsernameChange = (value: string) => {
+    handleInputChange("username", value);
+
+    if (debounceTimer) clearTimeout(debounceTimer);
+    clearCheck();
+
+    const timer = setTimeout(() => {
+      if (value.trim().length >= 3) {
+        checkUsername(value.trim());
+      }
+    }, 500);
+
+    setDebounceTimer(timer);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
+  }, [debounceTimer]);
+
   const handleCancelClick = () => {
     setEditData(profileData);
     setIsEditing(false);
   };
 
-  const handleConfirmSave = () => {
-    // Update profile data with only the editable fields
-    setProfileData({
-      ...profileData,
-      username: editData.username,
-      phone: editData.phone,
-    });
-    setIsConfirmDialogOpen(false);
-    setIsEditing(false);
+  const handleConfirmSave = async () => {
+    // Check if username is available (only if username changed and has been checked)
+    if (
+      profileData.username !== editData.username &&
+      (isUsernameAvailable === false || usernameError)
+    ) {
+      // Username is not available or has error, don't proceed
+      setError("Username tidak tersedia atau ada kesalahan");
+      return;
+    }
 
-    // Here you would typically make an API call to save the data
-    console.log("Profile updated:", {
-      username: editData.username,
-      phone: editData.phone,
-    });
+    if (!session?.user?.token) {
+      setError("Token tidak ditemukan");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("https://api.appiks.id/api/edit-profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.user.token}`,
+        },
+        body: JSON.stringify({
+          username: editData.username,
+          phone: editData.phone,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the profile data with the response data
+        const updatedData: ProfileData = {
+          ...editData,
+          name: data.data.name || editData.name,
+          username: data.data.username || editData.username,
+          phone: data.data.phone || editData.phone,
+        };
+        
+        setProfileData(updatedData);
+        setEditData(updatedData);
+        setIsConfirmDialogOpen(false);
+        setIsEditing(false);
+      } else {
+        throw new Error(data.message || "Profile update failed");
+      }
+    } catch (error) {
+      let errorMessage = "Terjadi kesalahan yang tidak diketahui";
+      if (error instanceof Error) {
+        if (error.message.includes("422")) {
+          errorMessage =
+            "Data yang dikirim tidak valid. Periksa format username dan nomor telepon.";
+        } else if (error.message.includes("403")) {
+          errorMessage = "Akses ditolak.";
+        } else if (error.message.includes("401")) {
+          errorMessage = "Sesi sudah kedaluwarsa. Silakan login kembali.";
+        } else if (error.message.includes("500")) {
+          errorMessage = "Terjadi kesalahan pada server. Silakan coba lagi.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
@@ -125,6 +254,16 @@ export default function Profile() {
   const hasChanges =
     editData.username !== profileData.username ||
     editData.phone !== profileData.phone;
+    
+  const usernameChanged = profileData.username !== editData.username;
+  const usernameValidation = validateUsername(editData.username);
+  const phoneValidation = validatePhone(editData.phone);
+  const isFormValid =
+    editData.username.trim() !== "" &&
+    editData.phone.trim() !== "" &&
+    usernameValidation.isValid &&
+    phoneValidation.isValid &&
+    (!usernameChanged || (isUsernameAvailable === true && !usernameError));
 
   return (
     <div className="space-y-6">
@@ -147,11 +286,20 @@ export default function Profile() {
             </Button>
             <Button
               onClick={handleSaveClick}
-              disabled={!hasChanges}
+              disabled={!hasChanges || !isFormValid || isLoading}
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Simpan
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Simpan
+                </>
+              )}
             </Button>
           </div>
         )}
@@ -211,23 +359,139 @@ export default function Profile() {
 
               {/* Username - Editable */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
-                </label>
+                <Label className="block text-sm font-medium text-gray-700 mb-2">
+                  Username *
+                </Label>
                 {isEditing ? (
-                  <Input
-                    value={editData.username}
-                    onChange={(e) =>
-                      handleInputChange("username", e.target.value)
-                    }
-                    placeholder="Masukkan username"
-                  />
+                  <div className="relative">
+                    <Input
+                      value={editData.username}
+                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      placeholder="Masukkan username"
+                      disabled={isChecking}
+                      className={`pr-10 transition-colors ${
+                        isChecking
+                          ? "border-gray-300"
+                          : editData.username.trim() === "" ||
+                            !usernameValidation.isValid
+                          ? "border-red-300 focus:border-red-500"
+                          : usernameError || isUsernameAvailable === false
+                          ? "border-red-300 focus:border-red-500"
+                          : isUsernameAvailable === true &&
+                            usernameValidation.isValid
+                          ? "border-green-300 focus:border-green-500"
+                          : "border-gray-300"
+                      }`}
+                      autoComplete="username"
+                    />
+                    {/* Status Icon */}
+                    <div
+                      className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                        isChecking
+                          ? "text-gray-500"
+                          : usernameError || isUsernameAvailable === false
+                          ? "text-red-500"
+                          : isUsernameAvailable === true
+                          ? "text-green-500"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {isChecking ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : usernameError || isUsernameAvailable === false ? (
+                        <X className="w-4 h-4" />
+                      ) : isUsernameAvailable === true ? (
+                        <Check className="w-4 h-4" />
+                      ) : null}
+                    </div>
+                  </div>
                 ) : (
                   <Input
                     value={profileData.username}
                     disabled
                     className="bg-gray-50"
                   />
+                )}
+                {isEditing && (
+                  <>
+                    {(isChecking ||
+                      usernameError ||
+                      isUsernameAvailable !== null) && (
+                      <p
+                        className={`text-sm flex items-center gap-1 mt-1 ${
+                          isChecking
+                            ? "text-gray-500"
+                            : usernameError || isUsernameAvailable === false
+                            ? "text-red-500"
+                            : isUsernameAvailable === true
+                            ? "text-green-500"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        <span>
+                          {isChecking
+                            ? "Mengecek ketersediaan..."
+                            : usernameError
+                            ? usernameError
+                            : isUsernameAvailable === true
+                            ? "Username tersedia"
+                            : isUsernameAvailable === false
+                            ? "Username sudah digunakan"
+                            : ""}
+                        </span>
+                      </p>
+                    )}
+                    {editData.username.trim() !== "" &&
+                      !usernameValidation.isValid && (
+                        <div className="text-xs mt-1">
+                          <p className="text-red-500 font-medium mb-1">
+                            Username harus memenuhi kriteria berikut:
+                          </p>
+                          <ul className="space-y-1">
+                            <li
+                              className={
+                                usernameValidation.minLength
+                                  ? "text-green-600"
+                                  : "text-red-500"
+                              }
+                            >
+                              Minimal 8 karakter{" "}
+                              {usernameValidation.minLength ? "✓" : "✗"}
+                            </li>
+                            <li
+                              className={
+                                usernameValidation.maxLength
+                                  ? "text-green-600"
+                                  : "text-red-500"
+                              }
+                            >
+                              Maksimal 20 karakter{" "}
+                              {usernameValidation.maxLength ? "✓" : "✗"}
+                            </li>
+                            <li
+                              className={
+                                usernameValidation.validChars
+                                  ? "text-green-600"
+                                  : "text-red-500"
+                              }
+                            >
+                              Hanya huruf, angka, dan underscore{" "}
+                              {usernameValidation.validChars ? "✓" : "✗"}
+                            </li>
+                            <li
+                              className={
+                                usernameValidation.notStartWithNumber
+                                  ? "text-green-600"
+                                  : "text-red-500"
+                              }
+                            >
+                              Tidak boleh dimulai dengan angka{" "}
+                              {usernameValidation.notStartWithNumber ? "✓" : "✗"}
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                  </>
                 )}
               </div>
 
@@ -245,22 +509,83 @@ export default function Profile() {
 
               {/* Nomor Telepon - Editable */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nomor Telepon
-                </label>
+                <Label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nomor Telepon *
+                </Label>
                 {isEditing ? (
-                  <Input
-                    value={editData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    placeholder="Masukkan nomor telepon"
-                    type="tel"
-                  />
+                  <div className="flex">
+                    <div className="flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                      +62
+                    </div>
+                    <Input
+                      value={editData.phone}
+                      onChange={(e) => {
+                        // Remove any non-digit characters
+                        let value = e.target.value.replace(/\D/g, "");
+                        // Remove leading zero if present
+                        if (value.startsWith("0")) {
+                          value = value.substring(1);
+                        }
+                        handleInputChange("phone", value);
+                      }}
+                      placeholder="812-3456-7890"
+                      type="tel"
+                      className={
+                        editData.phone.trim() === ""
+                          ? "border-red-300 focus:border-red-500 rounded-l-none"
+                          : "rounded-l-none"
+                      }
+                    />
+                  </div>
                 ) : (
                   <Input
                     value={profileData.phone}
                     disabled
                     className="bg-gray-50"
                   />
+                )}
+                {isEditing && (
+                  <>
+                    {editData.phone.trim() === "" && (
+                      <p className="text-sm text-red-500 mt-1">
+                        Nomor telepon wajib diisi
+                      </p>
+                    )}
+                    {editData.phone.trim() !== "" && !phoneValidation.isValid && (
+                      <div className="text-xs mt-1">
+                        <p className="text-red-500 font-medium mb-1">
+                          Nomor telepon harus memenuhi kriteria berikut:
+                        </p>
+                        <ul className="space-y-1">
+                          <li
+                            className={
+                              phoneValidation.isValidLength
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }
+                          >
+                            9-13 digit (tanpa +62){" "}
+                            {phoneValidation.isValidLength ? "✓" : "✗"}
+                          </li>
+                          <li
+                            className={
+                              phoneValidation.startsWithValidDigit
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }
+                          >
+                            Dimulai dengan 8 atau 9{" "}
+                            {phoneValidation.startsWithValidDigit ? "✓" : "✗"}
+                          </li>
+                        </ul>
+                      </div>
+                    )}
+                    {editData.phone.trim() !== "" && phoneValidation.isValid && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        Format: +62{editData.phone}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -321,6 +646,13 @@ export default function Profile() {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Show error message if any */}
+          {error && (
+            <div className="my-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
           {/* Show what will be changed */}
           {hasChanges && (
             <div className="my-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -335,7 +667,7 @@ export default function Profile() {
                 )}
                 {profileData.phone !== editData.phone && (
                   <div>
-                    • Nomor Telepon: {profileData.phone} → {editData.phone}
+                    • Nomor Telepon: {profileData.phone} → +62{editData.phone}
                   </div>
                 )}
               </div>
@@ -346,13 +678,23 @@ export default function Profile() {
             <Button
               variant="outline"
               onClick={() => setIsConfirmDialogOpen(false)}
+              disabled={isLoading}
             >
               <X className="w-4 h-4 mr-2" />
               Batal
             </Button>
-            <Button onClick={handleConfirmSave}>
-              <Check className="w-4 h-4 mr-2" />
-              Ya, Simpan
+            <Button onClick={handleConfirmSave} disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menyimpan...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Ya, Simpan
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

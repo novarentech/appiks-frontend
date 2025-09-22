@@ -1,6 +1,6 @@
 "use client";
 
-import { ProfileStudent } from "@/components/features/profile/StudentProfile";
+import { StudentProfile } from "@/components/features/profile/StudentProfile";
 import Profile from "@/components/features/profile/Profile";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -30,7 +30,7 @@ export default function ProfilePageComponent() {
 
   // Show different profile components based on user role
   if (user?.role === "student") {
-    return <ProfileStudent />;
+    return <StudentProfile />;
   }
 
   // For non-student roles (teacher, counselor, admin, etc.)
