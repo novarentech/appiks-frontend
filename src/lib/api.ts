@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -209,4 +209,12 @@ export async function recordMood(status: string): Promise<MoodRecordResponse> {
   }
 
   return response.json();
+}
+
+/**
+ * Get mood pattern data for a user
+ */
+export async function getMoodPattern(username: string, type: "weekly" | "monthly"): Promise<MoodPatternResponse> {
+  const response = await authGet(`/mood-record/pattern/${username}/${type}`);
+  return response;
 }

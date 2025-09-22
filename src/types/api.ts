@@ -104,6 +104,45 @@ export interface DashboardStudentResponse {
   data: Student[];
 }
 
+// Interface untuk response API mood pattern
+export interface MoodRecap {
+  sad: number;
+  neutral: number;
+  angry: number;
+  happy: number;
+}
+
+export interface MoodItem {
+  recorded: string;
+  status: string;
+}
+
+export interface MoodPatternUser {
+  name: string;
+  phone: string;
+  username: string;
+  identifier: string;
+  verified: boolean;
+  role: string;
+  mentor_id: number;
+  counselor_id: number;
+  room_id: number;
+  school_id: number;
+}
+
+export interface MoodPatternData {
+  recap: MoodRecap;
+  mean: string;
+  moods: MoodItem[];
+  user: MoodPatternUser;
+}
+
+export interface MoodPatternResponse {
+  success: boolean;
+  message: string;
+  data: MoodPatternData;
+}
+
 export interface BulkImportResponse {
   success: boolean;
   message: string;
