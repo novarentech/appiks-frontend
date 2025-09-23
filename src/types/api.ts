@@ -386,6 +386,18 @@ export interface CreateReportRequest {
   room: string;
 }
 
+// Interface untuk response API dashboard teacher
+export interface DashboardTeacherResponse {
+  success: boolean;
+  message: string;
+  data: {
+    student_count: number;
+    mood_today_count: number;
+    mood_secure_count: number;
+    mood_insecure_count: number;
+  };
+}
+
 export interface CreateReportResponse {
   success: boolean;
   message: string;

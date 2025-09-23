@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -328,5 +328,13 @@ export async function createReport(data: CreateReportRequest): Promise<CreateRep
  */
 export async function getDashboardMoodTrends(): Promise<DashboardMoodTrendsResponse> {
   const response = await authGet("/dashboard/mood-trends");
+  return response;
+}
+
+/**
+ * Get dashboard teacher data
+ */
+export async function getDashboardTeacher(): Promise<DashboardTeacherResponse> {
+  const response = await authGet("/dashboard/teacher");
   return response;
 }
