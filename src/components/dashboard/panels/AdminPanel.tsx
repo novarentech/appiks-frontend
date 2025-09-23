@@ -1,37 +1,74 @@
-import { Users, ClipboardList, ThumbsUp, AlertTriangle } from "lucide-react";
+"use client";
+
+import { Users, CalendarArrowUp, Newspaper } from "lucide-react";
 import DashboardPanel from "./DashboardPanel";
+import { useEffect, useState } from "react";
+import { getDashboardAdmin } from "@/lib/api";
 
 export default function AdminPanel() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       icon: Users,
       label: "TOTAL PENGGUNA",
-      value: 32,
-      bgColor: "bg-blue-100",
-      textColor: "text-blue-600"
+      value: 0,
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
     },
     {
-      icon: ClipboardList,
-      label: "PENGGUNA AKTIF",
-      value: 25,
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-600"
-    },
-    {
-      icon: ThumbsUp,
+      icon: Newspaper,
       label: "TOTAL KONTEN",
-      value: 20,
-      bgColor: "bg-green-100",
-      textColor: "text-green-600"
+      value: 0,
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
     },
     {
-      icon: AlertTriangle,
+      icon: CalendarArrowUp,
       label: "KONTEN HARI INI",
-      value: 5,
-      bgColor: "bg-orange-100",
-      textColor: "text-orange-600"
-    }
-  ];
+      value: 0,
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
+    },
+  ]);
+
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        const response = await getDashboardAdmin();
+        if (response.success) {
+          const { users_count, content_count, content_today_count } =
+            response.data;
+
+          setStats([
+            {
+              icon: Users,
+              label: "TOTAL PENGGUNA",
+              value: users_count,
+              bgColor: "bg-indigo-200",
+              textColor: "text-indigo-500",
+            },
+            {
+              icon: Newspaper,
+              label: "TOTAL KONTEN",
+              value: content_count,
+              bgColor: "bg-indigo-200",
+              textColor: "text-indigo-500",
+            },
+            {
+              icon: CalendarArrowUp,
+              label: "KONTEN HARI INI",
+              value: content_today_count,
+              bgColor: "bg-indigo-200",
+              textColor: "text-indigo-500",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch admin dashboard data:", error);
+      }
+    };
+
+    fetchAdminData();
+  }, []);
 
   return <DashboardPanel items={stats} />;
 }

@@ -437,6 +437,17 @@ export interface CreateReportResponse {
   data: Report;
 }
 
+// Interface untuk response API dashboard admin
+export interface DashboardAdminResponse {
+  success: boolean;
+  message: string;
+  data: {
+    users_count: number;
+    content_count: number;
+    content_today_count: number;
+  };
+}
+
 // Interface untuk response API dashboard user
 export interface DashboardUserResponse {
   success: boolean;
