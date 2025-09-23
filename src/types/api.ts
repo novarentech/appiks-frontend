@@ -482,6 +482,70 @@ export interface DashboardUserResponse {
   data: User[];
 }
 
+// Tag API types
+export interface Tag {
+  id: number;
+  title: string;
+}
+
+export interface TagResponse {
+  success: boolean;
+  message: string;
+  data: Tag[];
+}
+
+// Article Detail API types
+export interface ArticleDetail {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string;
+  content: string;
+}
+
+export interface ArticleDetailResponse {
+  success: boolean;
+  message: string;
+  data: ArticleDetail;
+}
+
+// Content API types
+export interface ContentTag {
+  id: number;
+  title: string;
+}
+
+export interface ContentArticle {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string;
+  content: string;
+  tags: ContentTag[];
+}
+
+export interface ContentVideo {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail: string;
+  duration: string;
+  channel: string;
+  views: number;
+  video_id: string;
+  tags: ContentTag[];
+}
+
+export type ContentItem = ContentArticle | ContentVideo;
+
+export interface ContentResponse {
+  success: boolean;
+  message: string;
+  data: ContentItem[];
+}
+
 // Interface untuk response API dashboard mood trends
 export interface DashboardMoodTrendsResponse {
   success: boolean;

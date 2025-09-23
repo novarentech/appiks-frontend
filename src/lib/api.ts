@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse, DashboardCounselorResponse, DashboardHeadTeacherResponse, DashboardUserResponse, DashboardAdminResponse, DashboardLatestContentResponse, DashboardLatestUserResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse, DashboardCounselorResponse, DashboardHeadTeacherResponse, DashboardUserResponse, DashboardAdminResponse, DashboardLatestContentResponse, DashboardLatestUserResponse, ContentResponse, TagResponse, ArticleDetailResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -385,4 +385,85 @@ export async function getDashboardLatestContent(): Promise<DashboardLatestConten
 export async function getDashboardLatestUser(): Promise<DashboardLatestUserResponse> {
   const response = await authGet("/dashboard/latest-user");
   return response;
+}
+
+/**
+ * Get content data (articles and videos)
+ */
+export async function getContent(): Promise<ContentResponse> {
+  const session = await getSession();
+
+  if (!session?.user?.token) {
+    throw new Error("No authentication token available");
+  }
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session.user.token}`,
+  };
+
+  const response = await fetch("https://api.appiks.id/api/content", {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET https://api.appiks.id/api/content failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get tags data
+ */
+export async function getTags(): Promise<TagResponse> {
+  const session = await getSession();
+
+  if (!session?.user?.token) {
+    throw new Error("No authentication token available");
+  }
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session.user.token}`,
+  };
+
+  const response = await fetch("https://api.appiks.id/api/tag", {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET https://api.appiks.id/api/tag failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get article detail by slug
+ */
+export async function getArticleDetail(slug: string): Promise<ArticleDetailResponse> {
+  const session = await getSession();
+
+  if (!session?.user?.token) {
+    throw new Error("No authentication token available");
+  }
+
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session.user.token}`,
+  };
+
+  const response = await fetch(`https://api.appiks.id/api/article/${slug}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET https://api.appiks.id/api/article/${slug} failed with status ${response.status}`);
+  }
+
+  return response.json();
 }

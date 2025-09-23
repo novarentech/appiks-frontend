@@ -17,7 +17,9 @@ import { ArticleCard } from "@/components/ui/edu-card";
 import { VideoGridSkeleton } from "@/components/ui/video-skeleton";
 import { FilterSkeleton } from "@/components/ui/filter-skeleton";
 import { useRouter } from "next/navigation";
-import { useTags, useVideos, useVideosByTags } from "@/hooks/useVideos";
+import { useTags } from "@/hooks/useTags";
+import { useContent, useContentByTags, isVideo, isArticle } from "@/hooks/useContent";
+import { ContentItem } from "@/types/api";
 import { Video } from "@/types/video";
 
 // Type definition for Article
@@ -33,42 +35,49 @@ interface Article {
   author?: string;
 }
 
-// Dummy articles
-const dummyArticles = [
-  {
-    id: 112,
-    title: "Cara Mengelola Emosi di Sekolah",
-    description: "Tips praktis untuk siswa dan guru dalam mengelola emosi di lingkungan sekolah.",
-    thumbnail: "",
-    tags: ["Emosi", "Sekolah"],
-    category: "Psikologi",
+// Adapter function to convert ContentItem to Video format
+function contentToVideo(content: ContentItem): Video {
+  if (!isVideo(content)) {
+    throw new Error("Content is not a video");
+  }
+  
+  const videoContent = content as ContentItem & { duration: string; channel: string; views: number; video_id: string };
+  
+  return {
+    id: content.id,
+    title: content.title,
+    description: content.description,
+    thumbnail: content.thumbnail,
+    duration: videoContent.duration,
+    channel: videoContent.channel,
+    views: videoContent.views,
+    video_id: videoContent.video_id,
+    school: "", // API doesn't provide school info
+    tags: content.tags.map(tag => ({
+      id: tag.id,
+      title: tag.title
+    }))
+  };
+}
+
+// Adapter function to convert ContentItem to Article format
+function contentToArticle(content: ContentItem): Article {
+  if (!isArticle(content)) {
+    throw new Error("Content is not an article");
+  }
+  
+  return {
+    id: content.id,
+    title: content.title,
+    description: content.description,
+    thumbnail: content.thumbnail,
+    tags: content.tags.map(tag => tag.title),
+    category: content.tags.length > 0 ? content.tags[0].title : "Umum",
     readTime: "5 menit",
-    publishedDate: "2025-08-01",
-    author: "Dr. Andi",
-  },
-  {
-    id: 113,
-    title: "Teknik Relaksasi untuk Remaja",
-    description: "Panduan teknik relaksasi sederhana yang bisa dilakukan di rumah.",
-    thumbnail: "",
-    tags: ["Relaksasi", "Remaja"],
-    category: "Kesehatan Mental",
-    readTime: "4 menit",
-    publishedDate: "2025-08-10",
-    author: "Psikolog Rina",
-  },
-  {
-    id: 322,
-    title: "Mengatasi Marah dengan Mindfulness",
-    description: "Bagaimana mindfulness membantu mengendalikan amarah.",
-    thumbnail: "",
-    tags: ["Mindfulness", "Marah"],
-    category: "Mindfulness",
-    readTime: "6 menit",
-    publishedDate: "2025-08-15",
-    author: "Yoga Pratama",
-  },
-];
+    publishedDate: new Date().toISOString().split('T')[0], // Default to today
+    author: "Admin" // Default value since API doesn't provide this
+  };
+}
 
 // Helper to shuffle array
 function shuffleArray<T>(array: T[]): T[] {
@@ -89,18 +98,18 @@ export function AngerManagement() {
   // Fetch data from APIs
   const { data: tags, loading: tagsLoading, error: tagsError } = useTags();
   const {
-    data: allVideos,
-    loading: videosLoading,
-    error: videosError,
-  } = useVideos();
-  const { data: filteredByTagVideos, loading: tagVideosLoading } =
-    useVideosByTags(selectedTagIds);
+    data: allContent,
+    loading: contentLoading,
+    error: contentError,
+  } = useContent();
+  const { data: filteredByTagContent, loading: tagContentLoading } =
+    useContentByTags(selectedTagIds);
 
-  // Use filtered videos if tags are selected, otherwise use all videos
-  const videosToShow =
-    selectedTagIds.length > 0 ? filteredByTagVideos : allVideos;
-  const isLoading = tagsLoading || videosLoading || tagVideosLoading;
-  const hasError = tagsError || videosError;
+  // Use filtered content if tags are selected, otherwise use all content
+  const contentToShow =
+    selectedTagIds.length > 0 ? filteredByTagContent : allContent;
+  const isLoading = tagsLoading || contentLoading || tagContentLoading;
+  const hasError = tagsError || contentError;
 
   // Generate category colors dynamically
   const getTagColor = (index: number) => {
@@ -117,9 +126,9 @@ export function AngerManagement() {
 
   // Count videos for each tag
   const getVideoCountForTag = (tagId: number) => {
-    if (!allVideos) return 0;
-    return allVideos.filter((video) =>
-      video.tags.some((tag) => tag.id === tagId)
+    if (!allContent) return 0;
+    return allContent.filter((content) =>
+      isVideo(content) && content.tags.some((tag) => tag.id === tagId)
     ).length;
   };
 
@@ -145,36 +154,29 @@ export function AngerManagement() {
     router.push(`/video-player/${videoId}`);
   };
 
-  const handleReadArticle = (articleId: number) => {
+  const handleReadArticle = (articleSlug: string) => {
     // Implementasi navigasi ke halaman artikel jika ada
-    router.push(`/article/${articleId}`);
+    router.push(`/article/${articleSlug}`);
   };
-
-  // Filtered content
-  const filteredArticles = dummyArticles.filter((article) => {
-    if (selectedTagIds.length === 0) return true;
-    if (!tags) return true;
-    // Cari tag yang dipilih ada di artikel
-    return article.tags.some((tagName) => {
-      const tagObj = tags.find((t) => t.title === tagName);
-      return tagObj && selectedTagIds.includes(tagObj.id);
-    });
-  });
 
   // Gabungkan video dan artikel jika "all" dipilih
   const showVideos = contentType === "all" || contentType === "video";
   const showArticles = contentType === "all" || contentType === "article";
 
+  // Filter content berdasarkan tipe
+  const videos = contentToShow?.filter(isVideo) || [];
+  const articles = contentToShow?.filter(isArticle) || [];
+
   // Acak urutan video dan artikel
-  const shuffledVideos = showVideos && videosToShow ? shuffleArray(videosToShow) : [];
-  const shuffledArticles = showArticles ? shuffleArray(filteredArticles) : [];
+  const shuffledVideos = showVideos ? shuffleArray(videos) : [];
+  const shuffledArticles = showArticles ? shuffleArray(articles) : [];
 
   // Gabungkan dan acak jika "all", jika tidak tampilkan sesuai filter
-  type ContentItem =
-    | { type: "video"; data: Video }
-    | { type: "article"; data: Article };
+  type MixedContentItem =
+    | { type: "video"; data: ContentItem }
+    | { type: "article"; data: ContentItem };
   
-  let mixedContent: ContentItem[] = [];
+  let mixedContent: MixedContentItem[] = [];
   if (contentType === "all") {
     mixedContent = shuffleArray([
       ...shuffledVideos.map((v) => ({ type: "video" as const, data: v })),
@@ -183,8 +185,8 @@ export function AngerManagement() {
   }
 
   const totalContent =
-    (showVideos ? (videosToShow?.length || 0) : 0) +
-    (showArticles ? filteredArticles.length : 0);
+    (showVideos ? shuffledVideos.length : 0) +
+    (showArticles ? shuffledArticles.length : 0);
 
   return (
     <>
@@ -271,7 +273,7 @@ export function AngerManagement() {
                     const tag = tags.find((t) => t.id === tagId);
                     return tag ? (
                       <Badge
-                        key={tagId}
+                        key={`selected-tag-${tagId}`}
                         variant="secondary"
                         className="bg-blue-100 text-blue-700"
                       >
@@ -308,7 +310,7 @@ export function AngerManagement() {
                 <div className="flex flex-wrap gap-2">
                   {tags?.map((tag, index) => (
                     <Button
-                      key={tag.id}
+                      key={`tag-${tag.id}`}
                       variant="outline"
                       size="sm"
                       className={`transition-all duration-200 hover:scale-105 ${
@@ -367,7 +369,7 @@ export function AngerManagement() {
                   Terjadi Kesalahan
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {hasError || "Gagal memuat data video"}
+                  {hasError || "Gagal memuat data konten"}
                 </p>
                 <Button
                   variant="outline"
@@ -386,15 +388,15 @@ export function AngerManagement() {
                 ? mixedContent.map((item) =>
                     item.type === "video" ? (
                       <VideoCard
-                        key={item.data.id}
-                        video={item.data}
+                        key={`video-${item.data.id}`}
+                        video={contentToVideo(item.data)}
                         onPlay={handleVideoPlay}
                       />
                     ) : (
                       <ArticleCard
-                        key={item.data.id}
-                        article={item.data}
-                        onRead={handleReadArticle}
+                        key={`article-${item.data.id}`}
+                        article={contentToArticle(item.data)}
+                        onRead={() => handleReadArticle(isArticle(item.data) ? item.data.slug : '')}
                       />
                     )
                   )
@@ -404,8 +406,8 @@ export function AngerManagement() {
                       shuffledVideos.length > 0 &&
                       shuffledVideos.map((video) => (
                         <VideoCard
-                          key={video.id}
-                          video={video}
+                          key={`video-${video.id}`}
+                          video={contentToVideo(video)}
                           onPlay={handleVideoPlay}
                         />
                       ))}
@@ -413,9 +415,9 @@ export function AngerManagement() {
                       shuffledArticles.length > 0 &&
                       shuffledArticles.map((article) => (
                         <ArticleCard
-                          key={article.id}
-                          article={article}
-                          onRead={handleReadArticle}
+                          key={`article-${article.id}`}
+                          article={contentToArticle(article)}
+                          onRead={() => handleReadArticle(isArticle(article) ? article.slug : '')}
                         />
                       ))}
                   </>
@@ -426,7 +428,7 @@ export function AngerManagement() {
           {/* No Results */}
           {!isLoading &&
             !hasError &&
-            ((showVideos && (!videosToShow || videosToShow.length === 0)) ||
+            ((showVideos && shuffledVideos.length === 0) ||
               (showArticles && shuffledArticles.length === 0)) && (
               <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
                 <div className="max-w-md mx-auto">

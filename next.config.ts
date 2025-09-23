@@ -2,13 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Enable standalone output for Docker
-  output: 'standalone',
-  
+  output: "standalone",
+
   images: {
     domains: [
       "images.unsplash.com",
       "unsplash.com",
-      "img.youtube.com", // ✅ tambahkan ini
+      "img.youtube.com",
+      "via.placeholder.com",
     ],
     remotePatterns: [
       {
@@ -19,10 +20,17 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "img.youtube.com", // ✅ tambahkan ini juga
+        hostname: "img.youtube.com",
         port: "",
         pathname: "/**",
       },
+    {
+      protocol: "https",
+      hostname: "via.placeholder.com",
+      port: "",
+      pathname: "/**",
+    },
+
     ],
   },
 };
