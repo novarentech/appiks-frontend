@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse, DashboardCounselorResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -336,5 +336,13 @@ export async function getDashboardMoodTrends(): Promise<DashboardMoodTrendsRespo
  */
 export async function getDashboardTeacher(): Promise<DashboardTeacherResponse> {
   const response = await authGet("/dashboard/teacher");
+  return response;
+}
+
+/**
+ * Get dashboard counselor data
+ */
+export async function getDashboardCounselor(): Promise<DashboardCounselorResponse> {
+  const response = await authGet("/dashboard/counselor");
   return response;
 }

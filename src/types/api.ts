@@ -398,6 +398,18 @@ export interface DashboardTeacherResponse {
   };
 }
 
+// Interface untuk response API dashboard counselor
+export interface DashboardCounselorResponse {
+  success: boolean;
+  message: string;
+  data: {
+    student_count: number;
+    report_today_count: number;
+    meet_today_count: number;
+    sharing_today_count: number;
+  };
+}
+
 export interface CreateReportResponse {
   success: boolean;
   message: string;
