@@ -40,7 +40,7 @@ interface StudentDataTableProps {
 // Helper functions
 const getMoodColor = (mood: string) => {
   switch (mood.toLowerCase()) {
-    case "senang":
+    case "gembira":
       return "text-green-600";
     case "netral":
       return "text-gray-600";
@@ -55,7 +55,7 @@ const getMoodColor = (mood: string) => {
 
 const getMoodEmoji = (mood: string) => {
   switch (mood.toLowerCase()) {
-    case "senang":
+    case "gembira":
       return "/icon/ico-happy.webp";
     case "netral":
       return "/icon/ico-neutral.webp";
