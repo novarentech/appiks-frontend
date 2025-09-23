@@ -1,7 +1,6 @@
 import {
   Users,
   ClipboardList,
-  ThumbsUp,
   AlertTriangle,
   Smile,
   Frown,
