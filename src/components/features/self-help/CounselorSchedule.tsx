@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Clock, Calendar, Send } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import {
   Select,
@@ -17,32 +23,74 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
+import { createReport } from "@/lib/api";
 
 // Custom time options (you can adjust as needed)
 const TIME_OPTIONS = [
-  "08:00", "08:30", "09:00", "09:30",
-  "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30",
-  "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30"
+  "08:00",
+  "08:30",
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
 ];
 
 export default function CounselorSchedule() {
+  const router = useRouter();
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState<string>("");
   const [topic, setTopic] = useState("");
+  const [room, setRoom] = useState("Ruang BK");
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    if (date && time && topic) {
-      // TODO: Kirim data ke API
-      console.log({
-        date: format(date, "yyyy-MM-dd"),
-        time,
-        topic,
-      });
+
+    if (date && time && topic && room) {
+      setIsLoading(true);
+      try {
+        const response = await createReport({
+          date: format(date, "yyyy-MM-dd"),
+          time,
+          topic,
+          room,
+        });
+
+        if (response.success) {
+          toast.success("Jadwal konseling berhasil dikirim!");
+          // Reset form setelah berhasil
+          setDate(undefined);
+          setTime("");
+          setTopic("");
+          setRoom("Ruang BK");
+          setSubmitted(false);
+
+          // Navigasi ke dashboard setelah berhasil submit
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 1500);
+        } else {
+          toast.error(response.message || "Gagal mengirim jadwal konseling");
+        }
+      } catch (error) {
+        console.error("Error creating report:", error);
+        toast.error("Terjadi kesalahan saat mengirim jadwal konseling");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -84,7 +132,9 @@ export default function CounselorSchedule() {
                 selected={date}
                 onSelect={setDate}
                 initialFocus
-                disabled={(day) => day < new Date(new Date().setHours(0,0,0,0))}
+                disabled={(day) =>
+                  day < new Date(new Date().setHours(0, 0, 0, 0))
+                }
                 className="rounded-md border shadow-sm"
                 captionLayout="dropdown"
                 fromYear={new Date().getFullYear()}
@@ -108,7 +158,7 @@ export default function CounselorSchedule() {
             <SelectContent className=" max-w-xs">
               {TIME_OPTIONS.map((t) => (
                 <SelectItem key={t} value={t}>
-                  {(t)}
+                  {t}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -117,19 +167,36 @@ export default function CounselorSchedule() {
             <p className="text-xs text-red-500 mt-1">Jam wajib diisi</p>
           )}
         </div>
+        {/* Ruang Konseling */}
+        <div>
+          <Label htmlFor="room" className="font-semibold text-gray-700">
+            Ruang Konseling<span className="text-red-500 ml-1">*</span>
+          </Label>
+          <Input
+            id="room"
+            placeholder="Masukkan ruang konseling"
+            value={room}
+            onChange={(e) => setRoom(e.target.value)}
+            required
+            className="mt-2"
+          />
+          {submitted && !room && (
+            <p className="text-xs text-red-500 mt-1">Ruang wajib diisi</p>
+          )}
+        </div>
         {/* Topik Konseling */}
         <div>
           <Label htmlFor="topic" className="font-semibold text-gray-700">
             Topik Konseling<span className="text-red-500 ml-1">*</span>
           </Label>
-            <Textarea
+          <Textarea
             id="topic"
             placeholder="Tulis topik mu disini"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             required
             className="mt-2 min-h-40"
-            />
+          />
           {submitted && !topic && (
             <p className="text-xs text-red-500 mt-1">Topik wajib diisi</p>
           )}
@@ -138,10 +205,18 @@ export default function CounselorSchedule() {
         <div className="flex justify-end pt-2">
           <Button
             type="submit"
-            disabled={!date || !time || !topic}
+            disabled={!date || !time || !topic || !room || isLoading}
           >
-            Kirim
-            <Send className="w-4 h-4 ml-1" />
+            {isLoading ? (
+              <>
+                Mengirim...
+              </>
+            ) : (
+              <>
+                Kirim
+                <Send className="w-4 h-4 ml-1" />
+              </>
+            )}
           </Button>
         </div>
       </form>

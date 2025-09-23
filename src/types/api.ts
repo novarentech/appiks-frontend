@@ -379,4 +379,16 @@ export interface UserListResponse {
   data: User[];
 }
 
+export interface CreateReportRequest {
+  date: string;
+  time: string;
+  topic: string;
+  room: string;
+}
+
+export interface CreateReportResponse {
+  success: boolean;
+  message: string;
+  data: Report;
+}
 
