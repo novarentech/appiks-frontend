@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,70 +15,67 @@ import { useState, useEffect } from "react";
 import { getDashboardMoodTrends } from "@/lib/api";
 
 // Fungsi untuk mengubah data dari API menjadi format yang sesuai untuk chart
-const transformApiDataToChartFormat = (
-  apiData: Record<string, { status: string; total: number }>
-) => {
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  // Filter hanya bulan yang memiliki data
-  const monthData = monthNames
-    .map((month) => {
-      const monthKey = Object.keys(apiData).find((key) =>
-        key.toLowerCase().includes(month.toLowerCase())
-      );
-
-      if (monthKey && apiData[monthKey]) {
-        const { status, total } = apiData[monthKey];
-
-        // Konversi status menjadi nilai numerik untuk chart
-        let moodName = "";
-
-        // Berdasarkan status, tentukan nilai mood
-        switch (status.toLowerCase()) {
-          case "happy":
-          case "gembira":
-            moodName = "Gembira";
-            break;
-          case "neutral":
-          case "netral":
-            moodName = "Netral";
-            break;
-          case "sad":
-          case "sedih":
-            moodName = "Sedih";
-            break;
-          case "angry":
-          case "marah":
-            moodName = "Marah";
-            break;
-          default:
-            moodName = "Netral";
-        }
-
-        return {
-          month,
-          moodName,
-          total,
-        };
+const transformApiDataToChartFormat = (apiData: Record<string, { status: string; total: number }>) => {
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+  // Hanya kembalikan data untuk bulan yang memiliki data dari API
+  const monthData = monthNames.reduce((acc, month) => {
+    const monthKey = Object.keys(apiData).find(key =>
+      key.toLowerCase().includes(month.toLowerCase())
+    );
+    
+    if (monthKey && apiData[monthKey]) {
+      const { status, total } = apiData[monthKey];
+      
+      // Konversi status menjadi nilai numerik untuk chart
+      let moodValue = 0;
+      let moodName = "";
+      
+      // Berdasarkan status, tentukan nilai mood
+      switch (status.toLowerCase()) {
+        case "happy":
+        case "gembira":
+          moodValue = 4;
+          moodName = "Gembira";
+          break;
+        case "neutral":
+        case "netral":
+          moodValue = 3;
+          moodName = "Netral";
+          break;
+        case "sad":
+        case "sedih":
+          moodValue = 2;
+          moodName = "Sedih";
+          break;
+        case "angry":
+        case "marah":
+          moodValue = 1;
+          moodName = "Marah";
+          break;
+        default:
+          moodValue = 0; 
+          moodName = "tidak diketahui";
       }
-
-      return null; // Return null untuk bulan yang tidak ada data
-    })
-    .filter((item): item is MoodData => item !== null); // Filter out null values dengan type guard
-
+      
+      acc.push({
+        month,
+        moodValue,
+        moodName,
+        total,
+        details: `${month}: Status mood rata-rata adalah ${status} (${moodValue}) dengan total ${total}.`,
+      });
+    }
+    
+    return acc;
+  }, [] as Array<{
+    month: string;
+    moodValue: number;
+    moodName: string;
+    total: number;
+    details: string;
+  }>);
+  
   return monthData;
 };
 
@@ -104,7 +102,7 @@ interface TooltipProps {
 const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     const moodData = payload[0].payload;
-
+    
     return (
       <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
         <p className="font-semibold">{`${label}`}</p>
@@ -154,7 +152,7 @@ export default function AverageStudentMood() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-700">
-            Rata-Rata Mood Siswa {new Date().getFullYear()}
+            Rata-Rata Mood Siswa 2025
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -181,13 +179,7 @@ export default function AverageStudentMood() {
                     domain={[0, 5]}
                     ticks={[0, 1, 2, 3, 4, 5]}
                     tickFormatter={(value) => {
-                      const labels = [
-                        "",
-                        "Marah",
-                        "Sedih",
-                        "Netral",
-                        "Gembira",
-                      ];
+                      const labels = ["", "Marah", "Sedih", "Netral", "Gembira"];
                       return labels[value] || "";
                     }}
                   />
@@ -199,6 +191,7 @@ export default function AverageStudentMood() {
                     dataKey="moodValue"
                     stroke="#6366F1"
                     strokeWidth={2}
+                    connectNulls={false} // Jangan hubungkan titik null
                     dot={{
                       fill: "#6366F1",
                       strokeWidth: 2,
@@ -229,19 +222,13 @@ export default function AverageStudentMood() {
                   </p>
                   <div className="mt-3">
                     <div className="text-sm">
-                      <span
-                        className={`${
-                          selectedPoint.moodName === "Gembira"
-                            ? "text-green-600"
-                            : selectedPoint.moodName === "Netral"
-                            ? "text-gray-600"
-                            : selectedPoint.moodName === "Marah"
-                            ? "text-red-600"
-                            : "text-blue-600"
-                        }`}
-                      >
-                        Mood Terbanyak: {selectedPoint.moodName} (
-                        {selectedPoint.moodValue})
+                      <span className={`${
+                        selectedPoint.moodName === 'Gembira' ? 'text-green-600' :
+                        selectedPoint.moodName === 'Netral' ? 'text-gray-600' :
+                        selectedPoint.moodName === 'Marah' ? 'text-red-600' :
+                        'text-blue-600'
+                      }`}>
+                        Mood Terbanyak: {selectedPoint.moodName} ({selectedPoint.moodValue})
                       </span>
                     </div>
                     <div className="text-sm mt-1">
@@ -251,12 +238,6 @@ export default function AverageStudentMood() {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedPoint(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
               </div>
             </div>
           )}
