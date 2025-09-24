@@ -36,6 +36,8 @@ import {
   Search,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTags } from "@/hooks/useTags";
+import { Tag } from "@/types/api";
 import { CreateVideoDialog } from "@/components/dashboard/dialogs/CreateVideoDialog";
 import { CreateArticleDialog } from "@/components/dashboard/dialogs/CreateArticleDialog";
 import { CreateQuoteDialog } from "@/components/dashboard/dialogs/CreateQuoteDialog";
@@ -122,6 +124,7 @@ const sampleData: ContentItem[] = [
 
 export function ContentManagementTable() {
   const router = useRouter();
+  const { data: tagsData, loading: tagsLoading } = useTags();
   const [data, setData] = useState<ContentItem[]>(sampleData);
   const [searchQuery, setSearchQuery] = useState("");
   const [contentTypeFilter, setContentTypeFilter] = useState("all");
@@ -395,6 +398,8 @@ export function ContentManagementTable() {
       <CreateArticleDialog
         open={isCreateArticleOpen}
         onOpenChange={setIsCreateArticleOpen}
+        tags={tagsData || []}
+        tagsLoading={tagsLoading}
         onSuccess={(newArticle: ContentItem) => {
           setData((prevData) => [...prevData, newArticle]);
           setIsCreateArticleOpen(false);
@@ -404,6 +409,8 @@ export function ContentManagementTable() {
       <CreateVideoDialog
         open={isCreateVideoOpen}
         onOpenChange={setIsCreateVideoOpen}
+        tags={tagsData || []}
+        tagsLoading={tagsLoading}
         onSuccess={(newVideo: ContentItem) => {
           setData((prevData) => [...prevData, newVideo]);
           setIsCreateVideoOpen(false);
@@ -423,6 +430,8 @@ export function ContentManagementTable() {
         open={isEditArticleOpen}
         onOpenChange={setIsEditArticleOpen}
         article={selectedItem}
+        tags={tagsData || []}
+        tagsLoading={tagsLoading}
         onSuccess={(updatedArticle: ContentItem) => {
           setData((prevData) =>
             prevData.map((item) =>
@@ -438,6 +447,8 @@ export function ContentManagementTable() {
         open={isEditVideoOpen}
         onOpenChange={setIsEditVideoOpen}
         video={selectedItem}
+        tags={tagsData || []}
+        tagsLoading={tagsLoading}
         onSuccess={(updatedVideo: ContentItem) => {
           setData((prevData) =>
             prevData.map((item) =>

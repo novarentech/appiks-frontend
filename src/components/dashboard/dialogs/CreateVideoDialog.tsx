@@ -14,23 +14,22 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Play, Upload, X } from "lucide-react";
 import { ContentItem } from "@/components/data-display/tables/ContentManagementTable";
+import { Tag } from "@/types/api";
 
 interface CreateVideoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tags: Tag[];
+  tagsLoading: boolean;
   onSuccess: (video: ContentItem) => void;
 }
 
-const availableTags = [
-  "Self Awareness",
-  "Mindfulness",
-  "Mental Health",
-  "Bullying",
-];
 
 export function CreateVideoDialog({
   open,
   onOpenChange,
+  tags,
+  tagsLoading,
   onSuccess,
 }: CreateVideoDialogProps) {
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -159,23 +158,35 @@ export function CreateVideoDialog({
             )}
 
             {/* Available Tags */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {availableTags.map((tag) => (
-                <Button
-                  key={tag}
-                  type="button"
-                  variant={selectedTags.includes(tag) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleTagToggle(tag)}
-                  className={
-                    selectedTags.includes(tag)
-                      ? "bg-blue-600 text-white"
-                      : "border-blue-300 text-blue-600 hover:bg-blue-50"
-                  }
-                >
-                  {tag}
-                </Button>
-              ))}
+            <div className="border rounded-lg p-3 bg-gray-50 min-h-[60px] mt-3">
+              {tagsLoading ? (
+                <div className="text-sm text-muted-foreground flex items-center justify-center h-10">
+                  Memuat tag...
+                </div>
+              ) : tags.length === 0 ? (
+                <div className="text-sm text-muted-foreground flex items-center justify-center h-10">
+                  Tidak ada tag tersedia
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <Button
+                      key={tag.id}
+                      type="button"
+                      variant={selectedTags.includes(tag.title) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleTagToggle(tag.title)}
+                      className={
+                        selectedTags.includes(tag.title)
+                          ? "bg-blue-600 text-white"
+                          : "border-blue-300 text-blue-600 hover:bg-blue-50"
+                      }
+                    >
+                      {tag.title}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

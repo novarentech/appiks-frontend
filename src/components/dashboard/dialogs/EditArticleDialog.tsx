@@ -19,25 +19,23 @@ import { EditorState, SerializedEditorState } from "lexical";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ContentItem } from "@/components/data-display/tables/ContentManagementTable";
+import { Tag } from "@/types/api";
 
 interface EditArticleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   article: ContentItem | null;
+  tags: Tag[];
+  tagsLoading: boolean;
   onSuccess: (article: ContentItem) => void;
 }
-
-const availableTags = [
-  "Self Awareness",
-  "Mindfulness",
-  "Mental Health",
-  "Bullying",
-];
 
 export function EditArticleDialog({
   open,
   onOpenChange,
   article,
+  tags,
+  tagsLoading,
   onSuccess,
 }: EditArticleDialogProps) {
   const [title, setTitle] = useState("");
@@ -137,10 +135,10 @@ export function EditArticleDialog({
       };
 
       onSuccess(updatedArticle);
-      
+
       // Show success toast
       toast.success("Artikel berhasil diperbarui!");
-      
+
       setIsSubmitting(false);
     }, 1000);
   };
@@ -165,7 +163,10 @@ export function EditArticleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        size="lg"
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+      >
         <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center gap-3 text-2xl font-semibold">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -325,25 +326,37 @@ export function EditArticleDialog({
                 <span className="text-xs text-muted-foreground">
                   Pilih kategori yang sesuai:
                 </span>
-                <div className="flex flex-wrap gap-2">
-                  {availableTags.map((tag) => (
-                    <Button
-                      key={tag}
-                      type="button"
-                      variant={
-                        selectedTags.includes(tag) ? "default" : "outline"
-                      }
-                      size="sm"
-                      onClick={() => handleTagToggle(tag)}
-                      className={
-                        selectedTags.includes(tag)
-                          ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-                          : "border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
-                      }
-                    >
-                      {tag}
-                    </Button>
-                  ))}
+                <div className="border rounded-lg p-3 bg-gray-50 min-h-[60px]">
+                  {tagsLoading ? (
+                    <div className="text-sm text-muted-foreground flex items-center justify-center h-10">
+                      Memuat tag...
+                    </div>
+                  ) : tags.length === 0 ? (
+                    <div className="text-sm text-muted-foreground flex items-center justify-center h-10">
+                      Tidak ada tag tersedia
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag) => (
+                        <Button
+                          key={tag.id}
+                          type="button"
+                          variant={
+                            selectedTags.includes(tag.title) ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => handleTagToggle(tag.title)}
+                          className={
+                            selectedTags.includes(tag.title)
+                              ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                              : "border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
+                          }
+                        >
+                          {tag.title}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

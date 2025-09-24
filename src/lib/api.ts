@@ -391,79 +391,22 @@ export async function getDashboardLatestUser(): Promise<DashboardLatestUserRespo
  * Get content data (articles and videos)
  */
 export async function getContent(): Promise<ContentResponse> {
-  const session = await getSession();
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token available");
-  }
-
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${session.user.token}`,
-  };
-
-  const response = await fetch("https://api.appiks.id/api/content", {
-    method: "GET",
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error(`GET https://api.appiks.id/api/content failed with status ${response.status}`);
-  }
-
-  return response.json();
+  const response = await authGet("/content");
+  return response;
 }
 
 /**
  * Get tags data
  */
 export async function getTags(): Promise<TagResponse> {
-  const session = await getSession();
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token available");
-  }
-
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${session.user.token}`,
-  };
-
-  const response = await fetch("https://api.appiks.id/api/tag", {
-    method: "GET",
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error(`GET https://api.appiks.id/api/tag failed with status ${response.status}`);
-  }
-
-  return response.json();
+  const response = await authGet("/tag");
+  return response;
 }
 
 /**
  * Get article detail by slug
  */
 export async function getArticleDetail(slug: string): Promise<ArticleDetailResponse> {
-  const session = await getSession();
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token available");
-  }
-
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${session.user.token}`,
-  };
-
-  const response = await fetch(`https://api.appiks.id/api/article/${slug}`, {
-    method: "GET",
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error(`GET https://api.appiks.id/api/article/${slug} failed with status ${response.status}`);
-  }
-
-  return response.json();
+  const response = await authGet(`/article/${slug}`);
+  return response;
 }
