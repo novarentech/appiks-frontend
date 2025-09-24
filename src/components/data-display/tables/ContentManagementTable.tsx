@@ -42,7 +42,6 @@ import { CreateArticleDialog } from "@/components/dashboard/dialogs/CreateArticl
 import { CreateQuoteDialog } from "@/components/dashboard/dialogs/CreateQuoteDialog";
 import { EditArticleDialog } from "@/components/dashboard/dialogs/EditArticleDialog";
 import { EditVideoDialog } from "@/components/dashboard/dialogs/EditVideoDialog";
-import { EditQuoteDialog } from "@/components/dashboard/dialogs/EditQuoteDialog";
 import { DeleteContentDialog } from "@/components/dashboard/dialogs/DeleteContentDialog";
 
 // Type definitions
@@ -135,7 +134,6 @@ export function ContentManagementTable() {
   const [isCreateQuoteOpen, setIsCreateQuoteOpen] = useState(false);
   const [isEditArticleOpen, setIsEditArticleOpen] = useState(false);
   const [isEditVideoOpen, setIsEditVideoOpen] = useState(false);
-  const [isEditQuoteOpen, setIsEditQuoteOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
 
@@ -161,7 +159,6 @@ export function ContentManagementTable() {
     } else if (item.type === "Artikel") {
       router.push(`/article/${item.id}`);
     }
-    // Quotes don't have view functionality
   };
 
   const handleEdit = (item: ContentItem) => {
@@ -170,9 +167,8 @@ export function ContentManagementTable() {
       setIsEditArticleOpen(true);
     } else if (item.type === "Video") {
       setIsEditVideoOpen(true);
-    } else if (item.type === "Quotes") {
-      setIsEditQuoteOpen(true);
     }
+    // Quotes tidak dapat diedit
   };
 
   const handleDelete = (item: ContentItem) => {
@@ -261,22 +257,24 @@ export function ContentManagementTable() {
                 </Tooltip>
               )}
 
-              {/* Edit button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEdit(item)}
-                    className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Edit</p>
-                </TooltipContent>
-              </Tooltip>
+              {/* Edit button - only for Article and Video */}
+              {item.type !== "Quotes" && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(item)}
+                      className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
               {/* Delete button */}
               <Tooltip>
@@ -455,21 +453,6 @@ export function ContentManagementTable() {
             )
           );
           setIsEditVideoOpen(false);
-          setSelectedItem(null);
-        }}
-      />
-
-      <EditQuoteDialog
-        open={isEditQuoteOpen}
-        onOpenChange={setIsEditQuoteOpen}
-        quote={selectedItem}
-        onSuccess={(updatedQuote: ContentItem) => {
-          setData((prevData) =>
-            prevData.map((item) =>
-              item.id === updatedQuote.id ? updatedQuote : item
-            )
-          );
-          setIsEditQuoteOpen(false);
           setSelectedItem(null);
         }}
       />
