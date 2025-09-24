@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
       "unsplash.com",
       "img.youtube.com",
       "via.placeholder.com",
+      "api.appiks.id",
     ],
     remotePatterns: [
       {
@@ -24,13 +25,18 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
-    {
-      protocol: "https",
-      hostname: "via.placeholder.com",
-      port: "",
-      pathname: "/**",
-    },
-
+      {
+        protocol: "https",
+        hostname: "via.placeholder.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.appiks.id",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };

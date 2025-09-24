@@ -1,5 +1,5 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse, DashboardCounselorResponse, DashboardHeadTeacherResponse, DashboardUserResponse, DashboardAdminResponse, DashboardLatestContentResponse, DashboardLatestUserResponse, ContentResponse, TagResponse, ArticleDetailResponse } from "@/types/api";
+import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse, DashboardCounselorResponse, DashboardHeadTeacherResponse, DashboardUserResponse, DashboardAdminResponse, DashboardLatestContentResponse, DashboardLatestUserResponse, ContentResponse, TagResponse, ArticleDetailResponse, DashboardContentResponse, UpdateArticleRequest, UpdateArticleResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -167,7 +167,7 @@ export async function getDashboardReportGraph(): Promise<DashboardReportGraphRes
   });
 
   if (!response.ok) {
-    throw new Error(`GET /api/dashboard/report-graph failed with status ${response.status}`);
+    throw new Error(`GET /dashboard/report-graph failed with status ${response.status}`);
   }
 
   return response.json();
@@ -409,4 +409,81 @@ export async function getTags(): Promise<TagResponse> {
 export async function getArticleDetail(slug: string): Promise<ArticleDetailResponse> {
   const response = await authGet(`/article/${slug}`);
   return response;
+}
+
+/**
+ * Get article detail by ID
+ */
+export async function getArticleDetailById(id: string): Promise<ArticleDetailResponse> {
+  const response = await authGet(`/article/${id}`);
+  return response;
+}
+
+/**
+ * Get dashboard content data
+ */
+export async function getDashboardContent(): Promise<DashboardContentResponse> {
+  const response = await authGet("/dashboard/content");
+  return response;
+}
+
+/**
+ * Update article by ID
+ */
+export async function updateArticle(id: string, data: UpdateArticleRequest): Promise<UpdateArticleResponse> {
+  // Convert string ID to number as API expects integer
+  const articleId = parseInt(id, 10);
+  
+  if (isNaN(articleId)) {
+    throw new Error("Invalid article ID");
+  }
+
+  const session = await getSession();
+  
+  if (!session?.user?.token) {
+    throw new Error("No authentication token available");
+  }
+
+  // Check if thumbnail is a File object
+  if (data.thumbnail instanceof File) {
+    // Use FormData for file upload
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("description", data.description);
+    formData.append("content", data.content);
+    
+    // Add tags as JSON string
+    formData.append("tags", JSON.stringify(data.tags));
+    
+    // Add file
+    formData.append("thumbnail", data.thumbnail);
+
+    const response = await fetch(`${API_BASE_URL}/article-update/${articleId}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.user.token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`POST /article-update/${articleId} failed with status ${response.status}`);
+    }
+
+    return response.json();
+  } else {
+    // Use JSON for non-file uploads
+    const updateData = {
+      title: data.title,
+      description: data.description,
+      content: data.content,
+      tags: data.tags,
+      ...(data.thumbnail ? { thumbnail: data.thumbnail } : {})
+    };
+
+    // Use authPost to send data to API
+    const response = await authPost(`/article-update/${articleId}`, updateData);
+
+    return response;
+  }
 }

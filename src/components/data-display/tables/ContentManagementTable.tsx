@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTags } from "@/hooks/useTags";
+import { useDashboardContent } from "@/hooks/useDashboardContent";
+import { DashboardContentItem } from "@/types/api";
 import { CreateVideoDialog } from "@/components/dashboard/dialogs/CreateVideoDialog";
 import { CreateArticleDialog } from "@/components/dashboard/dialogs/CreateArticleDialog";
 import { CreateQuoteDialog } from "@/components/dashboard/dialogs/CreateQuoteDialog";
@@ -55,6 +57,9 @@ export interface ContentItem {
   content?: string;
   author?: string;
   category?: string;
+  // API fields
+  ids?: string;
+  created_at?: string;
 }
 
 // Sample data - replace with actual API call
@@ -123,7 +128,54 @@ const sampleData: ContentItem[] = [
 export function ContentManagementTable() {
   const router = useRouter();
   const { data: tagsData, loading: tagsLoading } = useTags();
-  const [data, setData] = useState<ContentItem[]>(sampleData);
+  const { data: dashboardContentData, loading: contentLoading, error: contentError, refetch: refetchDashboardContent } = useDashboardContent();
+  
+  // Transform API data to ContentItem format
+  const transformedData = useMemo(() => {
+    if (!dashboardContentData) return sampleData;
+    
+    return dashboardContentData.map((item: DashboardContentItem) => {
+      // Map API type to UI type
+      let uiType: "Artikel" | "Video" | "Quotes";
+      switch (item.type) {
+        case "article":
+          uiType = "Artikel";
+          break;
+        case "video":
+          uiType = "Video";
+          break;
+        case "quote":
+          uiType = "Quotes";
+          break;
+        default:
+          uiType = "Artikel";
+      }
+      
+      // Format date
+      const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('id-ID', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      };
+      
+      return {
+        id: item.ids,
+        title: item.title,
+        type: uiType,
+        createdAt: formatDate(item.created_at),
+        // Preserve original API fields
+        ids: item.ids,
+        created_at: item.created_at,
+      };
+    });
+  }, [dashboardContentData]);
+  
+  const [data, setData] = useState<ContentItem[]>(transformedData);
   const [searchQuery, setSearchQuery] = useState("");
   const [contentTypeFilter, setContentTypeFilter] = useState("all");
   const [pageSize, setPageSize] = useState(10);
@@ -136,7 +188,16 @@ export function ContentManagementTable() {
   const [isEditVideoOpen, setIsEditVideoOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
 
+  // Update data when transformedData changes
+  useEffect(() => {
+    if (transformedData.length > 0) {
+      setData(transformedData);
+    }
+  }, [transformedData]);
+  
   // Filter and search functionality
   const filteredData = useMemo(() => {
     return data.filter((item) => {
@@ -164,6 +225,7 @@ export function ContentManagementTable() {
   const handleEdit = (item: ContentItem) => {
     setSelectedItem(item);
     if (item.type === "Artikel") {
+      setSelectedArticleId(item.ids || null);
       setIsEditArticleOpen(true);
     } else if (item.type === "Video") {
       setIsEditVideoOpen(true);
@@ -299,6 +361,31 @@ export function ContentManagementTable() {
     },
   ];
 
+  // Show loading state
+  if (contentLoading) {
+    return (
+      <div className="w-full space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (contentError) {
+    return (
+      <div className="w-full space-y-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="text-red-500 mb-2">Error loading content</div>
+            <div className="text-gray-600">{contentError}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-6">
       {/* Controls Row - Search, Filter, Rows per page, and Create Button */}
@@ -425,7 +512,12 @@ export function ContentManagementTable() {
 
       <EditArticleDialog
         open={isEditArticleOpen}
-        onOpenChange={setIsEditArticleOpen}
+        onOpenChange={(open) => {
+          setIsEditArticleOpen(open);
+          if (!open) {
+            setSelectedItem(null);
+          }
+        }}
         article={selectedItem}
         tags={tagsData || []}
         tagsLoading={tagsLoading}
@@ -435,8 +527,13 @@ export function ContentManagementTable() {
               item.id === updatedArticle.id ? updatedArticle : item
             )
           );
+          // Update selectedItem with the updated article data
+          setSelectedItem(updatedArticle);
+          // Reset article ID and detail state
+          setSelectedArticleId(null);
           setIsEditArticleOpen(false);
-          setSelectedItem(null);
+          // Refetch dashboard content to get fresh data
+          refetchDashboardContent();
         }}
       />
 

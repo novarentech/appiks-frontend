@@ -496,12 +496,13 @@ export interface TagResponse {
 
 // Article Detail API types
 export interface ArticleDetail {
-  id: number;
+  id: string;
   title: string;
   slug: string;
   description: string;
   thumbnail: string;
   content: string;
+  tags: Tag[];
 }
 
 export interface ArticleDetailResponse {
@@ -544,6 +545,36 @@ export interface ContentResponse {
   success: boolean;
   message: string;
   data: ContentItem[];
+}
+
+// Interface untuk response API dashboard content
+export interface DashboardContentItem {
+  ids: string;
+  title: string;
+  type: "article" | "video" | "quote";
+  created_at: string;
+}
+
+export interface DashboardContentResponse {
+  success: boolean;
+  message: string;
+  data: DashboardContentItem[];
+}
+
+// Interface untuk request update artikel
+export interface UpdateArticleRequest {
+  title: string;
+  description: string;
+  content: string;
+  tags: number[];
+  thumbnail?: File;
+}
+
+// Interface untuk response update artikel
+export interface UpdateArticleResponse {
+  success: boolean;
+  message: string;
+  data: ArticleDetail;
 }
 
 // Interface untuk response API dashboard mood trends
