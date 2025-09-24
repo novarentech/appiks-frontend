@@ -103,20 +103,6 @@ export function EditVideoDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* YouTube URL Input */}
-          <div>
-            <Label htmlFor="youtube-url" className="text-sm font-medium">
-              URL Youtube <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="youtube-url"
-              value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
-              placeholder="https://"
-              className="mt-1 bg-gray-100"
-            />
-          </div>
-
           {/* Tags Section */}
           <div>
             <Label className="text-sm font-medium">
