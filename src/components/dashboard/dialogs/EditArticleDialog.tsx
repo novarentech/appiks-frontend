@@ -23,6 +23,14 @@ import { Tag, ArticleDetail } from "@/types/api";
 import { useArticleDetailById } from "@/hooks/useArticleDetail";
 import { updateArticle } from "@/lib/api";
 
+interface UpdateArticleData {
+  title: string;
+  description: string;
+  content: string;
+  tags: number[];
+  thumbnail?: File;
+}
+
 interface EditArticleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,25 +48,29 @@ export function EditArticleDialog({
   tagsLoading,
   onSuccess,
 }: EditArticleDialogProps) {
+  // Form state
   const [title, setTitle] = useState("");
   const [overview, setOverview] = useState("");
   const [content, setContent] = useState("");
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [selectedTagTitles, setSelectedTagTitles] = useState<string[]>([]);
+  
+  // Editor state
   const [editorState, setEditorState] = useState<EditorState | undefined>();
   const [serializedEditorState, setSerializedEditorState] = useState<
     SerializedEditorState | undefined
   >();
-  const [selectedTags, setSelectedTags] = useState<number[]>([]);
-  const [selectedTagTitles, setSelectedTagTitles] = useState<string[]>([]);
+  const [editorKey, setEditorKey] = useState(0);
+  
+  // Image state
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [existingImage, setExistingImage] = useState<string>("");
+  const [existingImage, setExistingImage] = useState("");
+  
+  // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [, setDetailArticle] = useState<ArticleDetail | null>(null);
 
-  const [, setDetailArticle] = useState<ArticleDetail | null>(
-    null
-  );
-  const [editorKey, setEditorKey] = useState(0); // Force re-render editor
-
-  // Get article detail from API when dialog opens - only fetch if open && article?.ids exists
+  // API hooks
   const shouldFetchArticle = open && article?.ids;
   const {
     data: articleData,
@@ -66,65 +78,60 @@ export function EditArticleDialog({
     error: articleError,
   } = useArticleDetailById(shouldFetchArticle ? article.ids! : null, open);
 
-  // Reset form state when dialog closes
+  // Reset form when dialog closes
   useEffect(() => {
     if (!open) {
-      setTitle("");
-      setOverview("");
-      setContent("");
-      setEditorState(undefined);
-      setSerializedEditorState(undefined);
-      setSelectedTags([]);
-      setSelectedTagTitles([]);
-      setUploadedImage(null);
-      setExistingImage("");
-      setDetailArticle(null);
-      setEditorKey((prev) => prev + 1); // Force editor re-render
+      resetForm();
     }
   }, [open]);
 
+  // Populate form when article data is loaded
   useEffect(() => {
     if (articleData && open) {
-      console.log("Article data received:", articleData);
-
-      setTitle(articleData.title);
-      setOverview(articleData.description);
-
-      try {
-        // Parse content JSON
-        let parsedContent: SerializedEditorState;
-
-        if (typeof articleData.content === "string") {
-          parsedContent = JSON.parse(articleData.content);
-        } else {
-          parsedContent = articleData.content as SerializedEditorState;
-        }
-
-        console.log("Parsed content:", parsedContent);
-
-        // Set the serialized state first
-        setSerializedEditorState(parsedContent);
-        setContent(JSON.stringify(parsedContent));
-
-        // Force editor re-render with new content
-        setEditorKey((prev) => prev + 1);
-      } catch (error) {
-        console.error("Error parsing article content:", error);
-        console.log("Raw content:", articleData.content);
-      }
-
-      setExistingImage(articleData.thumbnail);
-
-      // Extract tag IDs from article data
-      const tagIds = articleData.tags.map((tag) => tag.id);
-      const tagTitles = articleData.tags.map((tag) => tag.title);
-      setSelectedTags(tagIds);
-      setSelectedTagTitles(tagTitles);
-
-      setUploadedImage(null);
-      setDetailArticle(articleData);
+      populateFormFromArticle(articleData);
     }
   }, [articleData, open]);
+
+  const resetForm = () => {
+    setTitle("");
+    setOverview("");
+    setContent("");
+    setEditorState(undefined);
+    setSerializedEditorState(undefined);
+    setSelectedTags([]);
+    setSelectedTagTitles([]);
+    setUploadedImage(null);
+    setExistingImage("");
+    setDetailArticle(null);
+    setEditorKey((prev) => prev + 1);
+  };
+
+  const populateFormFromArticle = (data: ArticleDetail) => {
+    setTitle(data.title);
+    setOverview(data.description);
+
+    try {
+      const parsedContent = typeof data.content === "string" 
+        ? JSON.parse(data.content) 
+        : data.content as SerializedEditorState;
+
+      setSerializedEditorState(parsedContent);
+      setContent(JSON.stringify(parsedContent));
+      setEditorKey((prev) => prev + 1);
+    } catch (error) {
+      console.error("Error parsing article content:", error);
+      console.log("Raw content:", data.content);
+    }
+
+    setExistingImage(data.thumbnail);
+
+    const tagIds = data.tags.map((tag) => tag.id);
+    const tagTitles = data.tags.map((tag) => tag.title);
+    setSelectedTags(tagIds);
+    setSelectedTagTitles(tagTitles);
+    setUploadedImage(null);
+    setDetailArticle(data);
+  };
 
   const handleTagToggle = (tag: Tag) => {
     setSelectedTags((prev) =>
@@ -147,42 +154,38 @@ export function EditArticleDialog({
     }
   };
 
+  const validateImageFile = (file: File): boolean => {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+    if (file.size > maxSize) {
+      toast.error(
+        `Ukuran file terlalu besar. Maksimal 5MB. File Anda: ${(
+          file.size /
+          1024 /
+          1024
+        ).toFixed(2)}MB`
+      );
+      return false;
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(
+        "Format file tidak didukung. Hanya JPG, PNG, dan WebP yang diperbolehkan."
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Check file size (5MB limit)
-      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-      if (file.size > maxSize) {
-        toast.error(
-          `Ukuran file terlalu besar. Maksimal 5MB. File Anda: ${(
-            file.size /
-            1024 /
-            1024
-          ).toFixed(2)}MB`
-        );
-        // Reset the input
-        event.target.value = "";
-        return;
-      }
-
-      // Check file format
-      const allowedTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/webp",
-      ];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(
-          "Format file tidak didukung. Hanya JPG, PNG, dan WebP yang diperbolehkan."
-        );
-        // Reset the input
-        event.target.value = "";
-        return;
-      }
-
+    if (file && validateImageFile(file)) {
       setUploadedImage(file);
     }
+    // Reset input regardless of validation result
+    event.target.value = "";
   };
 
   const handleRemoveImage = () => {
@@ -190,14 +193,32 @@ export function EditArticleDialog({
     setExistingImage("");
   };
 
+  const validateForm = (): boolean => {
+    return !!(
+      title.trim() &&
+      overview.trim() &&
+      content.trim() &&
+      article?.ids
+    );
+  };
+
+  const prepareUpdateData = (): UpdateArticleData => {
+    const updateData: UpdateArticleData = {
+      title: title.trim(),
+      description: overview.trim(),
+      content: content.trim(),
+      tags: selectedTags,
+    };
+
+    if (uploadedImage) {
+      updateData.thumbnail = uploadedImage;
+    }
+
+    return updateData;
+  };
+
   const handleSubmit = async () => {
-    if (
-      !title.trim() ||
-      !overview.trim() ||
-      !content.trim() ||
-      !article ||
-      !article.ids
-    ) {
+    if (!validateForm() || !article?.ids) {
       toast.error("Mohon lengkapi semua field yang wajib diisi");
       return;
     }
@@ -205,20 +226,10 @@ export function EditArticleDialog({
     setIsSubmitting(true);
 
     try {
-      // Prepare data for API
-      const updateData = {
-        title: title.trim(),
-        description: overview.trim(),
-        content: content.trim(),
-        tags: selectedTags,
-        ...(uploadedImage && { thumbnail: uploadedImage }),
-      };
-
-      // Call API to update article
+      const updateData = prepareUpdateData();
       const response = await updateArticle(articleData!.id, updateData);
 
       if (response.success) {
-        // Transform API response to ContentItem format
         const updatedArticle: ContentItem = {
           ...article,
           title: response.data.title,
@@ -229,7 +240,6 @@ export function EditArticleDialog({
             : response.data.thumbnail,
         };
 
-        // Close dialog and call onSuccess callback
         onOpenChange(false);
         onSuccess(updatedArticle);
         toast.success("Artikel berhasil diperbarui!");
@@ -249,42 +259,26 @@ export function EditArticleDialog({
 
   const handleCancel = () => {
     if (articleData) {
-      setTitle(articleData.title);
-      setOverview(articleData.description);
-
-      // Parse content JSON for the editor
-      try {
-        let parsedContent: SerializedEditorState;
-
-        if (typeof articleData.content === "string") {
-          parsedContent = JSON.parse(articleData.content);
-        } else {
-          parsedContent = articleData.content as SerializedEditorState;
-        }
-
-        setSerializedEditorState(parsedContent);
-        setContent(JSON.stringify(parsedContent));
-        setEditorKey((prev) => prev + 1); // Force editor re-render
-      } catch (error) {
-        console.error("Error parsing article content:", error);
-        setContent(articleData.content);
-      }
-
-      // Reset tags
-      const tagIds = articleData.tags.map((tag) => tag.id);
-      const tagTitles = articleData.tags.map((tag) => tag.title);
-      setSelectedTags(tagIds);
-      setSelectedTagTitles(tagTitles);
-
-      setExistingImage(articleData.thumbnail);
-      setUploadedImage(null);
+      populateFormFromArticle(articleData);
     }
     onOpenChange(false);
   };
 
+  const getErrorMessage = (error: string): string => {
+    if (error.includes("403")) {
+      return "Akses ditolak. Anda tidak memiliki izin untuk mengakses artikel ini.";
+    }
+    if (error.includes("404")) {
+      return "Artikel tidak ditemukan. Mungkin artikel telah dihapus atau ID tidak valid.";
+    }
+    if (error.includes("Failed to fetch")) {
+      return "Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.";
+    }
+    return error;
+  };
+
   if (!article) return null;
 
-  // Show loading state while fetching article detail
   if (articleLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -303,21 +297,8 @@ export function EditArticleDialog({
     );
   }
 
-  // Show error state if failed to fetch article detail
   if (articleError) {
-    // Handle specific API errors with custom messages
-    let errorMessage = articleError;
-    if (articleError.includes("403")) {
-      errorMessage =
-        "Akses ditolak. Anda tidak memiliki izin untuk mengakses artikel ini.";
-    } else if (articleError.includes("404")) {
-      errorMessage =
-        "Artikel tidak ditemukan. Mungkin artikel telah dihapus atau ID tidak valid.";
-    } else if (articleError.includes("Failed to fetch")) {
-      errorMessage =
-        "Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.";
-    }
-
+    const errorMessage = getErrorMessage(articleError);
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -345,6 +326,9 @@ export function EditArticleDialog({
   const displayImage = uploadedImage
     ? URL.createObjectURL(uploadedImage)
     : existingImage;
+
+  const isFormValid = title.trim() && overview.trim() && content.trim() && selectedTags.length > 0;
+  const isSubmitDisabled = isSubmitting || !isFormValid || articleLoading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -393,12 +377,8 @@ export function EditArticleDialog({
                       <div className="text-xs text-muted-foreground bg-gray-50 p-2 rounded">
                         {uploadedImage ? (
                           <>
-                            <div className="font-medium">
-                              {uploadedImage.name}
-                            </div>
-                            <div>
-                              {(uploadedImage.size / 1024 / 1024).toFixed(2)} MB
-                            </div>
+                            <div className="font-medium">{uploadedImage.name}</div>
+                            <div>{(uploadedImage.size / 1024 / 1024).toFixed(2)} MB</div>
                           </>
                         ) : (
                           <>
@@ -412,10 +392,7 @@ export function EditArticleDialog({
                     <div className="border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-lg p-8 text-center transition-colors duration-200 bg-gray-50 hover:bg-blue-50">
                       <Upload className="mx-auto h-10 w-10 text-gray-400 mb-3" />
                       <div>
-                        <label
-                          htmlFor="image-upload"
-                          className="cursor-pointer"
-                        >
+                        <label htmlFor="image-upload" className="cursor-pointer">
                           <span className="text-blue-600 hover:text-blue-700 font-medium">
                             Klik untuk upload gambar
                           </span>
@@ -485,7 +462,6 @@ export function EditArticleDialog({
                 <span className="text-red-500 text-xs">*</span>
               </Label>
 
-              {/* Selected Tags */}
               {selectedTagTitles.length > 0 && (
                 <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                   {selectedTagTitles.map((tagTitle) => (
@@ -506,7 +482,6 @@ export function EditArticleDialog({
                 </div>
               )}
 
-              {/* Available Tags */}
               <div className="space-y-2">
                 <span className="text-xs text-muted-foreground">
                   Pilih kategori yang sesuai:
@@ -526,11 +501,7 @@ export function EditArticleDialog({
                         <Button
                           key={tag.id}
                           type="button"
-                          variant={
-                            selectedTags.includes(tag.id)
-                              ? "default"
-                              : "outline"
-                          }
+                          variant={selectedTags.includes(tag.id) ? "default" : "outline"}
                           size="sm"
                           onClick={() => handleTagToggle(tag)}
                           className={
@@ -569,12 +540,11 @@ export function EditArticleDialog({
                   </div>
                 ) : (
                   <Editor
-                    key={editorKey} // Force re-render when content changes
+                    key={editorKey}
                     editorState={editorState}
                     editorSerializedState={serializedEditorState}
                     onChange={setEditorState}
                     onSerializedChange={(serialized) => {
-                      console.log("Editor content changed:", serialized);
                       setSerializedEditorState(serialized);
                       setContent(JSON.stringify(serialized));
                     }}
@@ -598,14 +568,7 @@ export function EditArticleDialog({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              !title.trim() ||
-              !overview.trim() ||
-              !content.trim() ||
-              selectedTags.length === 0 ||
-              articleLoading
-            }
+            disabled={isSubmitDisabled}
             className="bg-blue-600 hover:bg-blue-700 min-w-[120px]"
           >
             {isSubmitting ? (
