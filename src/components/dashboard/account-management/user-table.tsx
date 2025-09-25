@@ -21,8 +21,16 @@ export interface User {
   role: UserRole;
   createdAt: string;
   nip?: string; // For teachers and staff
-  class?: string; // For students and teachers
+  room?: {
+    id: number;
+    name: string;
+    level?: string;
+    code: string;
+    school_id: number;
+  }; // For students and teachers
   password?: string; // Optional password field
+  verified?: boolean;
+  mentor?: string;
 }
 
 interface UserDataTableProps {

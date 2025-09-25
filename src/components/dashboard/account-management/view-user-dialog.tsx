@@ -144,7 +144,7 @@ export function ViewUserDialog({
                 </div>
               )}
 
-              {user.class && (
+              {user.room && (
                 <>
                   {user.role === "siswa" && (
                     <div className="flex items-start space-x-4 p-4 bg-white border rounded-lg hover:shadow-md transition-shadow">
@@ -155,7 +155,7 @@ export function ViewUserDialog({
                         <p className="text-sm font-medium text-gray-500">
                           Tingkat Kelas
                         </p>
-                        <p className="font-semibold text-gray-900">{user.class.split(" ")[0]}</p>
+                        <p className="font-semibold text-gray-900">{user.room.level}</p>
                       </div>
                     </div>
                   )}
@@ -168,7 +168,7 @@ export function ViewUserDialog({
                       <p className="text-sm font-medium text-gray-500">
                         {user.role === "siswa" ? "Kelas" : "Wali Kelas"}
                       </p>
-                      <p className="font-semibold text-gray-900">{user.class}</p>
+                      <p className="font-semibold text-gray-900">{user.room.name}</p>
                     </div>
                   </div>
                 </>

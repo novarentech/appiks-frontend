@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { UserRole } from "@/types/auth";
 import { User } from "./user-table";
+import { getRooms } from "@/lib/api";
+import { RoomData } from "@/types/api";
 import { UserPlus, UserPen, Loader2, Check, X } from "lucide-react";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 
@@ -55,13 +57,16 @@ export function AddEditUserDialog({
     class: "",
     password: "",
   });
-  
-  const [classLevel, setClassLevel] = useState("");
+
+  const [rooms, setRooms] = useState<RoomData[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
-  
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
+
   const {
     isChecking,
     isAvailable: isUsernameAvailable,
@@ -72,6 +77,12 @@ export function AddEditUserDialog({
 
   const isEdit = !!user;
   const userRole = user?.role || role;
+
+  // Helper function to get class name by ID
+  const getSelectedClassName = (classId: string) => {
+    const room = rooms.find((r: RoomData) => r.id.toString() === classId);
+    return room ? room.mention : classId;
+  };
 
   // Password validation function
   const validatePassword = (password: string) => {
@@ -125,15 +136,9 @@ export function AddEditUserDialog({
         username: user.username,
         phone: user.phone ? user.phone.replace(/62/, "") : "",
         nip: user.nip || "",
-        class: user.class || "",
+        class: user.room ? user.room.id.toString() : "",
         password: user.password || "",
       });
-      
-      // Set class level based on user class
-      if (user.class) {
-        const level = user.class.split(" ")[0]; // Get the level part (X, XI, XII)
-        setClassLevel(level);
-      }
     } else {
       setFormData({
         fullName: "",
@@ -143,7 +148,6 @@ export function AddEditUserDialog({
         class: "",
         password: "",
       });
-      setClassLevel("");
     }
     setErrors({});
   }, [user]);
@@ -166,7 +170,7 @@ export function AddEditUserDialog({
       if (!usernameValidation.isValid) {
         newErrors.username = "Username tidak valid";
       }
-      
+
       // Check if username is available (only if username changed)
       const usernameChanged = user?.username !== formData.username;
       if (usernameChanged && (isUsernameAvailable === false || usernameError)) {
@@ -187,7 +191,10 @@ export function AddEditUserDialog({
     // NIP/NISN validation
     if (shouldShowNIP && formData.nip) {
       if (!/^\d+$/.test(formData.nip)) {
-        newErrors.nip = userRole === "siswa" ? "NISN hanya boleh mengandung angka" : "NIP hanya boleh mengandung angka";
+        newErrors.nip =
+          userRole === "siswa"
+            ? "NISN hanya boleh mengandung angka"
+            : "NIP hanya boleh mengandung angka";
       } else if (userRole === "siswa" && formData.nip.length !== 10) {
         newErrors.nip = "NISN harus 10 digit";
       }
@@ -233,12 +240,6 @@ export function AddEditUserDialog({
     };
   }, [debounceTimer]);
 
-  const handleClassLevelChange = (level: string) => {
-    setClassLevel(level);
-    // Reset class selection when level changes
-    setFormData({ ...formData, class: "" });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -260,7 +261,7 @@ export function AddEditUserDialog({
     try {
       // Format phone number with country code
       const formattedPhone = formData.phone ? `62${formData.phone}` : "";
-      
+
       const userData: Partial<User> = {
         ...formData,
         phone: formattedPhone,
@@ -296,15 +297,73 @@ export function AddEditUserDialog({
   };
 
   const shouldShowNIP =
-    userRole && ["guru_wali", "guru_bk", "kepala_sekolah", "siswa"].includes(userRole);
-  const shouldShowClass = userRole && ["siswa", "guru_wali"].includes(userRole);
-    
+    userRole &&
+    ["guru_wali", "guru_bk", "kepala_sekolah", "siswa"].includes(userRole);
+  const shouldShowClass = userRole && ["siswa"].includes(userRole);
+
+  // Fetch rooms data
+  useEffect(() => {
+    const fetchRooms = async () => {
+      if (!shouldShowClass) return;
+
+      setLoadingRooms(true);
+      try {
+        const response = await getRooms();
+        if (response.success) {
+          setRooms(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+      } finally {
+        setLoadingRooms(false);
+      }
+    };
+
+    fetchRooms();
+  }, [shouldShowClass]);
+
+  // Ensure rooms are loaded when editing a user with class
+  useEffect(() => {
+    if (isEdit && shouldShowClass && user?.room && rooms.length === 0 && !loadingRooms) {
+      const fetchRoomsForEdit = async () => {
+        setLoadingRooms(true);
+        try {
+          const response = await getRooms();
+          if (response.success) {
+            setRooms(response.data);
+          }
+        } catch (error) {
+          console.error("Error fetching rooms for edit:", error);
+        } finally {
+          setLoadingRooms(false);
+        }
+      };
+
+      fetchRoomsForEdit();
+    }
+  }, [isEdit, shouldShowClass, user?.room, rooms.length, loadingRooms]);
+
+  // Update form data class value when rooms are loaded
+  useEffect(() => {
+    if (isEdit && shouldShowClass && user?.room && rooms.length > 0 && !loadingRooms) {
+      const classId = user.room.id.toString();
+      const roomExists = rooms.some(room => room.id.toString() === classId);
+      
+      if (roomExists && formData.class !== classId) {
+        setFormData(prev => ({
+          ...prev,
+          class: classId
+        }));
+      }
+    }
+  }, [rooms, loadingRooms, isEdit, shouldShowClass, user?.room, formData.class]);
+
   // Check if form is valid
   const usernameValidation = validateUsername(formData.username);
   const phoneValidation = validatePhone(formData.phone);
   const passwordValidation = validatePassword(formData.password);
   const usernameChanged = user?.username !== formData.username;
-  
+
   const isFormValid =
     formData.fullName.trim() !== "" &&
     formData.username.trim() !== "" &&
@@ -360,7 +419,7 @@ export function AddEditUserDialog({
                 <Label htmlFor="username">
                   Username <span className="text-red-500">*</span>
                 </Label>
-                
+
                 <div className="relative">
                   <Input
                     id="username"
@@ -382,7 +441,7 @@ export function AddEditUserDialog({
                         : "border-gray-300"
                     }`}
                   />
-                  
+
                   {/* Status Icon */}
                   <div
                     className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
@@ -404,11 +463,11 @@ export function AddEditUserDialog({
                     ) : null}
                   </div>
                 </div>
-                
+
                 {errors.username && (
                   <p className="text-sm text-red-500">{errors.username}</p>
                 )}
-                
+
                 {/* Status Message - Only for availability check */}
                 {formData.username.trim() !== "" && (
                   <div className="mt-1">
@@ -424,7 +483,8 @@ export function AddEditUserDialog({
                           {usernameError || "Username sudah digunakan"}
                         </span>
                       </div>
-                    ) : isUsernameAvailable === true && validateUsername(formData.username).isValid ? (
+                    ) : isUsernameAvailable === true &&
+                      validateUsername(formData.username).isValid ? (
                       <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2 text-sm text-green-700 flex items-center gap-2">
                         <Check className="w-4 h-4 text-green-500" />
                         <span>Username tersedia</span>
@@ -432,7 +492,7 @@ export function AddEditUserDialog({
                     ) : null}
                   </div>
                 )}
-                
+
                 {/* Username Validation Rules */}
                 {formData.username.trim() !== "" &&
                   !validateUsername(formData.username).isValid && (
@@ -449,7 +509,9 @@ export function AddEditUserDialog({
                           }
                         >
                           Minimal 3 karakter{" "}
-                          {validateUsername(formData.username).minLength ? "✓" : "✗"}
+                          {validateUsername(formData.username).minLength
+                            ? "✓"
+                            : "✗"}
                         </li>
                         <li
                           className={
@@ -459,7 +521,9 @@ export function AddEditUserDialog({
                           }
                         >
                           Maksimal 20 karakter{" "}
-                          {validateUsername(formData.username).maxLength ? "✓" : "✗"}
+                          {validateUsername(formData.username).maxLength
+                            ? "✓"
+                            : "✗"}
                         </li>
                         <li
                           className={
@@ -469,17 +533,23 @@ export function AddEditUserDialog({
                           }
                         >
                           Hanya huruf, angka, dan underscore{" "}
-                          {validateUsername(formData.username).validChars ? "✓" : "✗"}
+                          {validateUsername(formData.username).validChars
+                            ? "✓"
+                            : "✗"}
                         </li>
                         <li
                           className={
-                            validateUsername(formData.username).notStartWithNumber
+                            validateUsername(formData.username)
+                              .notStartWithNumber
                               ? "text-green-600"
                               : "text-red-500"
                           }
                         >
                           Tidak boleh dimulai dengan angka{" "}
-                          {validateUsername(formData.username).notStartWithNumber ? "✓" : "✗"}
+                          {validateUsername(formData.username)
+                            .notStartWithNumber
+                            ? "✓"
+                            : "✗"}
                         </li>
                       </ul>
                     </div>
@@ -530,49 +600,57 @@ export function AddEditUserDialog({
                   placeholder="812-3456-7890"
                   type="tel"
                   className={`w-full ${
-                    errors.phone ? "border-red-500 rounded-l-none" : "rounded-l-none"
+                    errors.phone
+                      ? "border-red-500 rounded-l-none"
+                      : "rounded-l-none"
                   }`}
                 />
               </div>
               {errors.phone && (
                 <p className="text-sm text-red-500">{errors.phone}</p>
               )}
-              
+
               {/* Phone Validation Rules */}
-              {formData.phone.trim() !== "" && !validatePhone(formData.phone).isValid && (
-                <div className="text-xs">
-                  <p className="text-red-500 font-medium mb-1">
-                    Nomor telepon harus memenuhi kriteria berikut:
+              {formData.phone.trim() !== "" &&
+                !validatePhone(formData.phone).isValid && (
+                  <div className="text-xs">
+                    <p className="text-red-500 font-medium mb-1">
+                      Nomor telepon harus memenuhi kriteria berikut:
+                    </p>
+                    <ul className="space-y-1">
+                      <li
+                        className={
+                          validatePhone(formData.phone).isValidLength
+                            ? "text-green-600"
+                            : "text-red-500"
+                        }
+                      >
+                        9-13 digit (tanpa +62){" "}
+                        {validatePhone(formData.phone).isValidLength
+                          ? "✓"
+                          : "✗"}
+                      </li>
+                      <li
+                        className={
+                          validatePhone(formData.phone).startsWithValidDigit
+                            ? "text-green-600"
+                            : "text-red-500"
+                        }
+                      >
+                        Dimulai dengan 8 atau 9{" "}
+                        {validatePhone(formData.phone).startsWithValidDigit
+                          ? "✓"
+                          : "✗"}
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              {formData.phone.trim() !== "" &&
+                validatePhone(formData.phone).isValid && (
+                  <p className="text-sm text-gray-500">
+                    Format: 62{formData.phone}
                   </p>
-                  <ul className="space-y-1">
-                    <li
-                      className={
-                        validatePhone(formData.phone).isValidLength
-                          ? "text-green-600"
-                          : "text-red-500"
-                      }
-                    >
-                      9-13 digit (tanpa +62){" "}
-                      {validatePhone(formData.phone).isValidLength ? "✓" : "✗"}
-                    </li>
-                    <li
-                      className={
-                        validatePhone(formData.phone).startsWithValidDigit
-                          ? "text-green-600"
-                          : "text-red-500"
-                      }
-                    >
-                      Dimulai dengan 8 atau 9{" "}
-                      {validatePhone(formData.phone).startsWithValidDigit ? "✓" : "✗"}
-                    </li>
-                  </ul>
-                </div>
-              )}
-              {formData.phone.trim() !== "" && validatePhone(formData.phone).isValid && (
-                <p className="text-sm text-gray-500">
-                  Format: 62{formData.phone}
-                </p>
-              )}
+                )}
             </div>
 
             {shouldShowNIP && (
@@ -586,7 +664,11 @@ export function AddEditUserDialog({
                   onChange={(e) =>
                     setFormData({ ...formData, nip: e.target.value })
                   }
-                  placeholder={userRole === "siswa" ? "Masukkan NISN" : "Masukkan NIP/NUPTK"}
+                  placeholder={
+                    userRole === "siswa"
+                      ? "Masukkan NISN"
+                      : "Masukkan NIP/NUPTK"
+                  }
                   className={`w-full ${errors.nip ? "border-red-500" : ""}`}
                 />
                 {errors.nip && (
@@ -598,7 +680,8 @@ export function AddEditUserDialog({
             {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password">
-                Password <span className="text-gray-500 text-xs">(Opsional)</span>
+                Password{" "}
+                <span className="text-gray-500 text-xs">(Opsional)</span>
               </Label>
               <Input
                 id="password"
@@ -613,7 +696,7 @@ export function AddEditUserDialog({
               {errors.password && (
                 <p className="text-sm text-red-500">{errors.password}</p>
               )}
-              
+
               {/* Password Validation Rules */}
               {formData.password.trim() !== "" &&
                 !validatePassword(formData.password).isValid && (
@@ -630,7 +713,9 @@ export function AddEditUserDialog({
                         }
                       >
                         Minimal 8 karakter{" "}
-                        {validatePassword(formData.password).minLength ? "✓" : "✗"}
+                        {validatePassword(formData.password).minLength
+                          ? "✓"
+                          : "✗"}
                       </li>
                       <li
                         className={
@@ -640,7 +725,9 @@ export function AddEditUserDialog({
                         }
                       >
                         Mengandung huruf besar (A-Z){" "}
-                        {validatePassword(formData.password).hasUpperCase ? "✓" : "✗"}
+                        {validatePassword(formData.password).hasUpperCase
+                          ? "✓"
+                          : "✗"}
                       </li>
                       <li
                         className={
@@ -650,7 +737,9 @@ export function AddEditUserDialog({
                         }
                       >
                         Mengandung huruf kecil (a-z){" "}
-                        {validatePassword(formData.password).hasLowerCase ? "✓" : "✗"}
+                        {validatePassword(formData.password).hasLowerCase
+                          ? "✓"
+                          : "✗"}
                       </li>
                       <li
                         className={
@@ -660,7 +749,9 @@ export function AddEditUserDialog({
                         }
                       >
                         Mengandung angka (0-9){" "}
-                        {validatePassword(formData.password).hasNumber ? "✓" : "✗"}
+                        {validatePassword(formData.password).hasNumber
+                          ? "✓"
+                          : "✗"}
                       </li>
                     </ul>
                   </div>
@@ -673,107 +764,49 @@ export function AddEditUserDialog({
             </div>
 
             {shouldShowClass && (
-              <>
-                {userRole === "siswa" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="classLevel">Tingkat Kelas</Label>
-                    <Select
-                      value={classLevel}
-                      onValueChange={handleClassLevelChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Pilih tingkat kelas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="X">X</SelectItem>
-                        <SelectItem value="XI">XI</SelectItem>
-                        <SelectItem value="XII">XII</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="class">Kelas</Label>
+                <Select
+                  value={loadingRooms ? "" : formData.class}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, class: value })
+                  }
+                  disabled={loadingRooms}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={
+                        loadingRooms ? "Memuat data kelas..." :
+                        formData.class ? getSelectedClassName(formData.class) : "Pilih kelas"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loadingRooms ? (
+                      <SelectItem value="loading" disabled>
+                        Memuat data kelas...
+                      </SelectItem>
+                    ) : rooms.length > 0 ? (
+                      rooms.map((room) => (
+                        <SelectItem key={room.id} value={room.id.toString()}>
+                          {room.mention}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-data" disabled>
+                        Tidak ada data kelas tersedia
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {/* Show current class if it exists but not in rooms list */}
+                {formData.class && !loadingRooms && rooms.length > 0 &&
+                 !rooms.some(room => room.id.toString() === formData.class) && (
+                  <p className="text-sm text-gray-500">
+                    Kelas saat ini: {formData.class}
+                  </p>
                 )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="class">
-                    {userRole === "siswa" ? "Kelas" : "Wali Kelas"}
-                  </Label>
-                  <Select
-                    value={formData.class}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, class: value })
-                    }
-                    disabled={userRole === "siswa" && !classLevel}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue
-                        placeholder={`Pilih ${
-                          userRole === "siswa" ? "kelas" : "wali kelas"
-                        }`}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userRole === "siswa" ? (
-                        // Show classes based on selected level
-                        <>
-                          {classLevel === "X" && (
-                            <>
-                              <SelectItem value="X IPA 1">X IPA 1</SelectItem>
-                              <SelectItem value="X IPA 2">X IPA 2</SelectItem>
-                              <SelectItem value="X IPA 3">X IPA 3</SelectItem>
-                              <SelectItem value="X IPS 1">X IPS 1</SelectItem>
-                              <SelectItem value="X IPS 2">X IPS 2</SelectItem>
-                            </>
-                          )}
-                          
-                          {classLevel === "XI" && (
-                            <>
-                              <SelectItem value="XI IPA 1">XI IPA 1</SelectItem>
-                              <SelectItem value="XI IPA 2">XI IPA 2</SelectItem>
-                              <SelectItem value="XI IPS 1">XI IPS 1</SelectItem>
-                              <SelectItem value="XI IPS 2">XI IPS 2</SelectItem>
-                            </>
-                          )}
-                          
-                          {classLevel === "XII" && (
-                            <>
-                              <SelectItem value="XII IPA 1">XII IPA 1</SelectItem>
-                              <SelectItem value="XII IPA 2">XII IPA 2</SelectItem>
-                              <SelectItem value="XII IPS 1">XII IPS 1</SelectItem>
-                              <SelectItem value="XII IPS 2">XII IPS 2</SelectItem>
-                            </>
-                          )}
-                          
-                          {!classLevel && (
-                            <SelectItem value="" disabled>
-                              Pilih tingkat kelas terlebih dahulu
-                            </SelectItem>
-                          )}
-                        </>
-                      ) : (
-                        // For guru_wali, show all classes
-                        <>
-                          <SelectItem value="X IPA 1">X IPA 1</SelectItem>
-                          <SelectItem value="X IPA 2">X IPA 2</SelectItem>
-                          <SelectItem value="X IPA 3">X IPA 3</SelectItem>
-                          <SelectItem value="XI IPA 1">XI IPA 1</SelectItem>
-                          <SelectItem value="XI IPA 2">XI IPA 2</SelectItem>
-                          <SelectItem value="XII IPA 1">XII IPA 1</SelectItem>
-                          <SelectItem value="XII IPA 2">XII IPA 2</SelectItem>
-                          <SelectItem value="X IPS 1">X IPS 1</SelectItem>
-                          <SelectItem value="X IPS 2">X IPS 2</SelectItem>
-                          <SelectItem value="XI IPS 1">XI IPS 1</SelectItem>
-                          <SelectItem value="XI IPS 2">XI IPS 2</SelectItem>
-                          <SelectItem value="XII IPS 1">XII IPS 1</SelectItem>
-                          <SelectItem value="XII IPS 2">XII IPS 2</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {userRole === "siswa" && !classLevel && (
-                    <p className="text-sm text-gray-500">Pilih tingkat kelas terlebih dahulu</p>
-                  )}
-                </div>
-              </>
+              </div>
             )}
           </div>
 

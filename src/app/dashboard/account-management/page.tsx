@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -14,10 +13,12 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { UserRole } from "@/types/auth";
+import { User as ApiUser } from "@/types/api"; // Renamed to avoid conflict
+import { getAllUsers, uploadBulkImportFile, deleteUser } from "@/lib/api";
 
 import {
   UserDataTable,
-  User,
+  User as ComponentUser,
 } from "@/components/dashboard/account-management/user-table";
 import { AccountManagementPanelStats } from "@/components/dashboard/account-management/AccountManagementPanelStats";
 import { AddAccountDropdown } from "@/components/dashboard/account-management/AddAccountDropdown";
@@ -25,126 +26,107 @@ import { AddEditUserDialog } from "@/components/dashboard/account-management/Add
 import { ViewUserDialog } from "@/components/dashboard/account-management/view-user-dialog";
 import { DeleteUserDialog } from "@/components/dashboard/account-management/DeleteUserDialog";
 import { BulkImportDialog } from "@/components/dashboard/account-management/BulkImportDialog";
-import { uploadBulkImportFile } from "@/lib/api";
 import { toast } from "sonner";
 
-// Mock data for demonstration
-const mockUsers: User[] = [
-  {
-    id: "1",
-    fullName: "Rina Sari Dewi",
-    username: "rina_097",
-    phone: "081345123",
-    role: "siswa",
-    createdAt: "27/08/2025",
-    class: "X IPA 1",
-  },
-  {
-    id: "2",
-    fullName: "Anna Visconti",
-    username: "Anna_vis",
-    phone: "081345123",
-    role: "siswa",
-    createdAt: "27/08/2025",
-    class: "X IPA 2",
-  },
-  {
-    id: "3",
-    fullName: "Astrid Andersen",
-    username: "andersen",
-    phone: "081345123",
-    role: "siswa",
-    createdAt: "27/08/2025",
-    class: "XI IPA 1",
-  },
-  {
-    id: "4",
-    fullName: "David Kim",
-    username: "kim_david",
-    phone: "081345123",
-    role: "guru_wali",
-    createdAt: "25/08/2025",
-    nip: "197805152006041001",
-    class: "XI IPA 1",
-  },
-  {
-    id: "5",
-    fullName: "Diego Mendoza",
-    username: "diego_san",
-    phone: "081345123",
-    role: "guru_bk",
-    createdAt: "25/08/2025",
-    nip: "198203102008011002",
-  },
-  {
-    id: "6",
-    fullName: "Fatim Al-Sayed",
-    username: "fatim120",
-    phone: "081345123",
-    role: "kepala_sekolah",
-    createdAt: "25/08/2025",
-    nip: "196512081990032001",
-  },
-  // Add more users for better demo
-  {
-    id: "7",
-    fullName: "Ahmad Rahman",
-    username: "ahmad_r",
-    phone: "081234567",
-    role: "siswa",
-    createdAt: "09/09/2025",
-    class: "XII IPA 1",
-  },
-  {
-    id: "8",
-    fullName: "Siti Nurhaliza",
-    username: "siti_n",
-    phone: "081234568",
-    role: "guru_bk",
-    createdAt: "09/09/2025",
-    nip: "198505152010012003",
-  },
-];
+// Function to map API roles to local UserRole
+const mapApiRoleToUserRole = (apiRole: ApiUser["role"]): UserRole => {
+  switch (apiRole) {
+    case "student":
+      return "siswa";
+    case "teacher":
+      return "guru_wali";
+    case "counselor":
+      return "guru_bk";
+    case "headteacher":
+      return "kepala_sekolah";
+    case "admin":
+    case "super":
+      return "admin";
+    default:
+      return "siswa";
+  }
+};
+
+// Function to transform API data to component User format
+const transformApiUserToComponentUser = (apiUser: ApiUser): ComponentUser => {
+  const role = mapApiRoleToUserRole(apiUser.role);
+
+  // Format date - handle potential undefined created_at
+  const createdDate = apiUser.created_at
+    ? new Date(apiUser.created_at).toLocaleDateString("id-ID")
+    : new Date().toLocaleDateString("id-ID");
+
+  return {
+    id: apiUser.identifier,
+    fullName: apiUser.name,
+    username: apiUser.username,
+    phone: apiUser.phone,
+    role: role,
+    createdAt: createdDate,
+    nip: apiUser.identifier,
+    verified: apiUser.verified,
+    mentor: apiUser.mentor?.name,
+    room: apiUser.room,
+  };
+};
 
 export default function AccountManagementPage() {
   const { isLoading, isAuthenticated, isVerified, user } = useAuth();
-  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<UserRole>("siswa");
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<ComponentUser[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [, setIsDeletingUser] = useState(false);
   const [pageSize, setPageSize] = useState(10);
-  const [searchQuery, setSearchQuery] = useState(""); // Dialog states
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Dialog states
   const [addEditDialog, setAddEditDialog] = useState<{
     open: boolean;
-    user?: User | null;
+    user?: ComponentUser | null;
     role?: UserRole;
   }>({ open: false });
   const [viewDialog, setViewDialog] = useState<{
     open: boolean;
-    user: User | null;
+    user: ComponentUser | null;
   }>({ open: false, user: null });
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
-    user: User | null;
+    user: ComponentUser | null;
   }>({ open: false, user: null });
   const [bulkImportDialog, setBulkImportDialog] = useState<{
     open: boolean;
     role?: UserRole;
   }>({ open: false });
 
+  // Load users from API
+  const loadUsers = async () => {
+    setIsLoadingUsers(true);
+    try {
+      const response = await getAllUsers();
+
+      if (response.success && Array.isArray(response.data)) {
+        const transformedUsers = response.data.map(
+          transformApiUserToComponentUser
+        );
+        setUsers(transformedUsers);
+      } else {
+        throw new Error(response.message || "Failed to fetch users");
+      }
+    } catch (error) {
+      console.error("Failed to load users:", error);
+      toast.error("Gagal memuat data pengguna");
+      setUsers([]);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !isVerified)) {
-      router.push("/login");
-      return;
-    }
+    loadUsers();
+  }, []);
 
-    if (!isLoading && user && !["admin"].includes(user.role)) {
-      router.push("/dashboard");
-      return;
-    }
-  }, [isLoading, isAuthenticated, isVerified, user, router]);
-
-  if (isLoading) {
+  if (isLoading || isLoadingUsers) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -171,13 +153,13 @@ export default function AccountManagementPage() {
   }
 
   // Filter users by active tab and search query
-  const filteredUsers = users.filter((user) => {
-    const matchesRole = user.role === activeTab;
+  const filteredUsers = users.filter((userItem) => {
+    const matchesRole = userItem.role === activeTab;
     const matchesSearch =
       searchQuery === "" ||
-      user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.phone.includes(searchQuery);
+      userItem.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      userItem.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      userItem.phone.includes(searchQuery);
 
     return matchesRole && matchesSearch;
   });
@@ -191,48 +173,65 @@ export default function AccountManagementPage() {
     }
   };
 
-  const handleViewUser = (user: User) => {
-    setViewDialog({ open: true, user });
+  const handleViewUser = (userItem: ComponentUser) => {
+    setViewDialog({ open: true, user: userItem });
   };
 
-  const handleEditUser = (user: User) => {
-    setAddEditDialog({ open: true, user });
+  const handleEditUser = (userItem: ComponentUser) => {
+    setAddEditDialog({ open: true, user: userItem });
   };
 
-  const handleDeleteUser = (user: User) => {
-    setDeleteDialog({ open: true, user });
+  const handleDeleteUser = (userItem: ComponentUser) => {
+    setDeleteDialog({ open: true, user: userItem });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteDialog.user) {
-      setUsers((prev) => prev.filter((u) => u.id !== deleteDialog.user!.id));
+      setIsDeletingUser(true);
+      try {
+        await deleteUser(deleteDialog.user.username);
+        setUsers((prev) => prev.filter((u) => u.id !== deleteDialog.user!.id));
+        toast.success("Pengguna berhasil dihapus");
+        setDeleteDialog({ open: false, user: null });
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        toast.error("Gagal menghapus pengguna");
+      } finally {
+        setIsDeletingUser(false);
+      }
     }
   };
 
-  const handleSaveUser = (userData: Partial<User>) => {
-    if (addEditDialog.user) {
-      // Edit existing user
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === addEditDialog.user!.id ? { ...u, ...userData } : u
-        )
-      );
-    } else {
-      // Add new user
-      const newUser: User = {
-        id: Date.now().toString(),
-        fullName: userData.fullName!,
-        username: userData.username!,
-        phone: userData.phone!,
-        role: userData.role!,
-        createdAt: new Date().toLocaleDateString("id-ID"),
-        nip: userData.nip,
-        class: userData.class,
-        password: userData.password,
-      };
-      setUsers((prev) => [...prev, newUser]);
+  const handleSaveUser = async (userData: Partial<ComponentUser>) => {
+    try {
+      if (addEditDialog.user) {
+        // Edit existing user - TODO: Implement API call
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === addEditDialog.user!.id ? { ...u, ...userData } : u
+          )
+        );
+        toast.success("Pengguna berhasil diperbarui");
+      } else {
+        // Add new user - TODO: Implement API call
+        const newUser: ComponentUser = {
+          id: Date.now().toString(),
+          fullName: userData.fullName!,
+          username: userData.username!,
+          phone: userData.phone!,
+          role: userData.role!,
+          createdAt: new Date().toLocaleDateString("id-ID"),
+          nip: userData.nip,
+          verified: false,
+        };
+        setUsers((prev) => [...prev, newUser]);
+        toast.success("Pengguna berhasil ditambahkan");
+      }
+      setAddEditDialog({ open: false });
+    } catch (error) {
+      console.error("Error saving user:", error);
+      toast.error("Gagal menyimpan data pengguna");
     }
-    setAddEditDialog({ open: false });
   };
 
   const handleBulkImport = async (file: File) => {
@@ -240,7 +239,9 @@ export default function AccountManagementPage() {
       const response = await uploadBulkImportFile(file);
       console.log("Import successful:", response.data);
       toast.success("Import data berhasil!");
-      // Here you would typically refresh the user list
+      // Reload users after successful import
+      await loadUsers();
+      setBulkImportDialog({ open: false });
     } catch (error) {
       console.error("Import error:", error);
       toast.error("Terjadi kesalahan saat mengimpor data");
@@ -250,22 +251,22 @@ export default function AccountManagementPage() {
 
   const tabConfig = [
     {
-      value: "siswa",
+      value: "siswa" as const,
       label: "Akun Siswa",
       count: users.filter((u) => u.role === "siswa").length,
     },
     {
-      value: "guru_wali",
+      value: "guru_wali" as const,
       label: "Akun Guru Wali",
       count: users.filter((u) => u.role === "guru_wali").length,
     },
     {
-      value: "guru_bk",
+      value: "guru_bk" as const,
       label: "Akun Guru BK",
       count: users.filter((u) => u.role === "guru_bk").length,
     },
     {
-      value: "kepala_sekolah",
+      value: "kepala_sekolah" as const,
       label: "Kepala Sekolah",
       count: users.filter((u) => u.role === "kepala_sekolah").length,
     },
@@ -305,7 +306,7 @@ export default function AccountManagementPage() {
         </TabsList>
         {tabConfig.map((tab) => (
           <TabsContent key={tab.value} value={tab.value} className="space-y-4">
-            {/* Controls - Moved here */}
+            {/* Controls */}
             <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:gap-4 sm:justify-between sm:items-center my-4">
               <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />

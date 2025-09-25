@@ -48,6 +48,7 @@ import {
   DeleteArticleResponse,
   ContentStatisticsResponse,
 } from "@/types/api";
+import { RoomResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
@@ -178,6 +179,14 @@ export async function getBulkImportTemplate(): Promise<BulkTemplateResponse> {
   }
 
   return response.json();
+}
+
+/**
+ * Get all users for account management
+ */
+export async function getAllUsers(): Promise<DashboardUserResponse> {
+  const response = await authGet("/dashboard/users");
+  return response;
 }
 
 /**
@@ -649,11 +658,11 @@ export async function deleteQuote(id: string): Promise<DeleteQuoteResponse> {
 
   // Handle JSON response with success: true
   const data = await response.json();
-  
+
   if (data.success) {
     return {
       success: true,
-      message: data.message || "Quote berhasil dihapus"
+      message: data.message || "Quote berhasil dihapus",
     };
   } else {
     throw new Error(data.message || "Gagal menghapus quote");
@@ -680,11 +689,11 @@ export async function deleteVideo(id: string): Promise<DeleteVideoResponse> {
 
   // Handle JSON response with success: true
   const data = await response.json();
-  
+
   if (data.success) {
     return {
       success: true,
-      message: data.message || "Video berhasil dihapus"
+      message: data.message || "Video berhasil dihapus",
     };
   } else {
     throw new Error(data.message || "Gagal menghapus video");
@@ -713,11 +722,11 @@ export async function deleteArticle(
 
   // Handle JSON response with success: true
   const data = await response.json();
-  
+
   if (data.success) {
     return {
       success: true,
-      message: data.message || "Artikel berhasil dihapus"
+      message: data.message || "Artikel berhasil dihapus",
     };
   } else {
     throw new Error(data.message || "Gagal menghapus artikel");
@@ -729,5 +738,21 @@ export async function deleteArticle(
  */
 export async function getContentStatistics(): Promise<ContentStatisticsResponse> {
   const response = await authGet("/dashboard/content-statistics");
+  return response;
+}
+
+/**
+ * Get rooms/classes data
+ */
+export async function getRooms(): Promise<RoomResponse> {
+  const response = await authGet("/room");
+  return response;
+}
+
+/**
+ * Delete user by username
+ */
+export async function deleteUser(username: string): Promise<{ success: boolean; message: string }> {
+  const response = await authDelete(`/user/${username}`);
   return response;
 }

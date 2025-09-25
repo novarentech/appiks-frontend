@@ -70,6 +70,22 @@ export interface Room {
   school_id: number;
 }
 
+// Interface untuk Room API response
+export interface RoomData {
+  id: number;
+  name: string;
+  level: string;
+  code: string;
+  school_id: number;
+  mention: string;
+}
+
+export interface RoomResponse {
+  success: boolean;
+  message: string;
+  data: RoomData[];
+}
+
 // Interface untuk Mentor
 export interface Mentor {
   name: string;
@@ -329,7 +345,7 @@ export interface User {
   username: string;
   identifier: string;
   verified: boolean;
-  role: string;
+  role: "teacher" | "counselor" | "super" | "headteacher" | "admin" | "student"; // More specific
   mentor_id?: number;
   counselor_id?: number;
   room_id?: number;
@@ -338,6 +354,7 @@ export interface User {
   room?: {
     id: number;
     name: string;
+    level?: string; // Add level property
     code: string;
     school_id: number;
   };
@@ -355,6 +372,7 @@ export interface User {
     created_at?: string;
   };
 }
+
 export interface CounselingScheduleCounselor {
   name: string;
   phone: string;
