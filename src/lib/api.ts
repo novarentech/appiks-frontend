@@ -791,3 +791,17 @@ export async function getRoomStudentCount(): Promise<RoomStudentCountResponse> {
   const response = await authGet("/room-student-count");
   return response;
 }
+
+/**
+ * Create new user
+ */
+export async function createUser(userData: {
+  name: string;
+  username: string;
+  identifier: string;
+  phone: string;
+  role: "teacher" | "headteacher" | "counselor";
+}): Promise<{ success: boolean; message: string; data?: unknown }> {
+  const response = await authPost("/dashboard/users", userData);
+  return response;
+}

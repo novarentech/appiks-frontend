@@ -14,7 +14,7 @@ import {
 import { Search } from "lucide-react";
 import { UserRole } from "@/types/auth";
 import { User as ApiUser } from "@/types/api"; // Renamed to avoid conflict
-import { getAllUsers, uploadBulkImportFile, deleteUser, updateUser, getRooms, getUsersByType } from "@/lib/api";
+import { getAllUsers, uploadBulkImportFile, deleteUser, updateUser, getRooms, getUsersByType, createUser } from "@/lib/api";
 
 import {
   UserDataTable,
@@ -278,20 +278,51 @@ export default function AccountManagementPage() {
           throw new Error(response.message || "Gagal memperbarui pengguna");
         }
       } else {
-        // Add new user - TODO: Implement API call for creating user
-        const newUser: ComponentUser = {
-          id: Date.now().toString(),
-          fullName: userData.fullName!,
+        // Add new user
+        // Map role to API format
+        let apiRole: "teacher" | "headteacher" | "counselor";
+        switch (userData.role) {
+          case "guru_wali":
+            apiRole = "teacher";
+            break;
+          case "kepala_sekolah":
+            apiRole = "headteacher";
+            break;
+          case "guru_bk":
+            apiRole = "counselor";
+            break;
+          default:
+            apiRole = "teacher";
+        }
+
+        const createUserData = {
+          name: userData.fullName!,
           username: userData.username!,
+          identifier: userData.nip || userData.id!,
           phone: userData.phone!,
-          role: userData.role!,
-          createdAt: new Date().toLocaleDateString("id-ID"),
-          nip: userData.nip,
-          verified: false,
-          mentor: userData.mentor,
+          role: apiRole,
         };
-        setUsers((prev) => [...prev, newUser]);
-        toast.success("Pengguna berhasil ditambahkan");
+
+        const response = await createUser(createUserData);
+        
+        if (response.success) {
+          // Add new user to local state
+          const newUser: ComponentUser = {
+            id: Date.now().toString(),
+            fullName: userData.fullName!,
+            username: userData.username!,
+            phone: userData.phone!,
+            role: userData.role!,
+            createdAt: new Date().toLocaleDateString("id-ID"),
+            nip: userData.nip,
+            verified: false,
+            mentor: userData.mentor,
+          };
+          setUsers((prev) => [...prev, newUser]);
+          toast.success("Pengguna berhasil ditambahkan");
+        } else {
+          throw new Error(response.message || "Gagal menambah pengguna");
+        }
       }
       setAddEditDialog({ open: false });
     } catch (error) {
