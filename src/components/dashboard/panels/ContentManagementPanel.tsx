@@ -1,8 +1,4 @@
 import {
-  Users,
-  ClipboardList,
-  ThumbsUp,
-  AlertTriangle,
   Newspaper,
   Play,
   Quote,
@@ -15,25 +11,25 @@ import { ContentStatisticsResponse } from "@/types/api";
 export default function ContentManagementPanel() {
   const [stats, setStats] = useState([
     {
-      icon: ThumbsUp,
+      icon: Newspaper,
       label: "TOTAL KONTEN ARTIKEL",
       value: 0,
-      bgColor: "bg-green-100",
-      textColor: "text-green-600",
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
     },
     {
-      icon: AlertTriangle,
+      icon: Play,
       label: "TOTAL KONTEN VIDEO",
       value: 0,
-      bgColor: "bg-orange-100",
-      textColor: "text-orange-600",
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
     },
     {
-      icon: ClipboardList,
+      icon: Quote,
       label: "TOTAL KONTEN QUOTES",
       value: 0,
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-600",
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
     },
   ]);
 
