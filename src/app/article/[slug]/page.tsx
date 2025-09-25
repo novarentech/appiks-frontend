@@ -191,7 +191,7 @@ export default function ArticleDetailPage() {
 
             {/* Featured Image */}
             {article.thumbnail && (
-              <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden mb-8">
+              <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden ">
                 <Image
                   src={article.thumbnail}
                   alt={article.title}
@@ -204,27 +204,20 @@ export default function ArticleDetailPage() {
                 />
               </div>
             )}
-
-            {/* Introduction/Description */}
-            {article.description && (
-              <div className="mb-8">{article.description}</div>
-            )}
           </div>
 
           {/* Article Content */}
-          <div className="px-6 sm:px-8 pb-8">
-            <div className="border-t border-gray-200 pt-8">
-              {article.content ? (
-                <LexicalViewer
-                  content={article.content}
-                  className="article-content border-0 bg-transparent shadow-none"
-                />
-              ) : (
-                <div className="text-gray-500 italic text-center py-8">
-                  Konten artikel tidak tersedia
-                </div>
-              )}
-            </div>
+          <div className="px-6 sm:pb-8 pb-8">
+            {article.content ? (
+              <LexicalViewer
+                content={article.content}
+                className="article-content border-0 bg-transparent shadow-none"
+              />
+            ) : (
+              <div className="text-gray-500 italic text-center py-8">
+                Konten artikel tidak tersedia
+              </div>
+            )}
           </div>
         </article>
 
