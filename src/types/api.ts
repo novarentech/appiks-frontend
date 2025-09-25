@@ -675,3 +675,14 @@ export interface DeleteArticleResponse {
   message: string;
 }
 
+// Content Statistics API types
+export interface ContentStatisticsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    quote_count: number;
+    article_count: number;
+    video_count: number;
+  };
+}
+

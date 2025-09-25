@@ -46,6 +46,7 @@ import {
   DeleteQuoteResponse,
   DeleteVideoResponse,
   DeleteArticleResponse,
+  ContentStatisticsResponse,
 } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
@@ -721,4 +722,12 @@ export async function deleteArticle(
   } else {
     throw new Error(data.message || "Gagal menghapus artikel");
   }
+}
+
+/**
+ * Get content statistics data
+ */
+export async function getContentStatistics(): Promise<ContentStatisticsResponse> {
+  const response = await authGet("/dashboard/content-statistics");
+  return response;
 }
