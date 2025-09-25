@@ -1,14 +1,61 @@
 import { getSession } from "next-auth/react";
-import { MoodRecordResponse, BulkTemplateResponse, BulkImportResponse, DashboardReportGraphResponse, DashboardMoodGraphResponse, DashboardStudentResponse, MoodPatternResponse, SharingListResponse, SharingDetailResponse, SharingReplyResponse, SharingCreateResponse, ReportListResponse, ReportConfirmRequest, ReportConfirmResponse, ReportCloseRequest, ReportCloseResponse, ReportRescheduleRequest, ReportRescheduleResponse, ReportCancelRequest, ReportCancelResponse, UserListResponse, CreateReportRequest, CreateReportResponse, DashboardMoodTrendsResponse, DashboardTeacherResponse, DashboardCounselorResponse, DashboardHeadTeacherResponse, DashboardUserResponse, DashboardAdminResponse, DashboardLatestContentResponse, DashboardLatestUserResponse, ContentResponse, TagResponse, ArticleDetailResponse, DashboardContentResponse, UpdateArticleRequest, UpdateArticleResponse, CreateQuoteRequest, CreateQuoteResponse, CreateVideoRequest, CreateVideoResponse, CreateArticleRequest, CreateArticleResponse } from "@/types/api";
+import {
+  MoodRecordResponse,
+  BulkTemplateResponse,
+  BulkImportResponse,
+  DashboardReportGraphResponse,
+  DashboardMoodGraphResponse,
+  DashboardStudentResponse,
+  MoodPatternResponse,
+  SharingListResponse,
+  SharingDetailResponse,
+  SharingReplyResponse,
+  SharingCreateResponse,
+  ReportListResponse,
+  ReportConfirmRequest,
+  ReportConfirmResponse,
+  ReportCloseRequest,
+  ReportCloseResponse,
+  ReportRescheduleRequest,
+  ReportRescheduleResponse,
+  ReportCancelRequest,
+  ReportCancelResponse,
+  UserListResponse,
+  CreateReportRequest,
+  CreateReportResponse,
+  DashboardMoodTrendsResponse,
+  DashboardTeacherResponse,
+  DashboardCounselorResponse,
+  DashboardHeadTeacherResponse,
+  DashboardUserResponse,
+  DashboardAdminResponse,
+  DashboardLatestContentResponse,
+  DashboardLatestUserResponse,
+  ContentResponse,
+  TagResponse,
+  ArticleDetailResponse,
+  DashboardContentResponse,
+  UpdateArticleRequest,
+  UpdateArticleResponse,
+  CreateQuoteRequest,
+  CreateQuoteResponse,
+  CreateVideoRequest,
+  CreateVideoResponse,
+  CreateArticleRequest,
+  CreateArticleResponse,
+  DeleteQuoteResponse,
+  DeleteVideoResponse,
+  DeleteArticleResponse,
+} from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 
 /**
  * Get CSRF token from cookie
  */
 export function getCSRFToken(): string | null {
-  if (typeof document === 'undefined') return null;
-  
-  const match = document.cookie.match(new RegExp('(^| )csrf_token=([^;]+)'));
+  if (typeof document === "undefined") return null;
+
+  const match = document.cookie.match(new RegExp("(^| )csrf_token=([^;]+)"));
   return match ? match[2] : null;
 }
 
@@ -17,14 +64,14 @@ export function getCSRFToken(): string | null {
  */
 export function addCSRFToken(headers: HeadersInit = {}): HeadersInit {
   const csrfToken = getCSRFToken();
-  
+
   if (csrfToken) {
     return {
       ...headers,
       "x-csrf-token": csrfToken,
     };
   }
-  
+
   return headers;
 }
 
@@ -124,7 +171,9 @@ export async function getBulkImportTemplate(): Promise<BulkTemplateResponse> {
   });
 
   if (!response.ok) {
-    throw new Error(`GET /user/bulk/template failed with status ${response.status}`);
+    throw new Error(
+      `GET /user/bulk/template failed with status ${response.status}`
+    );
   }
 
   return response.json();
@@ -133,7 +182,9 @@ export async function getBulkImportTemplate(): Promise<BulkTemplateResponse> {
 /**
  * Upload bulk import file
  */
-export async function uploadBulkImportFile(file: File): Promise<BulkImportResponse> {
+export async function uploadBulkImportFile(
+  file: File
+): Promise<BulkImportResponse> {
   const session = await getSession();
 
   if (!session?.user?.token) {
@@ -167,7 +218,9 @@ export async function getDashboardReportGraph(): Promise<DashboardReportGraphRes
   });
 
   if (!response.ok) {
-    throw new Error(`GET /dashboard/report-graph failed with status ${response.status}`);
+    throw new Error(
+      `GET /dashboard/report-graph failed with status ${response.status}`
+    );
   }
 
   return response.json();
@@ -214,7 +267,10 @@ export async function recordMood(status: string): Promise<MoodRecordResponse> {
 /**
  * Get mood pattern data for a user
  */
-export async function getMoodPattern(username: string, type: "weekly" | "monthly"): Promise<MoodPatternResponse> {
+export async function getMoodPattern(
+  username: string,
+  type: "weekly" | "monthly"
+): Promise<MoodPatternResponse> {
   const response = await authGet(`/mood-record/pattern/${username}/${type}`);
   return response;
 }
@@ -230,7 +286,9 @@ export async function getSharingList(): Promise<SharingListResponse> {
 /**
  * Get sharing/curhat detail by ID
  */
-export async function getSharingDetail(id: number): Promise<SharingDetailResponse> {
+export async function getSharingDetail(
+  id: number
+): Promise<SharingDetailResponse> {
   const response = await authGet(`/sharing/${id}`);
   return response;
 }
@@ -238,7 +296,10 @@ export async function getSharingDetail(id: number): Promise<SharingDetailRespons
 /**
  * Create new sharing/curhat
  */
-export async function createSharing(data: { title: string; description: string }): Promise<SharingCreateResponse> {
+export async function createSharing(data: {
+  title: string;
+  description: string;
+}): Promise<SharingCreateResponse> {
   const response = await authPost("/sharing", data);
   return response;
 }
@@ -246,7 +307,10 @@ export async function createSharing(data: { title: string; description: string }
 /**
  * Reply to sharing/curhat
  */
-export async function replySharing(id: number, text: string): Promise<SharingReplyResponse> {
+export async function replySharing(
+  id: number,
+  text: string
+): Promise<SharingReplyResponse> {
   const response = await authPatch(`/sharing/reply/${id}`, { text });
   return response;
 }
@@ -278,7 +342,10 @@ export async function getReportList(): Promise<ReportListResponse> {
 /**
  * Confirm a counseling schedule report
  */
-export async function confirmReport(id: number, data: ReportConfirmRequest): Promise<ReportConfirmResponse> {
+export async function confirmReport(
+  id: number,
+  data: ReportConfirmRequest
+): Promise<ReportConfirmResponse> {
   const response = await authPatch(`/report/confirm/${id}`, data);
   return response;
 }
@@ -286,7 +353,10 @@ export async function confirmReport(id: number, data: ReportConfirmRequest): Pro
 /**
  * Close/Complete a counseling schedule report
  */
-export async function closeReport(id: number, data: ReportCloseRequest): Promise<ReportCloseResponse> {
+export async function closeReport(
+  id: number,
+  data: ReportCloseRequest
+): Promise<ReportCloseResponse> {
   const response = await authPatch(`/report/close/${id}`, data);
   return response;
 }
@@ -294,7 +364,10 @@ export async function closeReport(id: number, data: ReportCloseRequest): Promise
 /**
  * Reschedule a counseling report meeting
  */
-export async function rescheduleReport(id: number, data: ReportRescheduleRequest): Promise<ReportRescheduleResponse> {
+export async function rescheduleReport(
+  id: number,
+  data: ReportRescheduleRequest
+): Promise<ReportRescheduleResponse> {
   const response = await authPatch(`/report/reschedule/${id}`, data);
   return response;
 }
@@ -302,7 +375,10 @@ export async function rescheduleReport(id: number, data: ReportRescheduleRequest
 /**
  * Cancel a counseling schedule report
  */
-export async function cancelReport(id: number, data: ReportCancelRequest): Promise<ReportCancelResponse> {
+export async function cancelReport(
+  id: number,
+  data: ReportCancelRequest
+): Promise<ReportCancelResponse> {
   const response = await authPatch(`/report/cancel/${id}`, data);
   return response;
 }
@@ -318,7 +394,9 @@ export async function getUsersByType(type: string): Promise<UserListResponse> {
 /**
  * Create a new counseling schedule report
  */
-export async function createReport(data: CreateReportRequest): Promise<CreateReportResponse> {
+export async function createReport(
+  data: CreateReportRequest
+): Promise<CreateReportResponse> {
   const response = await authPost("/report", data);
   return response;
 }
@@ -406,7 +484,9 @@ export async function getTags(): Promise<TagResponse> {
 /**
  * Get article detail by slug
  */
-export async function getArticleDetail(slug: string): Promise<ArticleDetailResponse> {
+export async function getArticleDetail(
+  slug: string
+): Promise<ArticleDetailResponse> {
   const response = await authGet(`/article/${slug}`);
   return response;
 }
@@ -414,7 +494,9 @@ export async function getArticleDetail(slug: string): Promise<ArticleDetailRespo
 /**
  * Get article detail by ID
  */
-export async function getArticleDetailById(id: string): Promise<ArticleDetailResponse> {
+export async function getArticleDetailById(
+  id: string
+): Promise<ArticleDetailResponse> {
   const response = await authGet(`/article/${id}`);
   return response;
 }
@@ -430,16 +512,19 @@ export async function getDashboardContent(): Promise<DashboardContentResponse> {
 /**
  * Update article by ID
  */
-export async function updateArticle(id: string, data: UpdateArticleRequest): Promise<UpdateArticleResponse> {
+export async function updateArticle(
+  id: string,
+  data: UpdateArticleRequest
+): Promise<UpdateArticleResponse> {
   // Convert string ID to number as API expects integer
   const articleId = parseInt(id, 10);
-  
+
   if (isNaN(articleId)) {
     throw new Error("Invalid article ID");
   }
 
   const session = await getSession();
-  
+
   if (!session?.user?.token) {
     throw new Error("No authentication token available");
   }
@@ -451,23 +536,28 @@ export async function updateArticle(id: string, data: UpdateArticleRequest): Pro
     formData.append("title", data.title);
     formData.append("description", data.description);
     formData.append("content", data.content);
-    
+
     // Add tags as JSON string
     formData.append("tags", JSON.stringify(data.tags));
-    
+
     // Add file
     formData.append("thumbnail", data.thumbnail);
 
-    const response = await fetch(`${API_BASE_URL}/article-update/${articleId}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.user.token}`,
-      },
-      body: formData,
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/article-update/${articleId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.user.token}`,
+        },
+        body: formData,
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`POST /article-update/${articleId} failed with status ${response.status}`);
+      throw new Error(
+        `POST /article-update/${articleId} failed with status ${response.status}`
+      );
     }
 
     return response.json();
@@ -478,7 +568,7 @@ export async function updateArticle(id: string, data: UpdateArticleRequest): Pro
       description: data.description,
       content: data.content,
       tags: data.tags,
-      ...(data.thumbnail ? { thumbnail: data.thumbnail } : {})
+      ...(data.thumbnail ? { thumbnail: data.thumbnail } : {}),
     };
 
     // Use authPost to send data to API
@@ -489,21 +579,27 @@ export async function updateArticle(id: string, data: UpdateArticleRequest): Pro
 }
 
 // Create quote
-export async function createQuote(data: CreateQuoteRequest): Promise<CreateQuoteResponse> {
+export async function createQuote(
+  data: CreateQuoteRequest
+): Promise<CreateQuoteResponse> {
   const response = await authPost("/quote", data);
   return response;
 }
 
 // Create video
-export async function createVideo(data: CreateVideoRequest): Promise<CreateVideoResponse> {
+export async function createVideo(
+  data: CreateVideoRequest
+): Promise<CreateVideoResponse> {
   const response = await authPost("/video", data);
   return response;
 }
 
 // Create article with file upload support
-export async function createArticle(data: CreateArticleRequest): Promise<CreateArticleResponse> {
+export async function createArticle(
+  data: CreateArticleRequest
+): Promise<CreateArticleResponse> {
   const session = await getSession();
-  
+
   if (!session?.user?.token) {
     throw new Error("No authentication token available");
   }
@@ -513,7 +609,7 @@ export async function createArticle(data: CreateArticleRequest): Promise<CreateA
   formData.append("description", data.description);
   formData.append("content", data.content);
   formData.append("tags", JSON.stringify(data.tags));
-  
+
   if (data.thumbnail) {
     formData.append("thumbnail", data.thumbnail);
   }
@@ -531,4 +627,98 @@ export async function createArticle(data: CreateArticleRequest): Promise<CreateA
   }
 
   return response.json();
+}
+// Delete quote
+export async function deleteQuote(id: string): Promise<DeleteQuoteResponse> {
+  const session = await getSession();
+  if (!session?.user?.token) {
+    throw new Error("No authentication token available");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/quote/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${session.user.token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `DELETE /quote/${id} failed with status ${response.status}`
+    );
+  }
+
+  // Handle JSON response with success: true
+  const data = await response.json();
+  
+  if (data.success) {
+    return {
+      success: true,
+      message: data.message || "Quote berhasil dihapus"
+    };
+  } else {
+    throw new Error(data.message || "Gagal menghapus quote");
+  }
+}
+
+// Delete video
+export async function deleteVideo(id: string): Promise<DeleteVideoResponse> {
+  const session = await getSession();
+  if (!session?.user?.token) {
+    throw new Error("No authentication token available");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/video/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${session.user.token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `DELETE /video/${id} failed with status ${response.status}`
+    );
+  }
+
+  // Handle JSON response with success: true
+  const data = await response.json();
+  
+  if (data.success) {
+    return {
+      success: true,
+      message: data.message || "Video berhasil dihapus"
+    };
+  } else {
+    throw new Error(data.message || "Gagal menghapus video");
+  }
+}
+
+// Delete article
+export async function deleteArticle(
+  id: string
+): Promise<DeleteArticleResponse> {
+  const session = await getSession();
+  if (!session?.user?.token) {
+    throw new Error("No authentication token available");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/articles/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${session.user.token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `DELETE /articles/${id} failed with status ${response.status}`
+    );
+  }
+
+  // Handle JSON response with success: true
+  const data = await response.json();
+  
+  if (data.success) {
+    return {
+      success: true,
+      message: data.message || "Artikel berhasil dihapus"
+    };
+  } else {
+    throw new Error(data.message || "Gagal menghapus artikel");
+  }
 }

@@ -657,3 +657,21 @@ export interface CreateArticleResponse {
   };
 }
 
+// Delete Quote API types
+export interface DeleteQuoteResponse {
+  success: boolean;
+  message: string;
+}
+
+// Delete Video API types
+export interface DeleteVideoResponse {
+  success: boolean;
+  message: string;
+}
+
+// Delete Article API types
+export interface DeleteArticleResponse {
+  success: boolean;
+  message: string;
+}
+
