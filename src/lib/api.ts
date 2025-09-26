@@ -47,6 +47,10 @@ import {
   DeleteVideoResponse,
   DeleteArticleResponse,
   ContentStatisticsResponse,
+  ProvinceResponse,
+  CityResponse,
+  DistrictResponse,
+  VillageResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -841,4 +845,83 @@ export async function createUser(userData: {
 }): Promise<{ success: boolean; message: string; data?: unknown }> {
   const response = await authPost("/dashboard/users", userData);
   return response;
+}
+
+/**
+ * Location API functions for Indonesian administrative data
+ */
+
+/**
+ * Get all provinces
+ */
+export async function getProvinces(): Promise<ProvinceResponse> {
+  const response = await fetch("https://api.appiks.id/api/province", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET /province failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all cities by province name
+ */
+export async function getCitiesByProvince(province: string): Promise<CityResponse> {
+  const encodedProvince = encodeURIComponent(province);
+  const response = await fetch(`https://api.appiks.id/api/city/${encodedProvince}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET /city/${province} failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all districts by city name
+ */
+export async function getDistrictsByCity(city: string): Promise<DistrictResponse> {
+  const encodedCity = encodeURIComponent(city);
+  const response = await fetch(`https://api.appiks.id/api/district/${encodedCity}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET /district/${city} failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all villages by district name
+ */
+export async function getVillagesByDistrict(district: string): Promise<VillageResponse> {
+  const encodedDistrict = encodeURIComponent(district);
+  const response = await fetch(`https://api.appiks.id/api/village/${encodedDistrict}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`GET /village/${district} failed with status ${response.status}`);
+  }
+
+  return response.json();
 }

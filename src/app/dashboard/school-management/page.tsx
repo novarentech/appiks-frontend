@@ -1,6 +1,5 @@
 "use client";
 
-import TuPanel from "@/components/dashboard/panels/TuPanel";
 import SchoolMonitorTable from "@/components/data-display/tables/SchoolMonitorTable";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
@@ -51,11 +50,10 @@ export default function ClassDataPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Data Admin TU</h1>
-        <p className="text-gray-600 mt-2">Kelola Data Admin TU</p>
+        <h1 className="text-3xl font-bold">Kelola Sekolah</h1>
+        <p className="text-gray-600 mt-2">Kelola Data Sekolah</p>
       </div>
-      <TuPanel />
-
+      
       <SchoolMonitorTable />
     </div>
   );

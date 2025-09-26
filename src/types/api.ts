@@ -732,3 +732,28 @@ export interface DeleteRoomResponse {
   success: boolean;
   message: string;
 }
+
+// Location API types
+export interface ProvinceResponse {
+  success: boolean;
+  message: string;
+  data: string[];
+}
+
+export interface CityResponse {
+  success: boolean;
+  message: string;
+  data: string[];
+}
+
+export interface DistrictResponse {
+  success: boolean;
+  message: string;
+  data: string[];
+}
+
+export interface VillageResponse {
+  success: boolean;
+  message: string;
+  data: string[];
+}

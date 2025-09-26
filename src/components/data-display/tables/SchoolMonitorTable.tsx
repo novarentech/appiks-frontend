@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Eye, Edit, Trash2, Plus, Search } from "lucide-react";
+import { Eye, Edit, Trash2, Plus, Search, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { getProvinces, getCitiesByProvince, getDistrictsByCity } from "@/lib/api";
 
 // Dummy data sekolah dengan kecamatan, kota, provinsi
 const sampleData = [
@@ -120,33 +121,6 @@ const sampleData = [
   },
 ];
 
-// Opsi kecamatan unik dari data
-const kecamatanOptions = [
-  { value: "all", label: "Pilih Kecamatan" },
-  ...Array.from(new Set(sampleData.map((item) => item.kecamatan))).map((kec) => ({
-    value: kec,
-    label: kec,
-  })),
-];
-
-// Opsi kota/kabupaten unik dari data
-const kotaOptions = [
-  { value: "all", label: "Pilih Kota/Kabupaten" },
-  ...Array.from(new Set(sampleData.map((item) => item.kota))).map((kota) => ({
-    value: kota,
-    label: kota,
-  })),
-];
-
-// Opsi provinsi unik dari data
-const provinsiOptions = [
-  { value: "all", label: "Pilih Provinsi" },
-  ...Array.from(new Set(sampleData.map((item) => item.provinsi))).map((prov) => ({
-    value: prov,
-    label: prov,
-  })),
-];
-
 export interface School {
   id: string;
   nama: string;
@@ -167,6 +141,20 @@ export default function SchoolMonitorTable() {
   const [provinsiFilter, setProvinsiFilter] = useState("all");
   const [pageSize, setPageSize] = useState(10);
 
+  // API data states
+  const [provinces, setProvinces] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [districts, setDistricts] = useState<string[]>([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+
+  // Form location states
+  const [formCities, setFormCities] = useState<string[]>([]);
+  const [formDistricts, setFormDistricts] = useState<string[]>([]);
+  const [loadingFormCities, setLoadingFormCities] = useState(false);
+  const [loadingFormDistricts, setLoadingFormDistricts] = useState(false);
+
   // Dialog state
   const [openDialog, setOpenDialog] = useState<null | {
     type: "lihat" | "edit" | "hapus" | "tambah";
@@ -175,6 +163,160 @@ export default function SchoolMonitorTable() {
 
   // Form state
   const [form, setForm] = useState<Partial<School>>({});
+
+  // Load provinces on component mount
+  useEffect(() => {
+    loadProvinces();
+  }, []);
+
+  // Load cities when province filter changes
+  useEffect(() => {
+    if (provinsiFilter && provinsiFilter !== "all") {
+      loadCities(provinsiFilter);
+    } else {
+      setCities([]);
+      setDistricts([]);
+      setKotaFilter("all");
+      setKecamatanFilter("all");
+    }
+  }, [provinsiFilter]);
+
+  // Load districts when city filter changes
+  useEffect(() => {
+    if (kotaFilter && kotaFilter !== "all") {
+      loadDistricts(kotaFilter);
+    } else {
+      setDistricts([]);
+      setKecamatanFilter("all");
+    }
+  }, [kotaFilter]);
+
+  // Ensure kecamatan filter is disabled when province is "all"
+  useEffect(() => {
+    if (provinsiFilter === "all") {
+      setKecamatanFilter("all");
+    }
+  }, [provinsiFilter]);
+
+  // Debounced API calls for form location data
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedLoadFormCities = useCallback(
+    debounce((province: string) => {
+      if (province && province !== "") {
+        loadFormCities(province);
+      } else {
+        setFormCities([]);
+        setFormDistricts([]);
+        setForm(prev => ({ ...prev, kota: "", kecamatan: "" }));
+      }
+    }, 300),
+    []
+  );
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedLoadFormDistricts = useCallback(
+    debounce((city: string) => {
+      if (city && city !== "") {
+        loadFormDistricts(city);
+      } else {
+        setFormDistricts([]);
+        setForm(prev => ({ ...prev, kecamatan: "" }));
+      }
+    }, 300),
+    []
+  );
+
+  // Load form cities when form province changes (with debouncing)
+  useEffect(() => {
+    debouncedLoadFormCities(form.provinsi || "");
+  }, [form.provinsi, debouncedLoadFormCities]);
+
+  // Load form districts when form city changes (with debouncing)
+  useEffect(() => {
+    debouncedLoadFormDistricts(form.kota || "");
+  }, [form.kota, debouncedLoadFormDistricts]);
+
+  // Debounce utility function
+  function debounce<T extends (...args: string[]) => void>(
+    func: T,
+    wait: number
+  ): T {
+    let timeout: NodeJS.Timeout;
+    return ((...args: Parameters<T>) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    }) as T;
+  }
+
+  const loadProvinces = async () => {
+    setLoadingProvinces(true);
+    try {
+      const response = await getProvinces();
+      if (response.success) {
+        setProvinces(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load provinces:", error);
+    } finally {
+      setLoadingProvinces(false);
+    }
+  };
+
+  const loadCities = async (province: string) => {
+    setLoadingCities(true);
+    try {
+      const response = await getCitiesByProvince(province);
+      if (response.success) {
+        setCities(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load cities:", error);
+    } finally {
+      setLoadingCities(false);
+    }
+  };
+
+  const loadDistricts = async (city: string) => {
+    setLoadingDistricts(true);
+    try {
+      const response = await getDistrictsByCity(city);
+      if (response.success) {
+        setDistricts(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load districts:", error);
+    } finally {
+      setLoadingDistricts(false);
+    }
+  };
+
+  const loadFormCities = async (province: string) => {
+    setLoadingFormCities(true);
+    try {
+      const response = await getCitiesByProvince(province);
+      if (response.success) {
+        setFormCities(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load form cities:", error);
+    } finally {
+      setLoadingFormCities(false);
+    }
+  };
+
+  const loadFormDistricts = async (city: string) => {
+    setLoadingFormDistricts(true);
+    try {
+      const response = await getDistrictsByCity(city);
+      if (response.success) {
+        setFormDistricts(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load form districts:", error);
+    } finally {
+      setLoadingFormDistricts(false);
+    }
+  };
 
   // Filtering
   const filteredData = useMemo(() => {
@@ -251,6 +393,7 @@ export default function SchoolMonitorTable() {
                     size="sm"
                     onClick={() => {
                       setOpenDialog({ type: "edit", row: item });
+                      // Set form with the item data to trigger API calls for dependent selects
                       setForm(item);
                     }}
                     className="h-8 w-8 p-0 bg-purple-100 text-purple-700 hover:bg-purple-200"
@@ -284,10 +427,10 @@ export default function SchoolMonitorTable() {
     },
   ];
 
-  // Dialog form handlers
-  const handleFormChange = (field: keyof School, value: string) => {
+  // Dialog form handlers - optimized with useCallback
+  const handleFormChange = React.useCallback((field: keyof School, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   const handleTambah = () => {
     if (
@@ -369,21 +512,55 @@ export default function SchoolMonitorTable() {
     setOpenDialog(null);
   };
 
-  function DialogForm({
+  // Extracted DialogForm component with local state management
+  const DialogForm = React.memo(function DialogForm({
     type,
     readOnly = false,
+    initialData,
+    onSubmit,
+    provinces,
+    formCities,
+    formDistricts,
+    loadingFormCities,
+    loadingFormDistricts,
+    onFormChange,
   }: {
     type: "tambah" | "edit" | "lihat";
     readOnly?: boolean;
+    initialData: Partial<School>;
+    onSubmit: (data: Partial<School>) => void;
+    provinces: string[];
+    formCities: string[];
+    formDistricts: string[];
+    loadingFormCities: boolean;
+    loadingFormDistricts: boolean;
+    onFormChange: (field: keyof School, value: string) => void;
   }) {
+    // Local form state to prevent re-renders from parent
+    const [localForm, setLocalForm] = useState<Partial<School>>(initialData);
+
+    // Sync with parent when initialData changes (for edit mode)
+    useEffect(() => {
+      setLocalForm(initialData);
+    }, [initialData]);
+
+    const handleLocalFormChange = (field: keyof School, value: string) => {
+      setLocalForm(prev => ({ ...prev, [field]: value }));
+      // Only update parent state for location fields to trigger API calls
+      if (field === 'provinsi' || field === 'kota' || field === 'kecamatan') {
+        onFormChange(field, value);
+      }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      onSubmit(localForm);
+    };
+
     return (
       <form
         className="w-full"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (type === "tambah") handleTambah();
-          if (type === "edit") handleEdit();
-        }}
+        onSubmit={handleSubmit}
       >
         <DialogHeader className="pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -413,8 +590,8 @@ export default function SchoolMonitorTable() {
               </label>
               <Input
                 placeholder="Nama Sekolah"
-                value={form.nama || ""}
-                onChange={(e) => handleFormChange("nama", e.target.value)}
+                value={localForm.nama || ""}
+                onChange={(e) => handleLocalFormChange("nama", e.target.value)}
                 disabled={readOnly}
                 required
               />
@@ -425,8 +602,8 @@ export default function SchoolMonitorTable() {
               </label>
               <Input
                 placeholder="Alamat"
-                value={form.alamat || ""}
-                onChange={(e) => handleFormChange("alamat", e.target.value)}
+                value={localForm.alamat || ""}
+                onChange={(e) => handleLocalFormChange("alamat", e.target.value)}
                 disabled={readOnly}
                 required
               />
@@ -436,21 +613,23 @@ export default function SchoolMonitorTable() {
                 Kecamatan<span className="text-red-500">*</span>
               </label>
               <Select
-                value={form.kecamatan || ""}
-                onValueChange={(v) => handleFormChange("kecamatan", v)}
-                disabled={readOnly}
+                value={localForm.kecamatan || ""}
+                onValueChange={(v) => handleLocalFormChange("kecamatan", v)}
+                disabled={!localForm.kota || readOnly || loadingFormDistricts}
               >
                 <SelectTrigger className="w-full h-12">
-                  <SelectValue placeholder="Pilih Kecamatan" />
+                  {loadingFormDistricts ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <SelectValue placeholder="Pilih Kecamatan" />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {kecamatanOptions
-                    .filter((opt) => opt.value !== "all")
-                    .map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                  {formDistricts.map((district) => (
+                    <SelectItem key={district} value={district}>
+                      {district}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -459,21 +638,23 @@ export default function SchoolMonitorTable() {
                 Kota/Kabupaten<span className="text-red-500">*</span>
               </label>
               <Select
-                value={form.kota || ""}
-                onValueChange={(v) => handleFormChange("kota", v)}
-                disabled={readOnly}
+                value={localForm.kota || ""}
+                onValueChange={(v) => handleLocalFormChange("kota", v)}
+                disabled={!localForm.provinsi || readOnly || loadingFormCities}
               >
                 <SelectTrigger className="w-full h-12">
-                  <SelectValue placeholder="Pilih Kota/Kabupaten" />
+                  {loadingFormCities ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <SelectValue placeholder="Pilih Kota/Kabupaten" />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
-                  {kotaOptions
-                    .filter((opt) => opt.value !== "all")
-                    .map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                  {formCities.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -482,21 +663,19 @@ export default function SchoolMonitorTable() {
                 Provinsi<span className="text-red-500">*</span>
               </label>
               <Select
-                value={form.provinsi || ""}
-                onValueChange={(v) => handleFormChange("provinsi", v)}
+                value={localForm.provinsi || ""}
+                onValueChange={(v) => handleLocalFormChange("provinsi", v)}
                 disabled={readOnly}
               >
                 <SelectTrigger className="w-full h-12">
                   <SelectValue placeholder="Pilih Provinsi" />
                 </SelectTrigger>
                 <SelectContent>
-                  {provinsiOptions
-                    .filter((opt) => opt.value !== "all")
-                    .map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                  {provinces.map((province) => (
+                    <SelectItem key={province} value={province}>
+                      {province}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -506,9 +685,10 @@ export default function SchoolMonitorTable() {
               </label>
               <Input
                 placeholder="Telepon"
-                value={form.telepon || ""}
-                onChange={(e) => handleFormChange("telepon", e.target.value)}
+                value={localForm.telepon || ""}
+                onChange={(e) => handleLocalFormChange("telepon", e.target.value)}
                 disabled={readOnly}
+                type="tel"
                 required
               />
             </div>
@@ -518,8 +698,8 @@ export default function SchoolMonitorTable() {
               </label>
               <Input
                 placeholder="Email"
-                value={form.email || ""}
-                onChange={(e) => handleFormChange("email", e.target.value)}
+                value={localForm.email || ""}
+                onChange={(e) => handleLocalFormChange("email", e.target.value)}
                 disabled={readOnly}
                 required
               />
@@ -551,7 +731,7 @@ export default function SchoolMonitorTable() {
         </DialogFooter>
       </form>
     );
-  }
+  });
 
   function DialogDelete() {
     return (
@@ -596,38 +776,53 @@ export default function SchoolMonitorTable() {
               className="pl-9 w-full sm:w-48"
             />
           </div>
-          <Select value={kecamatanFilter} onValueChange={setKecamatanFilter}>
+          <Select value={kecamatanFilter} onValueChange={setKecamatanFilter} disabled={!kotaFilter || kotaFilter === "all" || loadingDistricts}>
             <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Pilih Kecamatan" />
+              {loadingDistricts ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SelectValue placeholder="Pilih Kecamatan" />
+              )}
             </SelectTrigger>
             <SelectContent>
-              {kecamatanOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+              <SelectItem value="all">Semua Kecamatan</SelectItem>
+              {districts.map((district) => (
+                <SelectItem key={district} value={district}>
+                  {district}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={kotaFilter} onValueChange={setKotaFilter}>
+          <Select value={kotaFilter} onValueChange={setKotaFilter} disabled={!provinsiFilter || provinsiFilter === "all" || loadingCities}>
             <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Pilih Kota/Kabupaten" />
+              {loadingCities ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SelectValue placeholder="Pilih Kota/Kabupaten" />
+              )}
             </SelectTrigger>
             <SelectContent>
-              {kotaOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+              <SelectItem value="all">Semua Kota</SelectItem>
+              {cities.map((city) => (
+                <SelectItem key={city} value={city}>
+                  {city}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={provinsiFilter} onValueChange={setProvinsiFilter}>
+          <Select value={provinsiFilter} onValueChange={setProvinsiFilter} disabled={loadingProvinces}>
             <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Pilih Provinsi" />
+              {loadingProvinces ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SelectValue placeholder="Pilih Provinsi" />
+              )}
             </SelectTrigger>
             <SelectContent>
-              {provinsiOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+              <SelectItem value="all">Semua Provinsi</SelectItem>
+              {provinces.map((province) => (
+                <SelectItem key={province} value={province}>
+                  {province}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -679,10 +874,45 @@ export default function SchoolMonitorTable() {
       {/* Dialogs */}
       <Dialog open={!!openDialog} onOpenChange={() => setOpenDialog(null)}>
         <DialogContent className="max-w-xl rounded-2xl max-h-[90vh] overflow-y-auto">
-          {openDialog?.type === "tambah" && <DialogForm type="tambah" />}
-          {openDialog?.type === "edit" && <DialogForm type="edit" />}
+          {openDialog?.type === "tambah" && (
+            <DialogForm
+              type="tambah"
+              initialData={form}
+              onSubmit={handleTambah}
+              provinces={provinces}
+              formCities={formCities}
+              formDistricts={formDistricts}
+              loadingFormCities={loadingFormCities}
+              loadingFormDistricts={loadingFormDistricts}
+              onFormChange={handleFormChange}
+            />
+          )}
+          {openDialog?.type === "edit" && (
+            <DialogForm
+              type="edit"
+              initialData={form}
+              onSubmit={handleEdit}
+              provinces={provinces}
+              formCities={formCities}
+              formDistricts={formDistricts}
+              loadingFormCities={loadingFormCities}
+              loadingFormDistricts={loadingFormDistricts}
+              onFormChange={handleFormChange}
+            />
+          )}
           {openDialog?.type === "lihat" && (
-            <DialogForm type="lihat" readOnly={true} />
+            <DialogForm
+              type="lihat"
+              readOnly={true}
+              initialData={form}
+              onSubmit={() => {}}
+              provinces={provinces}
+              formCities={formCities}
+              formDistricts={formDistricts}
+              loadingFormCities={loadingFormCities}
+              loadingFormDistricts={loadingFormDistricts}
+              onFormChange={handleFormChange}
+            />
           )}
           {openDialog?.type === "hapus" && <DialogDelete />}
         </DialogContent>
