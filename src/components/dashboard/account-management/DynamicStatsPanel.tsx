@@ -59,7 +59,7 @@ export function DynamicStatsPanel({ activeTab, users }: DynamicStatsPanelProps) 
             },
             {
               label: "KELAS TERDAFTAR",
-              value: new Set(siswaUsers.filter(u => u.class).map(u => u.class)).size,
+              value: new Set(siswaUsers.filter(u => u.room).map(u => u.room?.name || u.room?.code)).size,
               icon: BookOpen,
               color: "purple"
             }
@@ -80,7 +80,7 @@ export function DynamicStatsPanel({ activeTab, users }: DynamicStatsPanelProps) 
             },
             {
               label: "KELAS DIAMPU",
-              value: new Set(guruWaliUsers.filter(u => u.class).map(u => u.class)).size,
+              value: new Set(guruWaliUsers.filter(u => u.room).map(u => u.room?.name || u.room?.code)).size,
               icon: BookOpen,
               color: "purple"
             }
