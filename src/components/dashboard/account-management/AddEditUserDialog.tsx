@@ -140,7 +140,7 @@ export function AddEditUserDialog({
     };
   }, []);
 
-  // Reset form data when user prop changes
+  // Reset form data when user prop changes or when dialog opens/closes
   useEffect(() => {
     if (user) {
       setFormData({
@@ -164,7 +164,7 @@ export function AddEditUserDialog({
       });
     }
     setErrors({});
-  }, [user]);
+  }, [user, open]);
 
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
@@ -210,11 +210,26 @@ export function AddEditUserDialog({
           userRole === "siswa"
             ? "NISN hanya boleh mengandung angka"
             : "NIP hanya boleh mengandung angka";
+      } else {
+        // Length validation
+        if (userRole === "siswa") {
+          // NISN should be 8 characters
+          if (formData.nip.length !== 8) {
+            newErrors.nip = "NISN harus 8 karakter";
+          }
+        } else {
+          // NIP should be 10 characters for teachers/staff
+          if (formData.nip.length !== 10) {
+            newErrors.nip = "NIP harus 10 karakter";
+          }
+        }
       }
     }
 
-    // Password validation (optional)
-    if (formData.password && !validatePassword(formData.password).isValid) {
+    // Password validation (required for add, optional for edit)
+    if (!isEdit && !formData.password.trim()) {
+      newErrors.password = "Password harus diisi";
+    } else if (formData.password && !validatePassword(formData.password).isValid) {
       newErrors.password = "Password tidak valid";
     }
 
@@ -287,6 +302,7 @@ export function AddEditUserDialog({
       }
 
       await onSave(userData);
+      
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving user:", error);
@@ -409,7 +425,7 @@ export function AddEditUserDialog({
     formData.phone.trim() !== "" &&
     usernameValidation.isValid &&
     phoneValidation.isValid &&
-    (!formData.password || passwordValidation.isValid) &&
+    (isEdit ? (!formData.password || passwordValidation.isValid) : passwordValidation.isValid) &&
     (!usernameChanged || (isUsernameAvailable === true && !usernameError));
 
   return (
@@ -720,7 +736,11 @@ export function AddEditUserDialog({
             <div className="space-y-2">
               <Label htmlFor="password">
                 Password{" "}
-                <span className="text-gray-500 text-xs">(Opsional)</span>
+                {!isEdit ? (
+                  <span className="text-red-500">*</span>
+                ) : (
+                  <span className="text-gray-500 text-xs">(Opsional)</span>
+                )}
               </Label>
               <Input
                 id="password"
@@ -729,7 +749,7 @@ export function AddEditUserDialog({
                 onChange={(e) =>
                   setFormData(prev => ({ ...prev, password: e.target.value }))
                 }
-                placeholder="Masukkan password (kosongkan jika tidak ingin mengubah)"
+                placeholder={!isEdit ? "Masukkan password" : "Masukkan password (kosongkan jika tidak ingin mengubah)"}
                 className={`w-full ${errors.password ? "border-red-500" : ""}`}
               />
               {errors.password && (
@@ -798,7 +818,7 @@ export function AddEditUserDialog({
               <p className="text-xs text-gray-500">
                 {isEdit
                   ? "Kosongkan jika tidak ingin mengubah password"
-                  : "Kosongkan untuk menggunakan password default"}
+                  : "Password wajib diisi"}
               </p>
             </div>
 
