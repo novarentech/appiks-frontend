@@ -1,30 +1,57 @@
-import { University, ShieldUserIcon, User } from "lucide-react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { University, ShieldUserIcon } from "lucide-react";
 import DashboardPanel from "./DashboardPanel";
+import { getDashboardSuper } from "@/lib/api";
 
 export default function TuPanel() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       icon: University,
       label: "TOTAL SEKOLAH",
-      value: 32,
-      bgColor: "bg-blue-100",
-      textColor: "text-blue-600"
+      value: 0,
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
     },
     {
       icon: ShieldUserIcon,
       label: "TOTAL TU",
-      value: 25,
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-600"
+      value: 0,
+       bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
     },
-    {
-      icon: User,
-      label: "TOTAL SISWA",
-      value: 200,
-      bgColor: "bg-green-100",
-      textColor: "text-green-600"
-    },
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getDashboardSuper();
+        if (response.success) {
+          setStats([
+            {
+              icon: University,
+              label: "TOTAL SEKOLAH",
+              value: response.data.school_count,
+              bgColor: "bg-indigo-200",
+              textColor: "text-indigo-500",
+            },
+            {
+              icon: ShieldUserIcon,
+              label: "TOTAL TU",
+              value: response.data.admin_count,
+               bgColor: "bg-indigo-200",
+              textColor: "text-indigo-500",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard super data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return <DashboardPanel items={stats} />;
 }

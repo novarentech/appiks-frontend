@@ -444,6 +444,21 @@ export async function getDashboardHeadTeacher(): Promise<DashboardHeadTeacherRes
 }
 
 /**
+ * Get dashboard super data
+ */
+export async function getDashboardSuper(): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    school_count: number;
+    admin_count: number;
+  };
+}> {
+  const response = await authGet("/dashboard/super");
+  return response;
+}
+
+/**
  * Get dashboard user data
  */
 export async function getDashboardUsers(): Promise<DashboardUserResponse> {
