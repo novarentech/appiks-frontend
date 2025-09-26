@@ -65,7 +65,7 @@ export default function SchoolMonitorTable() {
   const [loadingProvinces, setLoadingProvinces] = useState(false);
   const [loadingCities, setLoadingCities] = useState(false);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
-  const [loadingSchools, setLoadingSchools] = useState(false);
+  const [, setLoadingSchools] = useState(false);
 
   // Form location states
   const [formCities, setFormCities] = useState<string[]>([]);
