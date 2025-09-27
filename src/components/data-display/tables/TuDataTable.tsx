@@ -104,7 +104,7 @@ export default function TuDataTable() {
   }>(null);
 
   // Form state
-  const [form, setForm] = useState<Partial<TuAdmin>>({});
+  const [, setForm] = useState<Partial<TuAdmin>>({});
 
   // Filtering
   const filteredData = useMemo(() => {
@@ -275,6 +275,7 @@ export default function TuDataTable() {
     setData((prev) => prev.filter((item) => item.id !== openDialog.row!.id));
     setForm({});
     setOpenDialog(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openDialog?.row?.id]);
 
   return (
