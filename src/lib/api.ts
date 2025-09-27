@@ -814,21 +814,6 @@ export async function deleteUser(username: string): Promise<{ success: boolean; 
   return response;
 }
 
-/**
- * Update user data
- */
-export async function updateUser(username: string, userData: {
-  username?: string;
-  phone?: string;
-  identifier?: string;
-  room_id?: string;
-  mentor_id?: string;
-  name?: string;
-  password?: string | null;
-}): Promise<{ success: boolean; message: string; data?: unknown }> {
-  const response = await authPatch(`/edit-user/${username}`, userData);
-  return response;
-}
 
 /**
  * Get room and student count data
@@ -847,6 +832,7 @@ export async function createUser(userData: {
   identifier: string;
   phone: string;
   role: "teacher" | "headteacher" | "counselor";
+  password: string;
 }): Promise<{ success: boolean; message: string; data?: unknown }> {
   const response = await authPost("/dashboard/users", userData);
   return response;
@@ -964,5 +950,36 @@ export async function updateSchool(schoolId: number, data: UpdateSchoolRequest):
  */
 export async function deleteSchool(schoolId: number): Promise<DeleteSchoolResponse> {
   const response = await authDelete(`/school/${schoolId}`);
+  return response;
+}
+
+/**
+ * Create a new admin user
+ */
+export async function createAdmin(data: {
+  name: string;
+  phone: string;
+  username: string;
+  identifier: string;
+  school_id: number;
+}): Promise<{ success: boolean; message: string; data?: unknown }> {
+  const response = await authPost("/user/admin", data);
+  return response;
+}
+
+/**
+ * Update a user
+ */
+export async function updateUser(username: string, userData: {
+  username?: string;
+  phone?: string;
+  identifier?: string;
+  room_id?: string;
+  mentor_id?: string;
+  name?: string;
+  password?: string | null;
+  school_id?: number;
+}): Promise<{ success: boolean; message: string; data?: unknown }> {
+  const response = await authPatch(`/edit-user/${username}`, userData);
   return response;
 }

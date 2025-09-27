@@ -20,16 +20,20 @@ import {
 } from "@/components/ui/tooltip";
 import { Eye, Edit, Trash2, Plus, Search, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { getUsersByType, deleteUser } from "@/lib/api";
-import { User } from "@/types/api";
+import { getUsersByType, deleteUser, createAdmin, getSchools, updateUser } from "@/lib/api";
+import { User, School } from "@/types/api";
 import TuDialogForms from "./TuDialogForms";
+import { toast } from "sonner";
 
 // Function to map API User data to TuAdmin interface
 function mapUserToTuAdmin(user: User): TuAdmin {
+  // Remove +62 prefix from phone number for form display
+  const cleanPhone = user.phone ? user.phone.replace(/^62/, "") : "";
+  
   return {
     id: user.id?.toString() || "",
     username: user.username,
-    sekolah: user.room?.name || "Unknown",
+    sekolah: user.school?.name || "Unknown",
     kontak: user.phone,
     waktu: user.created_at
       ? new Date(user.created_at).toLocaleString("id-ID", {
@@ -49,7 +53,7 @@ function mapUserToTuAdmin(user: User): TuAdmin {
     email: user.username + "@example.com", // Generate email since API doesn't provide it
     nama: user.name,
     nip: user.identifier,
-    telepon: user.phone,
+    telepon: cleanPhone,
   };
 }
 
@@ -63,6 +67,7 @@ export interface TuAdmin {
   nama: string;
   nip: string;
   telepon: string;
+  password?: string;
 }
 
 export default function TuDataTable() {
@@ -70,6 +75,8 @@ export default function TuDataTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [schools, setSchools] = useState<School[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [schoolFilter, setSchoolFilter] = useState("all");
   const [pageSize, setPageSize] = useState(10);
@@ -95,6 +102,22 @@ export default function TuDataTable() {
     };
 
     fetchAdminUsers();
+  }, []);
+
+  // Fetch schools data
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const response = await getSchools();
+        if (response.success && response.data) {
+          setSchools(response.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch schools:", err);
+      }
+    };
+
+    fetchSchools();
   }, []);
 
   // Dialog state
@@ -226,52 +249,87 @@ export default function TuDataTable() {
   ];
 
   // Handle form submission from dialog - now receives form data
-  const handleTambah = useCallback((formData: Partial<TuAdmin>) => {
-    const newId = `tu-${Date.now()}`;
-    const formattedTime = new Date().toLocaleString("id-ID", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    setData((prev) => [
-      ...prev,
-      {
-        id: newId,
-        username: formData.username!,
-        sekolah: formData.sekolah!,
-        kontak: formData.telepon!,
-        waktu: formattedTime,
-        email: formData.email!,
-        nama: formData.nama!,
-        nip: formData.nip!,
-        telepon: formData.telepon!,
-      },
-    ]);
-    setOpenDialog(null);
-  }, []);
+  const handleTambah = useCallback(async (formData: Partial<TuAdmin>) => {
+    try {
+      setAddLoading(true);
+      
+      // Find the school ID from the school name
+      const selectedSchool = schools.find((school: School) => school.name === formData.sekolah);
+      if (!selectedSchool) {
+        toast.error("Sekolah tidak ditemukan!");
+        return;
+      }
 
-  const handleEdit = useCallback((formData: Partial<TuAdmin>) => {
-    setData((prev) =>
-      prev.map((item) =>
-        item.id === formData.id
-          ? {
-              ...item,
-              username: formData.username!,
-              sekolah: formData.sekolah!,
-              kontak: formData.telepon!,
-              waktu: item.waktu,
-              email: formData.email!,
-              nama: formData.nama!,
-              nip: formData.nip!,
-              telepon: formData.telepon!,
-            }
-          : item
-      )
-    );
-    setOpenDialog(null);
-  }, []);
+      // Prepare data for API call
+      const apiData = {
+        name: formData.nama!,
+        phone: `62${formData.telepon!}`, // Add +62 prefix
+        username: formData.username!,
+        identifier: formData.nip!,
+        school_id: selectedSchool.id,
+        password: formData.password!,
+      };
+
+      // Call API to create admin
+      const response = await createAdmin(apiData);
+      
+      if (response.success) {
+        // Refresh the data from API to get the updated list
+        const adminResponse = await getUsersByType("admin");
+        if (adminResponse.success && adminResponse.data) {
+          const mappedData = adminResponse.data.map(mapUserToTuAdmin);
+          setData(mappedData);
+        }
+        setOpenDialog(null);
+        toast.success("Admin TU berhasil ditambahkan!");
+      } else {
+        toast.error(response.message || "Gagal menambah admin TU");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat menambah admin TU");
+    } finally {
+      setAddLoading(false);
+    }
+  }, [schools]);
+
+  const handleEdit = useCallback(async (formData: Partial<TuAdmin>) => {
+    try {
+      // Find the school ID from the school name
+      const selectedSchool = schools.find((school: School) => school.name === formData.sekolah);
+      if (!selectedSchool) {
+        toast.error("Sekolah tidak ditemukan!");
+        return;
+      }
+
+      // Prepare data for API call
+      const apiData = {
+        name: formData.nama!,
+        phone: `62${formData.telepon!}`, // Add +62 prefix
+        username: formData.username!,
+        identifier: formData.nip!,
+        school_id: selectedSchool.id,
+        password: formData.password || null, // Include password if provided
+      };
+
+      // Call API to update admin
+      const response = await updateUser(formData.username!, apiData);
+      
+      if (response.success) {
+        // Refresh the data from API to get the updated list
+        const adminResponse = await getUsersByType("admin");
+        if (adminResponse.success && adminResponse.data) {
+          const mappedData = adminResponse.data.map(mapUserToTuAdmin);
+          setData(mappedData);
+        }
+        setOpenDialog(null);
+        toast.success("Admin TU berhasil diperbarui!");
+      } else {
+        toast.error(response.message || "Gagal mengedit admin TU");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat mengedit admin TU");
+    }
+  }, [schools]);
 
   const handleDelete = useCallback(async () => {
     if (!openDialog?.row?.username) return;
@@ -284,11 +342,12 @@ export default function TuDataTable() {
         setData((prev) => prev.filter((item) => item.username !== openDialog.row!.username));
         setForm({});
         setOpenDialog(null);
+        toast.success("Admin TU berhasil dihapus!");
       } else {
-        alert(response.message || "Gagal menghapus admin TU");
+        toast.error(response.message || "Gagal menghapus admin TU");
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus admin TU");
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat menghapus admin TU");
     } finally {
       setDeleteLoading(false);
     }
@@ -393,6 +452,7 @@ export default function TuDataTable() {
             onDelete={handleDelete}
             setOpenDialog={setOpenDialog}
             deleteLoading={deleteLoading}
+            addLoading={addLoading}
           />
         </DialogContent>
       </Dialog>

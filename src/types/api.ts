@@ -351,6 +351,16 @@ export interface User {
   room_id?: number;
   school_id: number;
   created_at?: string;
+  school?: {
+    id: number;
+    name: string;
+    address: string;
+    phone: number;
+    email: string;
+    district: string;
+    city: string;
+    province: string;
+  };
   room?: {
     id: number;
     name: string;
@@ -600,10 +610,13 @@ export interface UpdateArticleResponse {
 export interface DashboardMoodTrendsResponse {
   success: boolean;
   message: string;
-  data: Record<string, {
-    status: string;
-    total: number;
-  }>;
+  data: Record<
+    string,
+    {
+      status: string;
+      total: number;
+    }
+  >;
 }
 
 // Interface untuk response API dashboard headteacher

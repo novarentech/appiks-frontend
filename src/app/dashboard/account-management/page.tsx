@@ -301,6 +301,7 @@ export default function AccountManagementPage() {
           identifier: userData.nip || userData.id!,
           phone: userData.phone!,
           role: apiRole,
+          password: userData.password!,
         };
 
         const response = await createUser(createUserData);

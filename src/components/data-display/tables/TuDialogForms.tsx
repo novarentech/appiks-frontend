@@ -21,6 +21,8 @@ import { TuAdmin } from "./TuDataTable";
 import { getSchools } from "@/lib/api";
 import { School } from "@/types/api";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
+import TuAdminDetail from "./TuAdminDetail";
+import { toast } from "sonner";
 
 // Separate memoized DialogForm component to prevent re-renders
 interface DialogFormProps {
@@ -33,6 +35,7 @@ interface DialogFormProps {
   onTambah: (formData: Partial<TuAdmin>) => void;
   onEdit: (formData: Partial<TuAdmin>) => void;
   originalUsername?: string;
+  addLoading?: boolean;
 }
 
 const DialogForm = memo(function DialogForm({
@@ -45,6 +48,7 @@ const DialogForm = memo(function DialogForm({
   onTambah,
   onEdit,
   originalUsername,
+  addLoading = false,
 }: DialogFormProps) {
   const {
     isChecking,
@@ -89,6 +93,22 @@ const DialogForm = memo(function DialogForm({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return {
       isValid: emailRegex.test(email),
+    };
+  }, []);
+
+  // Password validation function
+  const validatePassword = useCallback((password: string) => {
+    const minLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+
+    return {
+      minLength,
+      hasUpperCase,
+      hasLowerCase,
+      hasNumber,
+      isValid: minLength && hasUpperCase && hasLowerCase && hasNumber,
     };
   }, []);
 
@@ -145,7 +165,7 @@ const DialogForm = memo(function DialogForm({
       !localForm.nip ||
       !localForm.telepon
     ) {
-      alert("Semua field wajib diisi!");
+      toast.error("Semua field wajib diisi!");
       return;
     }
 
@@ -157,14 +177,14 @@ const DialogForm = memo(function DialogForm({
       if (!usernameValidation.maxLength) errorMessage += "- Maksimal 20 karakter\n";
       if (!usernameValidation.validChars) errorMessage += "- Hanya huruf, angka, dan underscore\n";
       if (!usernameValidation.notStartWithNumber) errorMessage += "- Tidak boleh dimulai dengan angka\n";
-      alert(errorMessage);
+      toast.error(errorMessage);
       return;
     }
 
     // Email validation
     const emailValidation = validateEmail(localForm.email || "");
     if (!emailValidation.isValid) {
-      alert("Format email tidak valid!");
+      toast.error("Format email tidak valid!");
       return;
     }
 
@@ -174,19 +194,33 @@ const DialogForm = memo(function DialogForm({
       let errorMessage = "Nomor telepon tidak valid. Harus memenuhi kriteria:\n";
       if (!phoneValidation.isValidLength) errorMessage += "- 9-13 digit (tanpa +62)\n";
       if (!phoneValidation.startsWithValidDigit) errorMessage += "- Dimulai dengan 8 atau 9\n";
-      alert(errorMessage);
+      toast.error(errorMessage);
       return;
     }
 
     // NIP validation (must be digits only, 10 characters for admin TU)
     if (!localForm.nip || !/^\d+$/.test(localForm.nip)) {
-      alert("NIP/NUPTK hanya boleh mengandung angka!");
+      toast.error("NIP/NUPTK hanya boleh mengandung angka!");
       return;
     }
     
     if (localForm.nip.length !== 10) {
-      alert("NIP/NUPTK harus 10 karakter!");
+      toast.error("NIP/NUPTK harus 10 karakter!");
       return;
+    }
+
+    // Password validation (only if password is provided)
+    if (localForm.password) {
+      const passwordValidation = validatePassword(localForm.password);
+      if (!passwordValidation.isValid) {
+        let errorMessage = "Password tidak valid. Harus memenuhi kriteria:\n";
+        if (!passwordValidation.minLength) errorMessage += "- Minimal 8 karakter\n";
+        if (!passwordValidation.hasUpperCase) errorMessage += "- Mengandung huruf besar (A-Z)\n";
+        if (!passwordValidation.hasLowerCase) errorMessage += "- Mengandung huruf kecil (a-z)\n";
+        if (!passwordValidation.hasNumber) errorMessage += "- Mengandung angka (0-9)\n";
+        toast.error(errorMessage);
+        return;
+      }
     }
 
     if (type === "tambah") {
@@ -194,7 +228,7 @@ const DialogForm = memo(function DialogForm({
     } else if (type === "edit") {
       onEdit(localForm);
     }
-  }, [localForm, onTambah, onEdit, type, originalUsername, isUsernameAvailable, usernameError, validateUsername, validatePhone, validateEmail]);
+  }, [localForm, onTambah, onEdit, type, originalUsername, isUsernameAvailable, usernameError, validateUsername, validatePhone, validateEmail, validatePassword]);
 
   // Check if form is valid
   const usernameValidation = validateUsername(localForm.username || "");
@@ -212,6 +246,7 @@ const DialogForm = memo(function DialogForm({
     usernameValidation.isValid &&
     phoneValidation.isValid &&
     emailValidation.isValid &&
+    (!localForm.password || validatePassword(localForm.password).isValid) &&
     (!usernameChanged || (isUsernameAvailable === true && !usernameError)) &&
     /^\d+$/.test(localForm.nip || "") &&
     (localForm.nip?.length === 10);
@@ -236,7 +271,7 @@ const DialogForm = memo(function DialogForm({
           ) : (
             <>
             <Eye className="h-6 w-6 text-[#6C63FF]" />
-            Detail Admin TU
+            Lihat Detail Admin TU
             </>
           )}
         </DialogTitle>
@@ -421,7 +456,7 @@ const DialogForm = memo(function DialogForm({
               </div>
             )}
           </div>
-          <div>
+          <div className="md:col-span-2">
             <label className="text-sm font-medium mb-1 block">
               Telepon<span className="text-red-500">*</span>
             </label>
@@ -468,6 +503,52 @@ const DialogForm = memo(function DialogForm({
             )}
           </div>
         </div>
+        
+        {/* Password Field */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium mb-1 block">
+            Password{type === "tambah" ? <span className="text-red-500">*</span> : <span className="text-gray-500 text-xs">(Opsional)</span>}
+          </label>
+          <Input
+            type="password"
+            value={localForm.password || ""}
+            onChange={(e) => handleFormChange("password", e.target.value)}
+            placeholder={type === "tambah" ? "Masukkan password" : "Masukkan password (kosongkan jika tidak ingin mengubah)"}
+            disabled={readOnly}
+            required={type === "tambah"}
+            className={`w-full ${localForm.password && !validatePassword(localForm.password).isValid ? "border-red-500" : ""}`}
+          />
+          {localForm.password && !validatePassword(localForm.password).isValid && (
+            <div className="text-xs text-red-500 space-y-1">
+              <p className="font-medium">
+                Password harus memenuhi kriteria:
+              </p>
+              <ul className="list-disc list-inside space-y-0.5 ml-2">
+                <li className={validatePassword(localForm.password).minLength ? "text-green-600" : "text-red-500"}>
+                  Minimal 8 karakter {validatePassword(localForm.password).minLength ? "✓" : "✗"}
+                </li>
+                <li className={validatePassword(localForm.password).hasUpperCase ? "text-green-600" : "text-red-500"}>
+                  Mengandung huruf besar (A-Z) {validatePassword(localForm.password).hasUpperCase ? "✓" : "✗"}
+                </li>
+                <li className={validatePassword(localForm.password).hasLowerCase ? "text-green-600" : "text-red-500"}>
+                  Mengandung huruf kecil (a-z) {validatePassword(localForm.password).hasLowerCase ? "✓" : "✗"}
+                </li>
+                <li className={validatePassword(localForm.password).hasNumber ? "text-green-600" : "text-red-500"}>
+                  Mengandung angka (0-9) {validatePassword(localForm.password).hasNumber ? "✓" : "✗"}
+                </li>
+              </ul>
+            </div>
+          )}
+          {localForm.password && validatePassword(localForm.password).isValid && (
+            <p className="text-sm text-green-600">Password valid</p>
+          )}
+          <p className="text-xs text-gray-500">
+            {type === "tambah"
+              ? "Password wajib diisi"
+              : "Kosongkan jika tidak ingin mengubah password"
+            }
+          </p>
+        </div>
       </div>
       <DialogFooter className="pt-4 border-t gap-3">
         <DialogClose asChild>
@@ -479,12 +560,19 @@ const DialogForm = memo(function DialogForm({
           <Button
             type="submit"
             className="bg-[#6C63FF] hover:bg-[#554fd8] text-white flex items-center gap-2"
-            disabled={!isFormValid || isChecking}
+            disabled={!isFormValid || isChecking || (type === "tambah" && addLoading)}
           >
             {type === "tambah" ? (
-              <>
-                Tambah <Plus className="w-4 h-4 ml-1" />
-              </>
+              addLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menambah...
+                </>
+              ) : (
+                <>
+                  Tambah <Plus className="w-4 h-4 ml-1" />
+                </>
+              )
             ) : (
               <>
                 Simpan <Edit className="w-4 h-4 ml-1" />
@@ -504,6 +592,7 @@ interface TuDialogFormsProps {
   onDelete: () => void;
   setOpenDialog: (dialog: null | { type: "lihat" | "edit" | "hapus" | "tambah"; row?: TuAdmin }) => void;
   deleteLoading?: boolean;
+  addLoading?: boolean;
 }
 
 export default function TuDialogForms({
@@ -512,6 +601,7 @@ export default function TuDialogForms({
   onEdit,
   onDelete,
   deleteLoading = false,
+  addLoading = false,
 }: TuDialogFormsProps) {
   // Local form state - this prevents parent re-renders on every keystroke
   const [localForm, setLocalForm] = useState<Partial<TuAdmin>>({});
@@ -609,6 +699,7 @@ export default function TuDialogForms({
           handleFormChange={handleFormChange}
           onTambah={onTambah}
           onEdit={onEdit}
+          addLoading={addLoading}
         />
       )}
       {openDialog.type === "edit" && (
@@ -623,18 +714,8 @@ export default function TuDialogForms({
           originalUsername={openDialog.row?.username}
         />
       )}
-      {openDialog.type === "lihat" && (
-        <DialogForm
-          type="lihat"
-          readOnly={true}
-          localForm={localForm}
-          schools={schools}
-          schoolsLoading={schoolsLoading}
-          handleFormChange={handleFormChange}
-          onTambah={onTambah}
-          onEdit={onEdit}
-          originalUsername={openDialog.row?.username}
-        />
+      {openDialog.type === "lihat" && openDialog.row && (
+        <TuAdminDetail admin={openDialog.row} />
       )}
       {openDialog.type === "hapus" && <DialogDelete />}
     </>
