@@ -1041,6 +1041,7 @@ export async function getLatestSharingNotifications(): Promise<Notification[]> {
     title: string;
     description: string;
     reply: string | null;
+    replied_by: string | null;
     replied_at: string | null;
     created_at: string;
   }) => {
@@ -1061,7 +1062,7 @@ export async function getLatestSharingNotifications(): Promise<Notification[]> {
       type: "curhat" as const,
       title: "Status Curhatmu",
       description: item.title,
-      teacher: "System", // Since API doesn't provide teacher info
+      teacher: item.replied_by || "System", // Since API doesn't provide teacher info
       date: formattedDate,
       status: status,
       statusText: statusText,
