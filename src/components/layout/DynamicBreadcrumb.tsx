@@ -35,6 +35,9 @@ export default function DynamicBreadcrumb() {
 
   // Mapping untuk membuat nama yang lebih readable dari URL
   const segmentToName = (segment: string): string => {
+    // Decode URL-encoded characters terlebih dahulu
+    const decodedSegment = decodeURIComponent(segment);
+
     const nameMap: Record<string, string> = {
       "account-management": "Manajemen Akun",
       "content-management": "Manajemen Konten",
@@ -42,6 +45,7 @@ export default function DynamicBreadcrumb() {
       "counseling-schedule": "Jadwal Konseling",
       "student-share": "Curhatan Siswa",
       "student-data": "Data Siswa",
+      "mood-detail": "Detail Mood",
       counseling: "Konseling",
       schedule: "Jadwal",
       class: "Kelas",
@@ -58,8 +62,9 @@ export default function DynamicBreadcrumb() {
     };
 
     return (
-      nameMap[segment] ||
-      segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ")
+      nameMap[decodedSegment] ||
+      decodedSegment.charAt(0).toUpperCase() +
+        decodedSegment.slice(1).replace(/-/g, " ")
     );
   };
 
@@ -101,9 +106,7 @@ export default function DynamicBreadcrumb() {
         <BreadcrumbItem className="hidden md:block">
           <BreadcrumbLink href="/dashboard" className="flex items-center gap-1">
             <Home className="h-4 w-4" />
-            {user?.role && (
-                <span>Dashboard {formatRoleName(user.role)}</span>
-            )}
+            {user?.role && <span>Dashboard {formatRoleName(user.role)}</span>}
           </BreadcrumbLink>
         </BreadcrumbItem>
 
@@ -115,16 +118,19 @@ export default function DynamicBreadcrumb() {
             .join("/")}`;
           const icon = segmentToIcon(segment);
 
+          // Check if this segment should be clickable
+          // For mood-detail followed by dynamic username, make it non-clickable
+          const isMoodDetailWithUsername =
+            segment === "mood-detail" &&
+            index < pathSegments.length - 1 &&
+            pathSegments[index + 1] !== "[username]";
+          const shouldBeClickable = !isLast && !isMoodDetailWithUsername;
+
           return (
             <Fragment key={segment}>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                {isLast ? (
-                  <BreadcrumbPage className="flex items-center gap-1">
-                    {icon}
-                    <span>{segmentToName(segment)}</span>
-                  </BreadcrumbPage>
-                ) : (
+                {shouldBeClickable ? (
                   <BreadcrumbLink
                     href={href}
                     className="flex items-center gap-1"
@@ -132,6 +138,11 @@ export default function DynamicBreadcrumb() {
                     {icon}
                     <span>{segmentToName(segment)}</span>
                   </BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage className="flex items-center gap-1">
+                    {icon}
+                    <span>{segmentToName(segment)}</span>
+                  </BreadcrumbPage>
                 )}
               </BreadcrumbItem>
             </Fragment>
