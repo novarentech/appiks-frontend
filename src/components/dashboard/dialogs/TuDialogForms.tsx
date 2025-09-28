@@ -16,13 +16,13 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Eye, Edit, Plus, Loader2, Check, X } from "lucide-react";
-import { TuAdmin } from "./TuDataTable";
+import { Eye, Edit, Plus, Loader2, Check, X } from "lucide-react";;
 import { getSchools } from "@/lib/api";
 import { School } from "@/types/api";
 import { useUsernameCheck } from "@/hooks/useUsernameCheck";
 import TuAdminDetail from "./TuAdminDetail";
 import { toast } from "sonner";
+import { TuAdmin } from "@/components/data-display/tables/TuDataTable";
 
 // Separate memoized DialogForm component to prevent re-renders
 interface DialogFormProps {
