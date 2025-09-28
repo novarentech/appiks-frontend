@@ -123,9 +123,66 @@ export function NotificationCard() {
       {/* Notifications by Groups */}
       <div className="p-4 sm:p-6 space-y-3 sm:space-y-4 max-h-80 sm:max-h-96 overflow-y-auto">
         {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-            <p className="text-gray-500 mt-2 text-sm">Memuat notifikasi...</p>
+          <div className="space-y-3 sm:space-y-4">
+            {/* Skeleton untuk Counseling Group */}
+            <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-100 border-b border-gray-200">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-300 rounded-full animate-pulse"></div>
+                  <div className="h-4 sm:h-5 bg-gray-300 rounded w-24 sm:w-32 animate-pulse"></div>
+                </div>
+                <div className="h-6 w-6 bg-gray-300 rounded-full animate-pulse"></div>
+              </div>
+              <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 sm:h-4 bg-gray-300 rounded w-3/4 animate-pulse"></div>
+                        <div className="h-3 bg-gray-300 rounded w-1/2 animate-pulse"></div>
+                      </div>
+                      <div className="flex flex-col items-end space-y-1">
+                        <div className="h-2 w-12 bg-gray-300 rounded animate-pulse"></div>
+                        <div className="h-2 w-16 bg-gray-300 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="border-l-2 border-gray-200 pl-2 sm:pl-3">
+                      <div className="h-3 bg-gray-300 rounded w-full animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Skeleton untuk Curhat Group */}
+            <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+              <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-100 border-b border-gray-200">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-300 rounded-full animate-pulse"></div>
+                  <div className="h-4 sm:h-5 bg-gray-300 rounded w-20 sm:w-28 animate-pulse"></div>
+                </div>
+                <div className="h-6 w-6 bg-gray-300 rounded-full animate-pulse"></div>
+              </div>
+              <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                {[1].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 sm:h-4 bg-gray-300 rounded w-3/4 animate-pulse"></div>
+                        <div className="h-3 bg-gray-300 rounded w-1/2 animate-pulse"></div>
+                      </div>
+                      <div className="flex flex-col items-end space-y-1">
+                        <div className="h-2 w-12 bg-gray-300 rounded animate-pulse"></div>
+                        <div className="h-2 w-16 bg-gray-300 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="border-l-2 border-gray-200 pl-2 sm:pl-3">
+                      <div className="h-3 bg-gray-300 rounded w-full animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ) : Object.entries(groupedNotifications).map(
           ([groupType, groupNotifications]) => {
