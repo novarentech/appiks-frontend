@@ -14,7 +14,9 @@ export type NotificationStatus =
   | "selesai"
   | "dibatalkan"
   | "dibalas"
-  | "dikirim";
+  | "dikirim"
+  | "menunggu"
+  | "dijadwalkan";
 
 export interface BaseNotification {
   id: number;
@@ -30,6 +32,7 @@ export interface BaseNotification {
   icon: LucideIcon;
   isNew: boolean;
   hasNewTag?: boolean;
+  createdAt?: string;
 }
 
 export interface CounselingNotification extends BaseNotification {

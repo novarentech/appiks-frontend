@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronLeft } from "lucide-react";
+import { Bell, ChevronLeft, Calendar, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -26,10 +26,9 @@ export default function NotificationsPage() {
           getReportList()
         ]);
         
-        // Transform sharing data to notifications (latest 2 with "tag baru")
+        // Transform and sort sharing data by created_at (newest first)
         const curhatNotifications = sharingResponse.data
-          ?.slice(0, 2)
-          .map((item: import("@/types/api").Sharing) => {
+          ?.map((item: import("@/types/api").Sharing) => {
             const createdDate = new Date(item.created_at);
             const formattedDate = createdDate.toLocaleDateString('id-ID', {
               day: '2-digit',
@@ -52,19 +51,24 @@ export default function NotificationsPage() {
               statusText: statusText,
               statusColor: statusColor,
               borderColor: item.reply ? "border-blue-400" : "border-amber-400",
-              icon: Bell,
+              icon: MessageCircle,
               isNew: true,
               curhatDescription: item.description,
               reply: item.reply,
               replyDate: item.replied_at ? new Date(item.replied_at).toLocaleString('id-ID') : undefined,
-              hasNewTag: true, // Add "tag baru" indicator
+              hasNewTag: false, // Will be set after sorting
+              createdAt: item.created_at, // For sorting
             };
-          }) || [];
+          })
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .map((item, index) => ({
+            ...item,
+            hasNewTag: index < 2, // Only latest 2 sharing have "tag baru"
+          })) || [];
 
-        // Transform report data to notifications (latest 2 with "tag baru")
+        // Transform and sort report data by created_at (newest first)
         const counselingNotifications = reportResponse.data
-          ?.slice(0, 2)
-          .map((item: import("@/types/api").Report) => {
+          ?.map((item: import("@/types/api").Report) => {
             const createdDate = new Date(item.created_at);
             const formattedDate = createdDate.toLocaleDateString('id-ID', {
               day: '2-digit',
@@ -72,7 +76,7 @@ export default function NotificationsPage() {
               year: 'numeric'
             }).replace(/\//g, '/');
 
-            let status: "disetujui" | "selesai" | "dibatalkan" = "disetujui";
+            let status: "disetujui" | "selesai" | "dibatalkan" | "menunggu" | "dijadwalkan" = "disetujui";
             let statusText = "Disetujui";
             let statusColor = "green";
             let borderColor = "border-green-400";
@@ -85,16 +89,28 @@ export default function NotificationsPage() {
                 borderColor = "border-emerald-400";
                 break;
               case "dijadwalkan":
-                status = "disetujui";
-                statusText = "Disetujui";
-                statusColor = "green";
-                borderColor = "border-green-400";
+                status = "dijadwalkan";
+                statusText = "Dijadwalkan";
+                statusColor = "blue";
+                borderColor = "border-blue-400";
                 break;
               case "dibatalkan":
                 status = "dibatalkan";
                 statusText = "Dibatalkan";
                 statusColor = "red";
                 borderColor = "border-red-400";
+                break;
+              case "menunggu":
+                status = "menunggu";
+                statusText = "Menunggu";
+                statusColor = "yellow";
+                borderColor = "border-yellow-400";
+                break;
+              case "disetujui":
+                status = "disetujui";
+                statusText = "Disetujui";
+                statusColor = "green";
+                borderColor = "border-green-400";
                 break;
             }
 
@@ -111,16 +127,24 @@ export default function NotificationsPage() {
               statusText: statusText,
               statusColor: statusColor,
               borderColor: borderColor,
-              icon: Bell,
+              icon: Calendar,
               isNew: true,
               notes: item.notes,
               noteDate: formattedDate,
-              hasNewTag: true, // Add "tag baru" indicator
+              hasNewTag: false, // Will be set after sorting
+              createdAt: item.created_at, // For sorting
             };
-          }) || [];
+          })
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .map((item, index) => ({
+            ...item,
+            hasNewTag: index < 2, // Only latest 2 report have "tag baru"
+          })) || [];
         
-        // Combine both types of notifications
-        const allNotifications = [...curhatNotifications, ...counselingNotifications];
+        // Combine both types of notifications and sort by created_at for display
+        const allNotifications = [...curhatNotifications, ...counselingNotifications]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
         setNotifications(allNotifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -256,7 +280,7 @@ export default function NotificationsPage() {
           </div>
         ) : filteredNotifications.map((notification: Notification, index: number) => (
           <motion.div
-            key={notification.id}
+            key={`${notification.type}-${notification.id}`}
             className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Calendar, Clock, Building, User } from "lucide-react";
 import { Notification } from "@/types/notifications";
 
 interface NotificationBadgeProps {
@@ -23,17 +24,21 @@ export function NotificationBadge({
           isSm ? "text-xs" : "text-xs sm:text-sm"
         }`}
       >
-        <div className={`bg-blue-100 text-blue-700 ${badgeClass}`}>
-          📅 {notification.date}
+        <div className={`bg-blue-100 text-blue-700 ${badgeClass} flex items-center gap-1`}>
+          <Calendar className="w-3 h-3" />
+          {notification.date}
         </div>
-        <div className={`bg-green-100 text-green-700 ${badgeClass}`}>
-          ⏰ {notification.time}
+        <div className={`bg-green-100 text-green-700 ${badgeClass} flex items-center gap-1`}>
+          <Clock className="w-3 h-3" />
+          {notification.time}
         </div>
-        <div className={`bg-purple-100 text-purple-700 ${badgeClass}`}>
-          🏢 {notification.room}
+        <div className={`bg-purple-100 text-purple-700 ${badgeClass} flex items-center gap-1`}>
+          <Building className="w-3 h-3" />
+          {notification.room}
         </div>
-        <div className={`bg-orange-100 text-orange-700 ${badgeClass}`}>
-          👨‍🏫 {notification.teacher}
+        <div className={`bg-orange-100 text-orange-700 ${badgeClass} flex items-center gap-1`}>
+          <User className="w-3 h-3" />
+          {notification.teacher}
         </div>
       </div>
     );
@@ -45,11 +50,13 @@ export function NotificationBadge({
         isSm ? "text-xs" : "text-xs sm:text-sm"
       }`}
     >
-      <div className={`bg-blue-100 text-blue-700 ${badgeClass}`}>
-        📅 {notification.date}
+      <div className={`bg-blue-100 text-blue-700 ${badgeClass} flex items-center gap-1`}>
+        <Calendar className="w-3 h-3" />
+        {notification.date}
       </div>
-      <div className={`bg-orange-100 text-orange-700 ${badgeClass}`}>
-        👨‍🏫 {notification.teacher}
+      <div className={`bg-orange-100 text-orange-700 ${badgeClass} flex items-center gap-1`}>
+        <User className="w-3 h-3" />
+        {notification.teacher}
       </div>
     </div>
   );

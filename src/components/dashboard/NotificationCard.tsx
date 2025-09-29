@@ -6,7 +6,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NotificationGroup } from "@/components/features/notifications/NotificationGroup";
 import { Notification, GroupConfig } from "@/types/notifications";
-import { getLatestSharingNotifications, getLatestCounselingNotifications } from "@/lib/api";
+import {
+  getLatestSharingNotifications,
+  getLatestCounselingNotifications,
+} from "@/lib/api";
 
 export function NotificationCard() {
   const router = useRouter();
@@ -20,13 +23,17 @@ export function NotificationCard() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const [curhatNotifications, counselingNotifications] = await Promise.all([
-          getLatestSharingNotifications(),
-          getLatestCounselingNotifications()
-        ]);
-        
+        const [curhatNotifications, counselingNotifications] =
+          await Promise.all([
+            getLatestSharingNotifications(),
+            getLatestCounselingNotifications(),
+          ]);
+
         // Combine both types of notifications
-        const allNotifications = [...curhatNotifications, ...counselingNotifications];
+        const allNotifications = [
+          ...curhatNotifications,
+          ...counselingNotifications,
+        ];
         setNotifications(allNotifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -48,9 +55,7 @@ export function NotificationCard() {
     setExpandedGroup(expandedGroup === groupType ? null : groupType);
   };
 
-  const activeNotifications = notifications.filter(
-    (n) => n.isNew
-  );
+  const activeNotifications = notifications.filter((n) => n.isNew);
 
   // Group notifications by type
   const groupedNotifications = activeNotifications.reduce(
@@ -153,7 +158,7 @@ export function NotificationCard() {
                 ))}
               </div>
             </div>
-            
+
             {/* Skeleton untuk Curhat Group */}
             <div className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
               <div className="flex items-center justify-between p-3 sm:p-4 bg-gray-100 border-b border-gray-200">
@@ -184,25 +189,27 @@ export function NotificationCard() {
               </div>
             </div>
           </div>
-        ) : Object.entries(groupedNotifications).map(
-          ([groupType, groupNotifications]) => {
-            const config = groupConfig[groupType];
-            if (!config) return null;
+        ) : (
+          Object.entries(groupedNotifications).map(
+            ([groupType, groupNotifications]) => {
+              const config = groupConfig[groupType];
+              if (!config) return null;
 
-            return (
-              <NotificationGroup
-                key={groupType}
-                groupType={groupType}
-                notifications={groupNotifications}
-                config={config}
-                isExpanded={expandedGroup === groupType}
-                onToggleGroup={toggleGroupExpand}
-                onToggleNotification={toggleExpand}
-                expandedNotificationId={expandedNotification}
-                size="sm"
-              />
-            );
-          }
+              return (
+                <NotificationGroup
+                  key={groupType}
+                  groupType={groupType}
+                  notifications={groupNotifications}
+                  config={config}
+                  isExpanded={expandedGroup === groupType}
+                  onToggleGroup={toggleGroupExpand}
+                  onToggleNotification={toggleExpand}
+                  expandedNotificationId={expandedNotification}
+                  size="sm"
+                />
+              );
+            }
+          )
         )}
       </div>
 
@@ -230,27 +237,25 @@ export function NotificationCard() {
       )}
 
       {/* View All Notifications Button */}
-      {activeNotifications.length > 0 && (
-        <div className="p-3 sm:p-4 border-t border-gray-100 bg-gray-50">
-          <motion.button
-            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push("/notifications")}
+      <div className="p-3 sm:p-4 border-t border-gray-100 bg-gray-50">
+        <motion.button
+          className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl text-sm sm:text-base"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push("/notifications")}
+        >
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span>Lihat Semua Notifikasi</span>
+          <motion.div
+            className="bg-white/20 px-2 py-1 rounded-full text-xs"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1 }}
           >
-            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>Lihat Semua Notifikasi</span>
-            <motion.div
-              className="bg-white/20 px-2 py-1 rounded-full text-xs"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              {activeNotifications.length}
-            </motion.div>
-          </motion.button>
-        </div>
-      )}
+            {activeNotifications.length}
+          </motion.div>
+        </motion.button>
+      </div>
     </motion.div>
   );
 }

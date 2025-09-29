@@ -76,7 +76,7 @@ export function NotificationItem({
               >
                 {isSm ? notification.description : notification.title}
               </h5>
-              {notification.isNew && (
+              {notification.hasNewTag && (
                 <motion.span
                   className="text-xs bg-red-500 text-white px-2 py-1 rounded-full flex-shrink-0"
                   initial={{ scale: 0 }}
