@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NotificationItem } from "@/components/features/notifications/NotificationItem";
-import { getLatestSharingNotifications, getLatestCounselingNotifications } from "@/lib/api";
+import { getSharingList, getReportList } from "@/lib/api";
 import { Notification } from "@/types/notifications";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -21,10 +21,103 @@ export default function NotificationsPage() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const [curhatNotifications, counselingNotifications] = await Promise.all([
-          getLatestSharingNotifications(),
-          getLatestCounselingNotifications()
+        const [sharingResponse, reportResponse] = await Promise.all([
+          getSharingList(),
+          getReportList()
         ]);
+        
+        // Transform sharing data to notifications (latest 2 with "tag baru")
+        const curhatNotifications = sharingResponse.data
+          ?.slice(0, 2)
+          .map((item: import("@/types/api").Sharing) => {
+            const createdDate = new Date(item.created_at);
+            const formattedDate = createdDate.toLocaleDateString('id-ID', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            }).replace(/\//g, '/');
+
+            const status: "dibalas" | "dikirim" = item.reply ? "dibalas" : "dikirim";
+            const statusText = item.reply ? "Dibalas" : "Dikirim";
+            const statusColor = item.reply ? "blue" : "amber";
+
+            return {
+              id: item.id,
+              type: "curhat" as const,
+              title: "Status Curhatmu",
+              description: item.title,
+              teacher: item.replied_by || "System",
+              date: formattedDate,
+              status: status,
+              statusText: statusText,
+              statusColor: statusColor,
+              borderColor: item.reply ? "border-blue-400" : "border-amber-400",
+              icon: Bell,
+              isNew: true,
+              curhatDescription: item.description,
+              reply: item.reply,
+              replyDate: item.replied_at ? new Date(item.replied_at).toLocaleString('id-ID') : undefined,
+              hasNewTag: true, // Add "tag baru" indicator
+            };
+          }) || [];
+
+        // Transform report data to notifications (latest 2 with "tag baru")
+        const counselingNotifications = reportResponse.data
+          ?.slice(0, 2)
+          .map((item: import("@/types/api").Report) => {
+            const createdDate = new Date(item.created_at);
+            const formattedDate = createdDate.toLocaleDateString('id-ID', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            }).replace(/\//g, '/');
+
+            let status: "disetujui" | "selesai" | "dibatalkan" = "disetujui";
+            let statusText = "Disetujui";
+            let statusColor = "green";
+            let borderColor = "border-green-400";
+
+            switch (item.status) {
+              case "selesai":
+                status = "selesai";
+                statusText = "Selesai";
+                statusColor = "emerald";
+                borderColor = "border-emerald-400";
+                break;
+              case "dijadwalkan":
+                status = "disetujui";
+                statusText = "Disetujui";
+                statusColor = "green";
+                borderColor = "border-green-400";
+                break;
+              case "dibatalkan":
+                status = "dibatalkan";
+                statusText = "Dibatalkan";
+                statusColor = "red";
+                borderColor = "border-red-400";
+                break;
+            }
+
+            return {
+              id: item.id,
+              type: "counseling" as const,
+              title: "Jadwal Konseling",
+              description: item.topic,
+              teacher: item.counselor?.name || "System",
+              date: formattedDate,
+              time: item.time,
+              room: item.room,
+              status: status,
+              statusText: statusText,
+              statusColor: statusColor,
+              borderColor: borderColor,
+              icon: Bell,
+              isNew: true,
+              notes: item.notes,
+              noteDate: formattedDate,
+              hasNewTag: true, // Add "tag baru" indicator
+            };
+          }) || [];
         
         // Combine both types of notifications
         const allNotifications = [...curhatNotifications, ...counselingNotifications];

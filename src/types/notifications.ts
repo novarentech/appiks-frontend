@@ -29,6 +29,7 @@ export interface BaseNotification {
   borderColor: string;
   icon: LucideIcon;
   isNew: boolean;
+  hasNewTag?: boolean;
 }
 
 export interface CounselingNotification extends BaseNotification {
