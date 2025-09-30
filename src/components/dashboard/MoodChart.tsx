@@ -102,8 +102,8 @@ export default function MoodChart({
           moodLabel = "Gembira";
           break;
         default:
-          moodValue = 3;
-          moodLabel = "Netral";
+          moodValue = 0;
+          moodLabel = "Tidak ada data";
       }
 
       return {
@@ -200,25 +200,25 @@ export default function MoodChart({
             <div className="text-center">
               <div className="text-sm text-gray-600 mb-1">MOOD GEMBIRA</div>
               <div className="text-2xl font-bold text-green-600">
-                {currentMoodStats.happy}
+                {currentMoodStats.happy || 0}
               </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-600 mb-1">MOOD NETRAL</div>
               <div className="text-2xl font-bold text-gray-600">
-                {currentMoodStats.neutral}
+                {currentMoodStats.neutral || 0}
               </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-600 mb-1">MOOD MARAH</div>
               <div className="text-2xl font-bold text-red-600">
-                {currentMoodStats.angry}
+                {currentMoodStats.angry || 0}
               </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-600 mb-1">MOOD SEDIH</div>
               <div className="text-2xl font-bold text-blue-600">
-                {currentMoodStats.sad}
+                {currentMoodStats.sad || 0}
               </div>
             </div>
           </div>

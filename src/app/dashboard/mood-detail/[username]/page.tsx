@@ -110,10 +110,6 @@ export default function MoodDetailPage() {
       moodAnalysis={moodAnalysis}
       onPeriodChange={setSelectedPeriod}
       showDownloadButton={true}
-      onDownload={() => {
-        // TODO: Implement download functionality
-        console.log("Download functionality not implemented yet");
-      }}
     />
   );
 }
