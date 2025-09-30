@@ -100,9 +100,16 @@ function LoginFormContent({
           <div className="p-4 md:px-10 md:py-14 flex flex-col items-center w-full">
             <Link
               href={"/"}
-              className="text-3xl md:text-5xl text-center font-normal mb-8"
+              className="text-3xl md:text-5xl text-center mb-8 flex items-center"
             >
-              Appiks
+              <Image
+                src="/logo.webp"
+                width={200}
+                height={200}
+                className="h-20 w-20 mr-2 dark:invert"
+                alt="Appiks Logo"
+              />
+              <span className="text-indigo-500 font-medium">Appiks</span>
             </Link>
             <form
               onSubmit={handleSubmit}
