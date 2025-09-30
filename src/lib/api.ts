@@ -1124,6 +1124,22 @@ export async function getDashboardReportCount(): Promise<{
 }
 
 /**
+ * Get dashboard sharing count data
+ */
+export async function getDashboardSharingCount(): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    received: string;
+    replied: string;
+    total: string;
+  };
+}> {
+  const response = await authGet("/dashboard/sharing-count");
+  return response;
+}
+
+/**
  * Get latest counseling schedule notifications
  */
 export async function getLatestCounselingNotifications(): Promise<Notification[]> {

@@ -1012,3 +1012,14 @@ export interface DashboardReportCountResponse {
     dibatalkan: number;
   };
 }
+
+// Dashboard Sharing Count API types
+export interface DashboardSharingCountResponse {
+  success: boolean;
+  message: string;
+  data: {
+    received: string;
+    replied: string;
+    total: string;
+  };
+}

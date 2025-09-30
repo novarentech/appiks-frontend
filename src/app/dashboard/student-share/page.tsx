@@ -1,6 +1,6 @@
 "use client";
 
-import CounselorPanel from "@/components/dashboard/panels/CouncelorPanel";
+import ConfidentPanel from "@/components/dashboard/panels/ConfidentPanel";
 import ConfidentTable from "@/components/data-display/tables/ConfidentTable";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
@@ -56,7 +56,7 @@ export default function DashboardDataSiswaPage() {
       </div>
 
       {/* Panel Statistik */}
-      <CounselorPanel />
+      <ConfidentPanel />
 
       {/* Table Curhatan Siswa */}
       <ConfidentTable />
