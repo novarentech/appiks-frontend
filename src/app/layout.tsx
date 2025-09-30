@@ -24,8 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className="font-plus-jakarta-sans antialiased bg-white text-black min-h-screen"
-        style={{ fontFamily: '"Plus Jakarta Sans Variable", sans-serif' }}
+        className="antialiased bg-white text-black min-h-screen font-sans"
       >
         <AuthProvider>
           <main className="w-full min-h-screen flex flex-col">{children}</main>
