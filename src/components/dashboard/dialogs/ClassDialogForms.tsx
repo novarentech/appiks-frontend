@@ -66,11 +66,13 @@ const DialogForm = memo(function DialogForm({
   // Check if form is valid
   const isFormValid = localForm.name && localForm.level;
 
+  // Debug: Log level value
+  useEffect(() => {
+    console.log("DialogForm localForm.level:", localForm.level);
+  }, [localForm.level]);
+
   return (
-    <form
-      className="w-full"
-      onSubmit={handleSubmit}
-    >
+    <div className="w-full">
       <DialogHeader className="pb-4 border-b">
         <DialogTitle className="flex items-center gap-2 text-xl">
           {type === "tambah" ? (
@@ -96,15 +98,12 @@ const DialogForm = memo(function DialogForm({
           <div className="flex-1">
             <label className="text-sm font-medium mb-1 block">
               Nama Sekolah
-              <span className="text-red-500">*</span>
             </label>
             <Input
               placeholder="Nama Sekolah"
               value={localForm.school?.name || ""}
-              onChange={(e) => handleFormChange("school", e.target.value)}
               disabled={true}
               className=""
-              required
             />
           </div>
         )}
@@ -128,6 +127,7 @@ const DialogForm = memo(function DialogForm({
             {(type === "tambah" || type === "edit") && <span className="text-red-500">*</span>}
           </label>
           <Select
+            key={localForm.level} // Force re-render when level changes
             value={localForm.level || ""}
             onValueChange={(v) => handleFormChange("level", v)}
             disabled={readOnly}
@@ -153,7 +153,8 @@ const DialogForm = memo(function DialogForm({
             </Button>
           </DialogClose>
           <Button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             className="bg-blue-600 hover:bg-blue-700"
             disabled={!isFormValid || (type === "tambah" && addLoading)}
           >
@@ -178,7 +179,7 @@ const DialogForm = memo(function DialogForm({
           </Button>
         </DialogFooter>
       )}
-    </form>
+    </div>
   );
 });
 
@@ -301,15 +302,39 @@ export default function ClassDialogForms({
 
   // Initialize form when dialog opens or changes
   useEffect(() => {
+    console.log("ClassDialogForms openDialog:", openDialog);
+    
     if (openDialog?.type === "tambah") {
       setLocalForm({});
     } else if (openDialog?.type === "edit" || openDialog?.type === "lihat") {
-      setLocalForm(openDialog.row || {});
+      if (openDialog.row) {
+        console.log("Setting form with row data:", openDialog.row);
+        console.log("Row level value:", openDialog.row.level);
+        
+        // Set the form with all data
+        setLocalForm({
+          id: openDialog.row.id,
+          name: openDialog.row.name,
+          level: openDialog.row.level,
+          code: openDialog.row.code,
+          school_id: openDialog.row.school_id,
+          school: openDialog.row.school,
+          created_at: openDialog.row.created_at,
+          mention: openDialog.row.mention,
+        });
+      }
     }
   }, [openDialog]);
 
+  // Debug: Log when localForm changes
+  useEffect(() => {
+    console.log("localForm updated:", localForm);
+    console.log("localForm.level:", localForm.level);
+  }, [localForm]);
+
   // Local form handler - no parent communication until submit
   const handleFormChange = useCallback((field: keyof ClassItem, value: string) => {
+    console.log(`handleFormChange: ${field} = ${value}`);
     setLocalForm(prev => ({ ...prev, [field]: value }));
   }, []);
 
