@@ -114,10 +114,6 @@ export function UserDataTable({
               {user.nip && (
                 <p className="text-sm text-gray-500 truncate">{user.nip}</p>
               )}
-              <div className="sm:hidden space-y-1 mt-1">
-                <p className="text-xs text-gray-500">@{user.username}</p>
-                <p className="text-xs text-gray-500">{user.phone}</p>
-              </div>
             </div>
           </div>
         );
@@ -127,8 +123,8 @@ export function UserDataTable({
       accessorKey: "username",
       header: "Username",
       cell: ({ row }) => (
-        <span className="text-gray-600 hidden sm:block">
-          @{row.getValue("username")}
+        <span className="text-gray-600">
+          {row.getValue("username")}
         </span>
       ),
     },
@@ -136,7 +132,7 @@ export function UserDataTable({
       accessorKey: "phone",
       header: "Kontak",
       cell: ({ row }) => (
-        <span className="hidden sm:block">{row.getValue("phone")}</span>
+        <span>{row.getValue("phone")}</span>
       ),
     },
     {

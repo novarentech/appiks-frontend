@@ -481,7 +481,7 @@ export function AddEditUserDialog({
                     id="username"
                     value={formData.username}
                     onChange={(e) => handleUsernameChange(e.target.value)}
-                    placeholder="@username"
+                    placeholder="username"
                     disabled={isChecking}
                     className={`pr-10 transition-colors ${
                       isChecking

@@ -96,7 +96,7 @@ export function ViewUserDialog({
               <h3 className="font-bold text-xl text-gray-800">
                 {user.fullName}
               </h3>
-              <p className="text-gray-600 font-medium">@{user.username}</p>
+              <p className="text-gray-600 font-medium">{user.username}</p>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
                 <Badge
                   variant="secondary"

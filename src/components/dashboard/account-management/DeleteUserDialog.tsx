@@ -60,7 +60,7 @@ export function DeleteUserDialog({
             </p>
             <div className="p-4 bg-gray-50 rounded-lg border">
               <p className="font-bold text-xl text-gray-900">{user.fullName}</p>
-              <p className="text-gray-600">@{user.username}</p>
+              <p className="text-gray-600">{user.username}</p>
             </div>
           </div>
 

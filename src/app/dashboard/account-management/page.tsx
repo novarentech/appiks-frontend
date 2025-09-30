@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { UserRole } from "@/types/auth";
-import { User as ApiUser } from "@/types/api"; // Renamed to avoid conflict
+import { User as ApiUser } from "@/types/api";
 import { getAllUsers, uploadBulkImportFile, deleteUser, updateUser, getRooms, getUsersByType, createUser } from "@/lib/api";
 
 import {
@@ -385,18 +385,20 @@ export default function AccountManagementPage() {
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as UserRole)}
       >
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-12 bg-gray-50 rounded-lg p-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-12 bg-gray-50 rounded-lg p-1 mb-4 sm:mb-6">
           {tabConfig.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex items-center justify-center gap-1 sm:gap-2 py-3 sm:py-2.5 px-2 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm min-h-[44px] sm:min-h-0"
             >
-              <span className="hidden md:inline truncate">{tab.label}</span>
-              <span className="md:hidden text-xs font-semibold">
-                {tab.label.split(" ").slice(-1)[0]}
+              <span className="hidden sm:inline truncate text-center">
+                {tab.label}
               </span>
-              <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold min-w-[24px] text-center">
+              <span className="sm:hidden text-xs font-semibold text-center leading-tight mr-2">
+                {tab.label.includes(" ") ? tab.label.split(" ").slice(-1)[0] : tab.label}
+              </span>
+              <span className="bg-blue-100 text-blue-700 px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-semibold min-w-[20px] sm:min-w-[24px] text-center">
                 {tab.count}
               </span>
             </TabsTrigger>
