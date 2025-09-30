@@ -106,7 +106,7 @@ function LoginFormContent({
                 src="/logo.webp"
                 width={200}
                 height={200}
-                className="h-20 w-20 mr-2 dark:invert"
+                className=" h-14 w-14 md:h-20 md:w-20 mr-2 dark:invert"
                 alt="Appiks Logo"
               />
               <span className="text-indigo-500 font-medium">Appiks</span>
