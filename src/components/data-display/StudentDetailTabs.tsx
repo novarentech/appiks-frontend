@@ -83,10 +83,6 @@ export default function StudentDetailTabs({
           moodAnalysis={moodAnalysis}
           onPeriodChange={onPeriodChange}
           showDownloadButton={true}
-          onDownload={() => {
-            // TODO: Implement download functionality
-            console.log("Download functionality not implemented yet");
-          }}
         />
       </TabsContent>
 
