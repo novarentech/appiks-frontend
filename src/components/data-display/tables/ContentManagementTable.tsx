@@ -182,7 +182,7 @@ export function ContentManagementTable({ refreshData }: { refreshData?: () => vo
       cell: ({ row }) => {
         const item = row.original;
         return (
-          <div className="font-medium text-gray-900 max-w-md">{item.title}</div>
+          <div className="font-medium text-gray-900 max-w-md truncate">{item.title}</div>
         );
       },
     },
