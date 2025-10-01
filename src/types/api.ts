@@ -1023,3 +1023,12 @@ export interface DashboardSharingCountResponse {
     total: string;
   };
 }
+
+// Mood Record Export API types
+export interface MoodRecordExportResponse {
+  success: boolean;
+  message: string;
+  data: {
+    url: string;
+  };
+}

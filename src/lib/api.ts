@@ -61,6 +61,7 @@ import {
   RoomDetailResponse,
   StudentSharingResponse,
   StudentReportResponse,
+  MoodRecordExportResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -1088,6 +1089,14 @@ export async function getLatestSharingNotifications(): Promise<Notification[]> {
   });
 
   return notifications;
+}
+
+/**
+ * Get mood record export URL for today
+ */
+export async function getMoodRecordExportToday(): Promise<MoodRecordExportResponse> {
+  const response = await authGet("/mood_record/export/today");
+  return response;
 }
 
 /**
