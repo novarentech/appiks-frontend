@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, RotateCw, Speech } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSpeech } from "@/hooks/useSpeech";
+import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 
 const affirmations = {
   calm: [
@@ -51,7 +51,14 @@ const cardMeta = {
 };
 
 export default function AffirmationDetail() {
-  const { isLoading, isAuthenticated, isVerified } = useAuth();
+  return (
+    <RoleGuard permissionType="student-only">
+      <AffirmationDetailContent />
+    </RoleGuard>
+  );
+}
+
+function AffirmationDetailContent() {
   const { speak, speaking } = useSpeech();
   const router = useRouter();
   const [isSpinning, setIsSpinning] = useState(false);
@@ -73,27 +80,6 @@ export default function AffirmationDetail() {
   if (!key || !affirmations[key]) return null;
 
   const meta = cardMeta[key];
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !isVerified) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p>Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen max-w-6xl container mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-10 sm:py-16 lg:py-20">

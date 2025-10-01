@@ -3,9 +3,9 @@
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ThumbsDown, ThumbsUp } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
+import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 
 const breathingVideos = {
   short: "0LqWXlBfBxE",
@@ -14,10 +14,17 @@ const breathingVideos = {
 };
 
 export default function BreathingVideoPage() {
+  return (
+    <RoleGuard permissionType="student-only">
+      <BreathingVideoPageContent />
+    </RoleGuard>
+  );
+}
+
+function BreathingVideoPageContent() {
   const { key } = useParams();
   const router = useRouter();
   const videoId = breathingVideos[key as keyof typeof breathingVideos];
-  const { isLoading, isAuthenticated, isVerified } = useAuth();
   const [feedback, setFeedback] = useState<"helpful" | "not-helpful" | null>(
     null
   );
@@ -36,27 +43,6 @@ export default function BreathingVideoPage() {
   const handleGoToDashboard = () => {
     router.push("/dashboard");
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !isVerified) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p>Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (!videoId) {
     return (

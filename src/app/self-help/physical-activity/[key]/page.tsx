@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
 import { ChevronLeft, RotateCw, Play } from "lucide-react";
+import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 
 const activityData = {
   walk: {
@@ -62,7 +62,14 @@ const activityData = {
 const durations = [10, 15, 20];
 
 export default function PhysicalActivityDetail() {
-  const { isLoading, isAuthenticated, isVerified } = useAuth();
+  return (
+    <RoleGuard permissionType="student-only">
+      <PhysicalActivityDetailContent />
+    </RoleGuard>
+  );
+}
+
+function PhysicalActivityDetailContent() {
   const { key } = useParams();
   const data = activityData[key as keyof typeof activityData];
   const [duration, setDuration] = useState<number | null>(null);
@@ -128,27 +135,6 @@ export default function PhysicalActivityDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Aktivitas tidak ditemukan.
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !isVerified) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p>Redirecting...</p>
-        </div>
       </div>
     );
   }
