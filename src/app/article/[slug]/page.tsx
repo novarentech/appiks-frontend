@@ -16,12 +16,15 @@ import Image from "next/image";
 import { useState } from "react";
 import { useArticleDetail } from "@/hooks/useArticleDetail";
 import { LexicalViewer } from "@/components/blocks/LexicalViewer";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function ArticleDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { isLoading, isAuthenticated, isVerified } = useAuth();
-  const [isHelpful, setIsHelpful] = useState<boolean | null>(null);
+  const [feedback, setFeedback] = useState<"helpful" | "not-helpful" | null>(
+    null
+  );
 
   // Get article slug from URL
   const articleSlug = params.slug as string;
@@ -74,8 +77,15 @@ export default function ArticleDetailPage() {
     router.back();
   };
 
-  const handleFeedback = (helpful: boolean) => {
-    setIsHelpful(helpful);
+  const handleFeedback = (isHelpful: boolean) => {
+    const feedbackType = isHelpful ? "helpful" : "not-helpful";
+
+    // Toggle feedback - if same feedback is clicked, remove it
+    if (feedback === feedbackType) {
+      setFeedback(null);
+    } else {
+      setFeedback(feedbackType);
+    }
   };
 
   // Calculate reading time (rough estimate: 200 words per minute)
@@ -143,7 +153,7 @@ export default function ArticleDetailPage() {
             onClick={handleGoBack}
           >
             <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-0.5 transition-transform" />
-            Kembali 
+            Kembali
           </Button>
         </div>
 
@@ -222,45 +232,43 @@ export default function ArticleDetailPage() {
         </article>
 
         {/* Feedback Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Apakah artikel ini bermanfaat?
-          </h3>
-          <div className="flex gap-4">
-            <Button
-              variant={isHelpful === true ? "default" : "outline"}
-              onClick={() => handleFeedback(true)}
-              className={`flex items-center gap-2 ${
-                isHelpful === true
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "border-green-300 text-green-600 hover:bg-green-50"
-              }`}
-            >
-              <ThumbsUp className="w-4 h-4" />
-              Bermanfaat
-            </Button>
-            <Button
-              variant={isHelpful === false ? "default" : "outline"}
-              onClick={() => handleFeedback(false)}
-              className={`flex items-center gap-2 ${
-                isHelpful === false
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "border-red-300 text-red-600 hover:bg-red-50"
-              }`}
-            >
-              <ThumbsDown className="w-4 h-4" />
-              Tidak Bermanfaat
-            </Button>
-          </div>
-          {isHelpful !== null && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                ✓ Terima kasih atas feedback Anda! Feedback Anda membantu kami
-                meningkatkan kualitas konten.
-              </p>
+        <Card className="overflow-hidden">
+          <CardContent className="space-y-6">
+            <h4 className="font-semibold text-gray-900">
+              Apakah video ini bermanfaat?
+            </h4>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleFeedback(true)}
+                className={`bg-white transition-colors ${
+                  feedback === "helpful"
+                    ? "bg-green-50 border-green-300 text-green-700"
+                    : "hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                }`}
+              >
+                <ThumbsUp className="w-4 h-4 mr-2" />
+                {feedback === "helpful" ? "Bermanfaat " : "Bermanfaat"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleFeedback(false)}
+                className={`bg-white transition-colors ${
+                  feedback === "not-helpful"
+                    ? "bg-red-50 border-red-300 text-red-700"
+                    : "hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+                }`}
+              >
+                <ThumbsDown className="w-4 h-4 mr-2" />
+                {feedback === "not-helpful"
+                  ? "Tidak Bermanfaat "
+                  : "Tidak Bermanfaat"}
+              </Button>
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Custom styles for better article reading experience */}
