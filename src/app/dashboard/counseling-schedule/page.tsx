@@ -3,6 +3,7 @@
 import CounselingSchedulePanel from "@/components/dashboard/panels/CouncelingSchedulePanel";
 import CounselingScheduleTable from "@/components/data-display/tables/CounselingScheduleTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function DashboardDataSiswaPage() {
   return (
@@ -15,12 +16,10 @@ export default function DashboardDataSiswaPage() {
 function DashboardDataSiswaPageContent() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Jadwal Konseling</h1>
-        <p className="text-gray-600 mt-2">
-          Kelola dan atur jadwal konseling siswa
-        </p>
-      </div>
+      <DashboardHeader
+        title="Jadwal Konseling"
+        subtitle="Kelola dan atur jadwal konseling siswa"
+      />
 
       {/* Panel Statistik */}
       <CounselingSchedulePanel />

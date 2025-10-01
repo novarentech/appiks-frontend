@@ -2,6 +2,7 @@
 
 import SchoolMonitorTable from "@/components/data-display/tables/SchoolMonitorTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function SchoolMonitorPage() {
   return (
@@ -14,12 +15,12 @@ export default function SchoolMonitorPage() {
 function SchoolMonitorPageContent() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Monitoring Sekolah</h1>
-        <p className="text-gray-600 mt-2">
-          Sistem pelacakan data sekolah, kelas, dan siswa
-        </p>
-      </div>
+      <DashboardHeader
+        title="Monitoring Sekolah"
+        subtitle="Sistem pelacakan data sekolah, kelas, dan siswa"
+      />
+      
+      {/* Table Data Sekolah */}
       <SchoolMonitorTable />
     </div>
   );

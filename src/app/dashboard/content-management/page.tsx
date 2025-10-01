@@ -4,6 +4,7 @@ import ContentManagementPanel from "@/components/dashboard/panels/ContentManagem
 import { ContentManagementTable } from "@/components/data-display/tables/ContentManagementTable";
 import { useState } from "react";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function ContentManagementPage() {
   return (
@@ -22,10 +23,12 @@ function ContentManagementPageContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Kelola Konten Edukasi</h1>
-        <p className="text-gray-600 mt-2">Management artikel dan video </p>
-      </div>
+      <DashboardHeader
+        title="Kelola Konten Edukasi"
+        subtitle="Management artikel dan video "
+      />
+
+      {/* Panel Statistik */}
 
       <ContentManagementPanel refreshTrigger={refreshTrigger} />
 

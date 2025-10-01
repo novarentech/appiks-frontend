@@ -3,6 +3,7 @@
 import ConfidentPanel from "@/components/dashboard/panels/ConfidentPanel";
 import ConfidentTable from "@/components/data-display/tables/ConfidentTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function DashboardDataSiswaPage() {
   return (
@@ -15,10 +16,10 @@ export default function DashboardDataSiswaPage() {
 function DashboardDataSiswaPageContent() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Curhatan Siswa</h1>
-        <p className="text-gray-600 mt-2">Kelola dan tanggapi curhatan siswa</p>
-      </div>
+      <DashboardHeader
+        title="Curhatan Siswa"
+        subtitle="Kelola dan tanggapi curhatan siswa"
+      />
 
       {/* Panel Statistik */}
       <ConfidentPanel />

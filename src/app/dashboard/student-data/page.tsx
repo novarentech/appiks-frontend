@@ -6,6 +6,7 @@ import TeacherStudentData from "@/components/data-display/tables/TeacherStudentD
 import CounselorStudentData from "@/components/data-display/tables/CounselorStudentData";
 import TeacherPanel from "@/components/dashboard/panels/TeacherPanel";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 interface Student {
   id: number;
@@ -52,14 +53,14 @@ function DashboardDataSiswaPageContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Data Siswa</h1>
-        <p className="text-gray-600 mt-2">
-          {user?.role === "teacher"
+      <DashboardHeader
+        title="Data Siswa"
+        subtitle={
+          user?.role === "teacher"
             ? "Pantau mood siswa, interaksi, dan laporan dengan mudah."
-            : "Monitor kondisi emosional siswa dan kelola sesi konseling."}
-        </p>
-      </div>
+            : "Monitor kondisi emosional siswa dan kelola sesi konseling."
+        }
+      />
 
       {/* Metrics Panel - Different for Teacher and Counselor */}
       {user?.role === "teacher" && <TeacherPanel />}

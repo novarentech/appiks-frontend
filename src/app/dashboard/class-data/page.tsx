@@ -3,6 +3,7 @@
 import ClassPanel from "@/components/dashboard/panels/ClassPanel";
 import ClassDataTable from "@/components/data-display/tables/ClassDataTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function ClassDataPage() {
   return (
@@ -15,12 +16,12 @@ export default function ClassDataPage() {
 function ClassDataPageContent() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Data Kelas</h1>
-        <p className="text-gray-600 mt-2">Kelola Data Kelas</p>
-      </div>
+      <DashboardHeader
+        title="Data Kelas"
+        subtitle="Kelola Data Kelas"
+      />
+      {/* Panel Statistik */}
       <ClassPanel />
-
       <ClassDataTable />
     </div>
   );

@@ -27,6 +27,7 @@ import { DeleteUserDialog } from "@/components/dashboard/account-management/Dele
 import { BulkImportDialog } from "@/components/dashboard/account-management/BulkImportDialog";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 // Function to map API roles to local UserRole
 const mapApiRoleToUserRole = (apiRole: ApiUser["role"]): UserRole => {
@@ -363,10 +364,10 @@ function AccountManagementPageContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Kelola Akun</h1>
-        <p className="text-gray-600 mt-2">Kelola Akun dan Pengguna Appiks</p>
-      </div>
+      <DashboardHeader
+        title="Kelola Akun"
+        subtitle="Kelola Akun dan Pengguna Appiks"
+      />
 
       {/* Statistics Panel */}
       <AccountManagementPanelStats role={activeTab} users={users} />

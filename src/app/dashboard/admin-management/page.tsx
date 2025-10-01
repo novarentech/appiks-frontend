@@ -2,6 +2,7 @@
 
 import TuDataTable from "@/components/data-display/tables/TuDataTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function ClassDataPage() {
   return (
@@ -15,10 +16,10 @@ function ClassDataPageContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Data Admin TU</h1>
-        <p className="text-gray-600 mt-2">Kelola Data Admin TU</p>
-      </div>
+      <DashboardHeader
+        title="Data Admin TU"
+        subtitle="Kelola Data Admin TU dengan Mudah"
+      />
       <TuDataTable />
     </div>
   );

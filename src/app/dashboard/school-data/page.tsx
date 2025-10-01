@@ -3,6 +3,7 @@
 import HeadTeacherPanel from "@/components/dashboard/panels/HeadTeacherPanel";
 import SchoolDataTable from "@/components/data-display/tables/SchoolDataTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function SchoolDataPage() {
   return (
@@ -15,10 +16,12 @@ export default function SchoolDataPage() {
 function SchoolDataPageContent() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Data Sekolah</h1>
-        <p className="text-gray-600 mt-2">Lihat data akun pengguna Apppiks</p>
-      </div>
+      <DashboardHeader
+        title="Data Sekolah"
+        subtitle="Lihat data akun pengguna Apppiks"
+      />
+
+      {/* Panel Statistik */}
       <HeadTeacherPanel />
       <SchoolDataTable />
     </div>

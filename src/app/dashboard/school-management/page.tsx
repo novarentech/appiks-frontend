@@ -2,6 +2,7 @@
 
 import SuperSchoolDataTable from "@/components/data-display/tables/SuperSchoolDataTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 export default function ClassDataPage() {
   return (
@@ -14,11 +15,11 @@ export default function ClassDataPage() {
 function ClassDataPageContent() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Kelola Sekolah</h1>
-        <p className="text-gray-600 mt-2">Kelola Data Sekolah</p>
-      </div>
-      
+      <DashboardHeader
+        title="Kelola Sekolah"
+        subtitle="Kelola Data Sekolah"
+      />
+      {/* Table Data Sekolah */}
       <SuperSchoolDataTable />
     </div>
   );
