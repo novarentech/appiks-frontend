@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker
   output: "standalone",
 
+  compiler: {
+    removeConsole: true,
+  },
+
   images: {
     domains: [
       "images.unsplash.com",
