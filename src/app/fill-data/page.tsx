@@ -4,11 +4,7 @@ import { FillData } from "@/components/auth/FillData";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 
 export default function FillDataPage() {
-  return (
-    <RoleGuard permissionType="student-only">
-      <FillDataContent />
-    </RoleGuard>
-  );
+  return <FillDataContent />;
 }
 
 function FillDataContent() {
