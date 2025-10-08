@@ -213,14 +213,14 @@ export function AddEditUserDialog({
       } else {
         // Length validation
         if (userRole === "siswa") {
-          // NISN should be 8 characters
-          if (formData.nip.length !== 10) {
-            newErrors.nip = "NISN harus 10 karakter";
+          // NISN should be minimal 10 characters
+          if (formData.nip.length < 10) {
+            newErrors.nip = "NISN minimal 10 karakter";
           }
         } else {
-          // NIP should be 18 characters for teachers/staff
-          if (formData.nip.length !== 18) {
-            newErrors.nip = "NIP harus 18 karakter";
+          // NIP should be minimal 16 characters for teachers/staff
+          if (formData.nip.length < 16) {
+            newErrors.nip = "NIP/NUPTK minimal 16 karakter";
           }
         }
       }
