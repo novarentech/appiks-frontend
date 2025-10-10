@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { GraduationCap, Building, Check, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ interface ProfileData {
 
 const FillData = () => {
   const { data: session } = useSession();
+  const router = useRouter();
   const { isLoading, error, updateProfile } = useProfileUpdate();
   const {
     isLoading: isLoadingProfile,
@@ -191,6 +193,9 @@ const FillData = () => {
       setProfileData(updatedEditData);
       setEditData(updatedEditData);
       setShowSaveModal(false);
+      
+      // Redirect to dashboard after successful save
+      router.push("/dashboard");
     }
     // Error handling is done in the hook
   };
