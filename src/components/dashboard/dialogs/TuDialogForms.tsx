@@ -33,7 +33,7 @@ interface DialogFormProps {
   schoolsLoading: boolean;
   handleFormChange: (field: keyof TuAdmin, value: string) => void;
   onTambah: (formData: Partial<TuAdmin>) => void;
-  onEdit: (formData: Partial<TuAdmin>) => void;
+  onEdit: (formData: Partial<TuAdmin>, originalUsername?: string) => void;
   originalUsername?: string;
   addLoading?: boolean;
 }
@@ -226,7 +226,7 @@ const DialogForm = memo(function DialogForm({
     if (type === "tambah") {
       onTambah(localForm);
     } else if (type === "edit") {
-      onEdit(localForm);
+      onEdit(localForm, originalUsername);
     }
   }, [localForm, onTambah, onEdit, type, originalUsername, isUsernameAvailable, usernameError, validateUsername, validatePhone, validateEmail, validatePassword]);
 
@@ -588,7 +588,7 @@ const DialogForm = memo(function DialogForm({
 interface TuDialogFormsProps {
   openDialog: { type: "lihat" | "edit" | "hapus" | "tambah"; row?: TuAdmin } | null;
   onTambah: (formData: Partial<TuAdmin>) => void;
-  onEdit: (formData: Partial<TuAdmin>) => void;
+  onEdit: (formData: Partial<TuAdmin>, originalUsername?: string) => void;
   onDelete: () => void;
   setOpenDialog: (dialog: null | { type: "lihat" | "edit" | "hapus" | "tambah"; row?: TuAdmin }) => void;
   deleteLoading?: boolean;

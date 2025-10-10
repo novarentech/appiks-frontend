@@ -292,7 +292,7 @@ export default function TuDataTable() {
     }
   }, [schools]);
 
-  const handleEdit = useCallback(async (formData: Partial<TuAdmin>) => {
+  const handleEdit = useCallback(async (formData: Partial<TuAdmin>, originalUsername?: string) => {
     try {
       // Find the school ID from the school name
       const selectedSchool = schools.find((school: School) => school.name === formData.sekolah);
@@ -301,18 +301,21 @@ export default function TuDataTable() {
         return;
       }
 
+      // Use original username as identifier, new username in the data
+      const usernameIdentifier = originalUsername || formData.username!;
+      
       // Prepare data for API call
       const apiData = {
         name: formData.nama!,
         phone: `62${formData.telepon!}`, // Add +62 prefix
-        username: formData.username!,
+        username: formData.username!, // This can be the new username
         identifier: formData.nip!,
         school_id: selectedSchool.id,
         password: formData.password || null, // Include password if provided
       };
 
-      // Call API to update admin
-      const response = await updateUser(formData.username!, apiData);
+      // Call API to update admin using original username as identifier
+      const response = await updateUser(usernameIdentifier, apiData);
       
       if (response.success) {
         // Refresh the data from API to get the updated list
