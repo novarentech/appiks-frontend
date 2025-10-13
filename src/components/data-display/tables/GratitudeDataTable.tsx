@@ -21,6 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getSelfHelpData } from "@/lib/api";
+import { SelfHelpResponse, GratitudeJournalContent } from "@/types/api";
 
 interface GratitudeEntry {
   id: number;
@@ -31,112 +33,74 @@ interface GratitudeEntry {
 }
 
 interface GratitudeDataTableProps {
+  username: string;
   onEntrySelect?: (entry: GratitudeEntry) => void;
 }
 
-// Sample local data
-const sampleGratitudeData: GratitudeEntry[] = [
-  {
-    id: 1,
-    time: "08/27/2025 08:00 AM",
-    improvement: [
-      "Aku berani berbicara meskipun gugup.",
-      "Aku menyiapkan materi dengan baik sejak kemarin.",
-      "Aku tidak menyerah meskipun sempat salah saat menjelaskan."
-    ],
-    achivement: "Aku akhirnya berani presentasi di depan kelas.",
-    appreciate: "Hari ini, aku bangga pada diriku karena aku berani mencoba dan tidak takut gagal."
-  },
-  {
-    id: 2,
-    time: "08/26/2025 03:30 PM",
-    improvement: [
-      "Aku belajar dengan disiplin setiap hari.",
-      "Aku bertanya kepada guru saat tidak mengerti.",
-      "Aku mengerjakan latihan soal secara rutin."
-    ],
-    achivement: "Aku mendapatkan nilai A untuk ulangan matematika.",
-    appreciate: "Aku bersyukur atas kerja kerasku dan bantuan dari teman-teman yang sudah membantu belajar."
-  },
-  {
-    id: 3,
-    time: "08/25/2025 07:15 PM",
-    improvement: [
-      "Aku mencoba mengontrol emosiku saat marah.",
-      "Aku mau mendengarkan pendapat adikku.",
-      "Aku yang memulai untuk minta maaf terlebih dahulu."
-    ],
-    achivement: "Aku berhasil menyelesaikan konflik dengan adikku dengan baik.",
-    appreciate: "Aku menghargai proses belajarku untuk menjadi kakak yang lebih baik."
-  },
-  {
-    id: 4,
-    time: "08/24/2025 02:00 PM",
-    improvement: [
-      "Aku menulis dengan lebih terstruktur.",
-      "Aku melakukan riset untuk mendukung argumen ku.",
-      "Aku meminta masukan kepada teman sebelum mengumpulkan."
-    ],
-    achivement: "Tugas bahasa Indonesiaku dipuji oleh guru dan menjadi contoh di kelas.",
-    appreciate: "Aku bangga dengan hasil kerjaku dan termotivasi untuk terus berkembang."
-  },
-  {
-    id: 5,
-    time: "08/23/2025 06:45 PM",
-    improvement: [
-      "Aku berani mengungkapkan perasaanku secara jujur.",
-      "Aku mendukung keputusan sahabatku.",
-      "Aku berjanji untuk tetap menjaga komunikasi."
-    ],
-    achivement: "Aku bisa melepas kepergian sahabatku dengan hati yang ikhlas.",
-    appreciate: "Aku bersyukur memiliki persahabatan yang indah dan pengalaman berharga selama ini."
-  },
-  {
-    id: 6,
-    time: "08/22/2025 11:30 AM",
-    improvement: [
-      "Aku mulai belajar untuk bangun lebih pagi.",
-      "Aku menyiapkan keperluan sekolah dari malam sebelumnya.",
-      "Aku mengatur waktu dengan lebih baik."
-    ],
-    achivement: "Aku berhasil sampai di sekolah tepat waktu dan siap mengikuti pelajaran.",
-    appreciate: "Aku menghargai usaha kecilku untuk menjadi lebih disiplin."
-  },
-  {
-    id: 7,
-    time: "08/21/2025 04:15 PM",
-    improvement: [
-      "Aku rajin mengikuti latihan basket.",
-      "Aku bekerja sama dengan tim dengan baik.",
-      "Aku tidak mudah menyerah saat pertandingan sulit."
-    ],
-    achivement: "Aku berkontribusi dalam kemenangan tim basket sekolah.",
-    appreciate: "Aku bersyukur bisa menjadi bagian dari tim yang solid dan penuh semangat."
-  },
-  {
-    id: 8,
-    time: "08/20/2025 08:30 PM",
-    improvement: [
-      "Aku mulai mencari informasi tentang berbagai jurusan.",
-      "Aku diskusi dengan orang tua tentang masa depan.",
-      "Aku mencoba untuk berpikir positif dan percaya diri."
-    ],
-    achivement: "Aku mulai memiliki gambaran yang lebih jelas tentang arah masa depanku.",
-    appreciate: "Aku menghargai proses pencarian jati diri dan dukungan dari keluarga."
+// Transform API data to GratitudeEntry format
+function transformApiDataToGratitudeEntries(apiData: SelfHelpResponse): GratitudeEntry[] {
+  if (!apiData.success || !apiData.data) {
+    return [];
   }
-];
 
-export default function GratitudeDataTable({}: GratitudeDataTableProps) {
+  return apiData.data
+    .filter(item => item.type === "Gratitude Journal")
+    .map(item => {
+      const content = item.content as GratitudeJournalContent;
+      return {
+        id: item.id,
+        time: new Date(item.created_at).toLocaleString('id-ID', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).replace(/\//g, '/'),
+        improvement: content.progress,
+        achivement: content.achievement.join(", "),
+        appreciate: content.apreciation
+      };
+    })
+    .reverse(); // Show newest entries first
+}
+
+export default function GratitudeDataTable({ username }: GratitudeDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredData, setFilteredData] =
-    useState<GratitudeEntry[]>(sampleGratitudeData);
+  const [apiData, setApiData] = useState<GratitudeEntry[]>([]);
+  const [filteredData, setFilteredData] = useState<GratitudeEntry[]>([]);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [selectedEntry, setSelectedEntry] = useState<GratitudeEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Apply search filter when search term changes
+  // Fetch data from API
   useEffect(() => {
-    const filtered = sampleGratitudeData.filter((entry) => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getSelfHelpData("Gratitude Journal", username);
+        const transformedData = transformApiDataToGratitudeEntries(response);
+        setApiData(transformedData);
+        setFilteredData(transformedData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setApiData([]);
+        setFilteredData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      fetchData();
+    }
+  }, [username]);
+
+  // Apply search filter when search term or API data changes
+  useEffect(() => {
+    const filtered = apiData.filter((entry) => {
       const matchesSearch =
         entry.achivement.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.appreciate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,7 +111,7 @@ export default function GratitudeDataTable({}: GratitudeDataTableProps) {
       return matchesSearch;
     });
     setFilteredData(filtered);
-  }, [searchTerm]);
+  }, [searchTerm, apiData]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -275,57 +239,113 @@ export default function GratitudeDataTable({}: GratitudeDataTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Controls Layout */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1 min-w-0">
-          <Input
-            placeholder="Cari pencapaian, apresiasi, atau perbaikan diri..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full"
-          />
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Memuat data...</p>
+          </div>
         </div>
+      )}
 
-        {/* Page Size Selector */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
-            Tampilkan:
-          </span>
-          <span className="text-sm font-medium text-gray-600 sm:hidden">
-            Per halaman:
-          </span>
-          <Select
-            value={currentPageSize.toString()}
-            onValueChange={(value) => setCurrentPageSize(Number(value))}
-          >
-            <SelectTrigger className="w-[80px] sm:w-[80px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Error State */}
+      {error && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const fetchData = async () => {
+                  try {
+                    setLoading(true);
+                    setError(null);
+                    const response = await getSelfHelpData("Gratitude Journal", username);
+                    const transformedData = transformApiDataToGratitudeEntries(response);
+                    setApiData(transformedData);
+                    setFilteredData(transformedData);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to fetch data");
+                    setApiData([]);
+                    setFilteredData([]);
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                fetchData();
+              }}
+            >
+              Coba Lagi
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && filteredData.length === 0 && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Tidak ada data Gratitude Journal yang tersedia.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Controls Layout */}
+      {!loading && !error && filteredData.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 min-w-0">
+            <Input
+              placeholder="Cari pencapaian, apresiasi, atau perbaikan diri..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
+              Tampilkan:
+            </span>
+            <span className="text-sm font-medium text-gray-600 sm:hidden">
+              Per halaman:
+            </span>
+            <Select
+              value={currentPageSize.toString()}
+              onValueChange={(value) => setCurrentPageSize(Number(value))}
+            >
+              <SelectTrigger className="w-[80px] sm:w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={filteredData}
-        searchColumn=""
-        searchPlaceholder=""
-        showColumnToggle={false}
-        showPagination={true}
-        pageSize={currentPageSize}
-        pageSizeOptions={[5, 10, 15, 20, 25, 50]}
-        showPageSizeSelector={false}
-      />
+      {!loading && !error && filteredData.length > 0 && (
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          searchColumn=""
+          searchPlaceholder=""
+          showColumnToggle={false}
+          showPagination={true}
+          pageSize={currentPageSize}
+          pageSizeOptions={[5, 10, 15, 20, 25, 50]}
+          showPageSizeSelector={false}
+        />
+      )}
     </div>
   );
 }

@@ -68,8 +68,7 @@ const getMoodEmoji = (mood: string) => {
   }
 };
 
-export default function TeacherStudentData({
-}: StudentDataTableProps) {
+export default function TeacherStudentData({}: StudentDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [kelasFilter, setKelasFilter] = useState("all");
   const [statusMoodFilter, setStatusMoodFilter] = useState("all");
@@ -360,6 +359,19 @@ export default function TeacherStudentData({
               >
                 <Eye className="w-3 h-3 mr-1" />
                 <span className="hidden sm:inline">Lihat Pola Mood</span>
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-3 py-1 h-8"
+            >
+              <Link
+                href={`/dashboard/self-help-history/${student.username}`}
+                className="flex items-center justify-center"
+              >
+                <Eye className="w-3 h-3 mr-1" />
+                <span className="hidden sm:inline">Riwayat Self-Help</span>
               </Link>
             </Button>
           </div>

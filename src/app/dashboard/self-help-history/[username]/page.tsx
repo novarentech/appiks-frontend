@@ -1,24 +1,31 @@
 "use client";
 
+import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import GratitudeDataTable from "@/components/data-display/tables/GratitudeDataTable";
 import GroundingDataTable from "@/components/data-display/tables/GroundingDataTable";
 import JournalingDataTable from "@/components/data-display/tables/JournalingDataTable";
 import SensoryDataTable from "@/components/data-display/tables/SensoryDataTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Brain, Heart, Wind } from "lucide-react";
+import { useParams } from "next/navigation";
 
 export default function SchoolMonitorPage() {
-  return <SelfHelpPageContent />;
+  return (
+    <RoleGuard permissionType="self-help-history">
+      <SelfHelpPageContent />
+    </RoleGuard>
+  );
 }
 
 function SelfHelpPageContent() {
+  const params = useParams();
+  const username = params.username as string;
+
   return (
     <div className="space-y-6">
       <div className="sm:flex items-center justify-between ">
         <div>
-          <h1 className="text-3xl font-bold">
-            Riwayat Self Help Diego Mendoza
-          </h1>
+          <h1 className="text-3xl font-bold">Riwayat Self Help {username}</h1>
           <p className="text-gray-600 mt-2">
             Pantau aktivitas self help siswa dan lihat hasilnya
           </p>
@@ -56,16 +63,16 @@ function SelfHelpPageContent() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="daily-journaling" className="space-y-4">
-          <JournalingDataTable />
+          <JournalingDataTable username={username} />
         </TabsContent>
         <TabsContent value="gratitude-journal">
-          <GratitudeDataTable />
+          <GratitudeDataTable username={username} />
         </TabsContent>
         <TabsContent value="grounding-technique">
-          <GroundingDataTable />
+          <GroundingDataTable username={username} />
         </TabsContent>
         <TabsContent value="sensory-relaxation">
-          <SensoryDataTable/>
+          <SensoryDataTable username={username} />
         </TabsContent>
       </Tabs>
     </div>

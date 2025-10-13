@@ -21,6 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getSelfHelpData } from "@/lib/api";
+import { SelfHelpResponse, GroundingTechniqueContent } from "@/types/api";
 
 interface GroundingEntry {
   id: number;
@@ -33,153 +35,78 @@ interface GroundingEntry {
 }
 
 interface GroundingDataTableProps {
+  username: string;
   onEntrySelect?: (entry: GroundingEntry) => void;
 }
 
-// Sample local data
-const sampleGroundingData: GroundingEntry[] = [
-  {
-    id: 1,
-    time: "08/27/2025 08:00 AM",
-    "5_hal_yang_dilihat": ["papan tulis", "buku", "pensil", "tas", "jendela"],
-    "4_hal_yang_disentuh": ["meja", "kursi", "kain seragam", "rambut"],
-    "3_hal_yang_bisa_didengar": [
-      "suara AC",
-      "langkah kaki",
-      "suara teman berbicara",
-    ],
-    "2_hal_yang_bisa_dicium": ["aroma ruangan", "parfum teman"],
-    "1_hal_yang_bisa_dirasakan": ["rasa permen mint"],
-  },
-  {
-    id: 2,
-    time: "08/26/2025 03:30 PM",
-    "5_hal_yang_dilihat": [
-      "layar laptop",
-      "cangkir kopi",
-      "buku catatan",
-      "tanaman hias",
-      "jam dinding",
-    ],
-    "4_hal_yang_disentuh": ["keyboard laptop", "mouse", "gelas", "meja kayu"],
-    "3_hal_yang_bisa_didengar": [
-      "ketikan keyboard",
-      "suara kipas",
-      "deru kendaraan",
-    ],
-    "2_hal_yang_bisa_dicium": ["aroma kopi", "bau kertas"],
-    "1_hal_yang_bisa_dirasakan": ["hangatnya cangkir"],
-  },
-  {
-    id: 3,
-    time: "08/25/2025 07:15 PM",
-    "5_hal_yang_dilihat": ["TV", "sofa", "meja kopi", "lampu tidur", "bantal"],
-    "4_hal_yang_disentuh": ["selimut", "remote TV", "dinding", "lantai karpet"],
-    "3_hal_yang_bisa_didengar": ["suara TV", "denting jam", "angin di luar"],
-    "2_hal_yang_bisa_dicium": ["aroma lavender", "bau makanan"],
-    "1_hal_yang_bisa_dirasakan": ["kenyamanan sofa"],
-  },
-  {
-    id: 4,
-    time: "08/24/2025 02:00 PM",
-    "5_hal_yang_dilihat": ["pohon", "langit biru", "awan", "burung", "rumput"],
-    "4_hal_yang_disentuh": ["rumput", "batu", "kulit pohon", "angin"],
-    "3_hal_yang_bisa_didengar": ["kicau burung", "desau angin", "suara jauh"],
-    "2_hal_yang_bisa_dicium": ["aroma tanah", "bau bunga"],
-    "1_hal_yang_bisa_dirasakan": ["hangatnya matahari"],
-  },
-  {
-    id: 5,
-    time: "08/23/2025 06:45 PM",
-    "5_hal_yang_dilihat": ["kompor", "panci", "sayuran", "pisau", "piring"],
-    "4_hal_yang_disentuh": [
-      "handle panci",
-      "sayuran",
-      "meja dapur",
-      "air keran",
-    ],
-    "3_hal_yang_bisa_didengar": [
-      "suara menumis",
-      "rebusan air",
-      "buka tutup kulkas",
-    ],
-    "2_hal_yang_bisa_dicium": ["aroma masakan", "bau sayuran segar"],
-    "1_hal_yang_bisa_dirasakan": ["panasnya kompor"],
-  },
-  {
-    id: 6,
-    time: "08/22/2025 11:30 AM",
-    "5_hal_yang_dilihat": [
-      "spidol",
-      "kertas putih",
-      "penggaris",
-      "penghapus",
-      "meja belajar",
-    ],
-    "4_hal_yang_disentuh": ["spidol", "kertas", "penggaris", "permukaan meja"],
-    "3_hal_yang_bisa_didengar": ["suara spidol", "napasku", "suara dari luar"],
-    "2_hal_yang_bisa_dicium": ["bau spidol", "bau kertas"],
-    "1_hal_yang_bisa_dirasakan": ["tekanan spidol"],
-  },
-  {
-    id: 7,
-    time: "08/21/2025 04:15 PM",
-    "5_hal_yang_dilihat": [
-      "sepatu",
-      "kaos kaki",
-      "air mineral",
-      "handuk",
-      "lantai kamar mandi",
-    ],
-    "4_hal_yang_disentuh": [
-      "sepatu",
-      "kaos kaki",
-      "botol air",
-      "lantai keramik",
-    ],
-    "3_hal_yang_bisa_didengar": ["suara keran", "tetesan air", "langkah kaki"],
-    "2_hal_yang_bisa_dicium": ["bau sabun", "aroma air mineral"],
-    "1_hal_yang_bisa_dirasakan": ["dinginnya air"],
-  },
-  {
-    id: 8,
-    time: "08/20/2025 08:30 PM",
-    "5_hal_yang_dilihat": [
-      "buku novel",
-      "lampu baca",
-      "kacamata",
-      "bookmark",
-      "meja nakas",
-    ],
-    "4_hal_yang_disentuh": [
-      "halaman buku",
-      "cover buku",
-      "kacamata",
-      "selimut",
-    ],
-    "3_hal_yang_bisa_didengar": [
-      "suara halaman dibalik",
-      "denting jam",
-      "suara hujan",
-    ],
-    "2_hal_yang_bisa_dicium": ["bau kertas buku", "aroma lavender"],
-    "1_hal_yang_bisa_dirasakan": ["tekstur kertas"],
-  },
-];
+// Transform API data to GroundingEntry format
+function transformApiDataToGroundingEntries(apiData: SelfHelpResponse): GroundingEntry[] {
+  if (!apiData.success || !apiData.data) {
+    return [];
+  }
 
-export default function GroundingDataTable({}: GroundingDataTableProps) {
+  return apiData.data
+    .filter(item => item.type === "Grounding Technique")
+    .map(item => {
+      const content = item.content as GroundingTechniqueContent;
+      return {
+        id: item.id,
+        time: new Date(item.created_at).toLocaleString('id-ID', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).replace(/\//g, '/'),
+        "5_hal_yang_dilihat": content.five,
+        "4_hal_yang_disentuh": content.four,
+        "3_hal_yang_bisa_didengar": content.three,
+        "2_hal_yang_bisa_dicium": content.two,
+        "1_hal_yang_bisa_dirasakan": [content.one]
+      };
+    })
+    .reverse(); // Show newest entries first
+}
+
+export default function GroundingDataTable({ username }: GroundingDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredData, setFilteredData] =
-    useState<GroundingEntry[]>(sampleGroundingData);
+  const [apiData, setApiData] = useState<GroundingEntry[]>([]);
+  const [filteredData, setFilteredData] = useState<GroundingEntry[]>([]);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [selectedEntry, setSelectedEntry] = useState<GroundingEntry | null>(
     null
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Apply search filter when search term changes
+  // Fetch data from API
   useEffect(() => {
-    const filtered = sampleGroundingData.filter((entry) => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getSelfHelpData("Grounding Technique", username);
+        const transformedData = transformApiDataToGroundingEntries(response);
+        setApiData(transformedData);
+        setFilteredData(transformedData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setApiData([]);
+        setFilteredData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      fetchData();
+    }
+  }, [username]);
+
+  // Apply search filter when search term or API data changes
+  useEffect(() => {
+    const filtered = apiData.filter((entry) => {
       const matchesSearch =
         entry["5_hal_yang_dilihat"].some((item) =>
           item.toLowerCase().includes(searchTerm.toLowerCase())
@@ -200,7 +127,7 @@ export default function GroundingDataTable({}: GroundingDataTableProps) {
       return matchesSearch;
     });
     setFilteredData(filtered);
-  }, [searchTerm]);
+  }, [searchTerm, apiData]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -340,57 +267,113 @@ export default function GroundingDataTable({}: GroundingDataTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Controls Layout */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1 min-w-0">
-          <Input
-            placeholder="Cari hal yang dilihat, disentuh, didengar, dicium, atau dirasakan..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full"
-          />
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Memuat data...</p>
+          </div>
         </div>
+      )}
 
-        {/* Page Size Selector */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
-            Tampilkan:
-          </span>
-          <span className="text-sm font-medium text-gray-600 sm:hidden">
-            Per halaman:
-          </span>
-          <Select
-            value={currentPageSize.toString()}
-            onValueChange={(value) => setCurrentPageSize(Number(value))}
-          >
-            <SelectTrigger className="w-[80px] sm:w-[80px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Error State */}
+      {error && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const fetchData = async () => {
+                  try {
+                    setLoading(true);
+                    setError(null);
+                    const response = await getSelfHelpData("Grounding Technique", username);
+                    const transformedData = transformApiDataToGroundingEntries(response);
+                    setApiData(transformedData);
+                    setFilteredData(transformedData);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to fetch data");
+                    setApiData([]);
+                    setFilteredData([]);
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                fetchData();
+              }}
+            >
+              Coba Lagi
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && filteredData.length === 0 && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Tidak ada data Grounding Technique yang tersedia.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Controls Layout */}
+      {!loading && !error && filteredData.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 min-w-0">
+            <Input
+              placeholder="Cari hal yang dilihat, disentuh, didengar, dicium, atau dirasakan..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
+              Tampilkan:
+            </span>
+            <span className="text-sm font-medium text-gray-600 sm:hidden">
+              Per halaman:
+            </span>
+            <Select
+              value={currentPageSize.toString()}
+              onValueChange={(value) => setCurrentPageSize(Number(value))}
+            >
+              <SelectTrigger className="w-[80px] sm:w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={filteredData}
-        searchColumn=""
-        searchPlaceholder=""
-        showColumnToggle={false}
-        showPagination={true}
-        pageSize={currentPageSize}
-        pageSizeOptions={[5, 10, 15, 20, 25, 50]}
-        showPageSizeSelector={false}
-      />
+      {!loading && !error && filteredData.length > 0 && (
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          searchColumn=""
+          searchPlaceholder=""
+          showColumnToggle={false}
+          showPagination={true}
+          pageSize={currentPageSize}
+          pageSizeOptions={[5, 10, 15, 20, 25, 50]}
+          showPageSizeSelector={false}
+        />
+      )}
     </div>
   );
 }

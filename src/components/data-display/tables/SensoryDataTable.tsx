@@ -21,6 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getSelfHelpData } from "@/lib/api";
+import { SelfHelpResponse, SensoryRelaxationContent } from "@/types/api";
 
 interface SensoryEntry {
   id: number;
@@ -30,104 +32,73 @@ interface SensoryEntry {
 }
 
 interface SensoryDataTableProps {
+  username: string;
   onEntrySelect?: (entry: SensoryEntry) => void;
 }
 
-// Sample local data
-const sampleSensoryData: SensoryEntry[] = [
-  {
-    id: 1,
-    time: "08/27/2025 08:00 AM",
-    Aktivitas: [
-      "Cuci tangan dengan air mengalir",
-      "Mandi air dingin (saat merasa jenuh dan butuh segar) atau",
-      "Mandi air hangat (saat merasa sangat lelah, frustasi dan membutuhkan fokus ketenangan)"
-    ],
-    Refleksi: "aku merasa lebih tenang dan segar juga emosi lebih stabil"
-  },
-  {
-    id: 2,
-    time: "08/26/2025 03:30 PM",
-    Aktivitas: [
-      "Berjalan kaki di taman sambil merasakan angin",
-      "Menyentuh daun dan bunga dengan lembut",
-      "Duduk di rumput sambil merasakan teksturnya"
-    ],
-    Refleksi: "aku merasa terhubung dengan alam dan lebih rileks"
-  },
-  {
-    id: 3,
-    time: "08/25/2025 07:15 PM",
-    Aktivitas: [
-      "Menggosok badan dengan handuk kasar",
-      "Minum teh hangat sambil merasakan hangatnya",
-      "Mendengarkan suara hujan di jendela"
-    ],
-    Refleksi: "aku merasa nyaman dan lebih siap untuk tidur"
-  },
-  {
-    id: 4,
-    time: "08/24/2025 02:00 PM",
-    Aktivitas: [
-      "Memegang es batu dengan telapak tangan",
-      "Mencelupkan kaki ke air dingin",
-      "Menghirup aroma peppermint oil"
-    ],
-    Refleksi: "aku merasa segar dan fokus kembali setelah lelah belajar"
-  },
-  {
-    id: 5,
-    time: "08/23/2025 06:45 PM",
-    Aktivitas: [
-      "Memijat bahu dengan lembut",
-      "Menggosok punggung dengan sikat lembut",
-      "Mengenakan pakaian yang nyaman dan lembut"
-    ],
-    Refleksi: "aku merasa relaks dan tegangku berkurang"
-  },
-  {
-    id: 6,
-    time: "08/22/2025 11:30 AM",
-    Aktivitas: [
-      "Mencium aroma kopi segar",
-      "Merasakan tekstur biji kopi",
-      "Menikmati hangatnya cangkir kopi"
-    ],
-    Refleksi: "aku merasa berenergi dan siap untuk memulai hari"
-  },
-  {
-    id: 7,
-    time: "08/21/2025 04:15 PM",
-    Aktivitas: [
-      "Menggosok telapak kaki di karpet",
-      "Memegang bantal lembut",
-      "Merasakan selimut hangat"
-    ],
-    Refleksi: "aku merasa aman dan nyaman di ruanganku"
-  },
-  {
-    id: 8,
-    time: "08/20/2025 08:30 PM",
-    Aktivitas: [
-      "Mencuci muka dengan air dingin",
-      "Mengaplikasikan pelembap wajah",
-      "Merasakan tekstur handuk lembut di wajah"
-    ],
-    Refleksi: "aku merasa segar dan siap untuk tidur nyenyak"
+// Transform API data to SensoryEntry format
+function transformApiDataToSensoryEntries(apiData: SelfHelpResponse): SensoryEntry[] {
+  if (!apiData.success || !apiData.data) {
+    return [];
   }
-];
 
-export default function SensoryDataTable({}: SensoryDataTableProps) {
+  return apiData.data
+    .filter(item => item.type === "Sensory Relaxation")
+    .map(item => {
+      const content = item.content as SensoryRelaxationContent;
+      return {
+        id: item.id,
+        time: new Date(item.created_at).toLocaleString('id-ID', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).replace(/\//g, '/'),
+        Aktivitas: content.activity,
+        Refleksi: content.reflection
+      };
+    })
+    .reverse(); // Show newest entries first
+}
+
+export default function SensoryDataTable({ username }: SensoryDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredData, setFilteredData] =
-    useState<SensoryEntry[]>(sampleSensoryData);
+  const [apiData, setApiData] = useState<SensoryEntry[]>([]);
+  const [filteredData, setFilteredData] = useState<SensoryEntry[]>([]);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [selectedEntry, setSelectedEntry] = useState<SensoryEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Apply search filter when search term changes
+  // Fetch data from API
   useEffect(() => {
-    const filtered = sampleSensoryData.filter((entry) => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getSelfHelpData("Sensory Relaxation", username);
+        const transformedData = transformApiDataToSensoryEntries(response);
+        setApiData(transformedData);
+        setFilteredData(transformedData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setApiData([]);
+        setFilteredData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      fetchData();
+    }
+  }, [username]);
+
+  // Apply search filter when search term or API data changes
+  useEffect(() => {
+    const filtered = apiData.filter((entry) => {
       const matchesSearch =
         entry.Aktivitas.some((aktivitas) =>
           aktivitas.toLowerCase().includes(searchTerm.toLowerCase())
@@ -137,7 +108,7 @@ export default function SensoryDataTable({}: SensoryDataTableProps) {
       return matchesSearch;
     });
     setFilteredData(filtered);
-  }, [searchTerm]);
+  }, [searchTerm, apiData]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -258,57 +229,113 @@ export default function SensoryDataTable({}: SensoryDataTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Controls Layout */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1 min-w-0">
-          <Input
-            placeholder="Cari aktivitas atau refleksi..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full"
-          />
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Memuat data...</p>
+          </div>
         </div>
+      )}
 
-        {/* Page Size Selector */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
-            Tampilkan:
-          </span>
-          <span className="text-sm font-medium text-gray-600 sm:hidden">
-            Per halaman:
-          </span>
-          <Select
-            value={currentPageSize.toString()}
-            onValueChange={(value) => setCurrentPageSize(Number(value))}
-          >
-            <SelectTrigger className="w-[80px] sm:w-[80px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Error State */}
+      {error && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const fetchData = async () => {
+                  try {
+                    setLoading(true);
+                    setError(null);
+                    const response = await getSelfHelpData("Sensory Relaxation", username);
+                    const transformedData = transformApiDataToSensoryEntries(response);
+                    setApiData(transformedData);
+                    setFilteredData(transformedData);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to fetch data");
+                    setApiData([]);
+                    setFilteredData([]);
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                fetchData();
+              }}
+            >
+              Coba Lagi
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && filteredData.length === 0 && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Tidak ada data Sensory Relaxation yang tersedia.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Controls Layout */}
+      {!loading && !error && filteredData.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 min-w-0">
+            <Input
+              placeholder="Cari aktivitas atau refleksi..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
+              Tampilkan:
+            </span>
+            <span className="text-sm font-medium text-gray-600 sm:hidden">
+              Per halaman:
+            </span>
+            <Select
+              value={currentPageSize.toString()}
+              onValueChange={(value) => setCurrentPageSize(Number(value))}
+            >
+              <SelectTrigger className="w-[80px] sm:w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={filteredData}
-        searchColumn=""
-        searchPlaceholder=""
-        showColumnToggle={false}
-        showPagination={true}
-        pageSize={currentPageSize}
-        pageSizeOptions={[5, 10, 15, 20, 25, 50]}
-        showPageSizeSelector={false}
-      />
+      {!loading && !error && filteredData.length > 0 && (
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          searchColumn=""
+          searchPlaceholder=""
+          showColumnToggle={false}
+          showPagination={true}
+          pageSize={currentPageSize}
+          pageSizeOptions={[5, 10, 15, 20, 25, 50]}
+          showPageSizeSelector={false}
+        />
+      )}
     </div>
   );
 }

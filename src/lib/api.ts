@@ -63,6 +63,7 @@ import {
   StudentReportResponse,
   MoodRecordExportResponse,
   StudentMoodExportResponse,
+  SelfHelpResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -1154,6 +1155,18 @@ export async function getDashboardSharingCount(): Promise<{
   };
 }> {
   const response = await authGet("/dashboard/sharing-count");
+  return response;
+}
+
+/**
+ * Get self-help data by type and username
+ */
+export async function getSelfHelpData(
+  type: "Daily Journaling" | "Gratitude Journal" | "Grounding Technique" | "Sensory Relaxation",
+  username: string
+): Promise<SelfHelpResponse> {
+  const encodedType = encodeURIComponent(type);
+  const response = await authGet(`/self-help/${encodedType}/${username}`);
   return response;
 }
 

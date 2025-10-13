@@ -46,6 +46,7 @@ export default function DynamicBreadcrumb() {
       "student-share": "Curhatan Siswa",
       "student-data": "Data Siswa",
       "mood-detail": "Detail Mood",
+      "self-help-history": "Riwayat Self Help",
       counseling: "Konseling",
       schedule: "Jadwal",
       class: "Kelas",
@@ -119,12 +120,18 @@ export default function DynamicBreadcrumb() {
           const icon = segmentToIcon(segment);
 
           // Check if this segment should be clickable
-          // For mood-detail followed by dynamic username, make it non-clickable
           const isMoodDetailWithUsername =
             segment === "mood-detail" &&
             index < pathSegments.length - 1 &&
             pathSegments[index + 1] !== "[username]";
-          const shouldBeClickable = !isLast && !isMoodDetailWithUsername;
+
+          const isSelfHelpHistoryWithUsername =
+            segment === "self-help-history" &&
+            index < pathSegments.length - 1 &&
+            pathSegments[index + 1] !== "[username]";
+
+          const shouldBeClickable =
+            !isLast && !isMoodDetailWithUsername && !isSelfHelpHistoryWithUsername;
 
           return (
             <Fragment key={segment}>

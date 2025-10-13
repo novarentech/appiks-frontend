@@ -112,6 +112,11 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
     requireVerification: true,
     redirectTo: "/dashboard",
   },
+  "self-help-history": {
+    allowedRoles: ["teacher"],
+    requireVerification: true,
+    redirectTo: "/dashboard",
+  },
 
   // Dashboard (all roles but different rendering)
   dashboard: {

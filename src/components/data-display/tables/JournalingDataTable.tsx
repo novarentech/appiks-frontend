@@ -22,6 +22,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getSelfHelpData } from "@/lib/api";
+import { SelfHelpResponse, DailyJournalingContent } from "@/types/api";
 
 interface JournalEntry {
   id: number;
@@ -33,98 +35,75 @@ interface JournalEntry {
 }
 
 interface JournalingDataTableProps {
+  username: string;
   onEntrySelect?: (entry: JournalEntry) => void;
 }
 
-// Sample local data
-const sampleJournalData: JournalEntry[] = [
-  {
-    id: 1,
-    time: "08/27/2025 08:00 AM",
-    story:
-      "Hari ini aku merasa takut karena beberapa teman menertawakanku saat presentasi di depan kelas. Setelah itu aku jadi sedih dan memilih diam sepanjang pelajaran. Tapi makin lama aku merasa marah, bukan cuma karena mereka mengejek, tapi juga karena aku gak bisa membela diri saat itu.",
-    emosi: ["takut", "sedih", "marah"],
-    category: "sekolah",
-    think: "Aku harap besok aku bisa tampil lagi dengan lebih percaya diri.",
-  },
-  {
-    id: 2,
-    time: "08/26/2025 03:30 PM",
-    story:
-      "Tadi siang ada ulangan matematika dan aku merasa cemas banget. Soal-soalnya susah dan aku gak yakin sama jawabanku. Setelah selesai, aku merasa lega tapi juga sedikit kecewa dengan diriku sendiri.",
-    emosi: ["cemas", "lega", "kecewa"],
-    category: "akademik",
-    think: "Besok harus belajar lebih giat lagi dan jangan mudah panik.",
-  },
-  {
-    id: 3,
-    time: "08/25/2025 07:15 PM",
-    story:
-      "Malam ini aku bertengkar dengan adikku karena masalah sepele. Aku jadi marah dan frustrasi, tapi setelah itu aku merasa bersalah karena sudah keras sama dia. Akhirnya aku minta maaf dan kita baikan lagi.",
-    emosi: ["marah", "frustrasi", "bersalah"],
-    category: "keluarga",
-    think:
-      "Harus lebih sabar menghadapi adik dan jangan mudah terpancing emosi.",
-  },
-  {
-    id: 4,
-    time: "08/24/2025 02:00 PM",
-    story:
-      "Hari ini aku dapat nilai bagus untuk tugas bahasa Indonesia. Aku merasa senang dan bangga dengan hasil kerjaku. Teman-teman juga ikut senang dan memuji hasilku. Aku jadi lebih termotivasi untuk belajar.",
-    emosi: ["senang", "bangga", "termotivasi"],
-    category: "akademik",
-    think: "Prestasi ini harus dipertahankan dan ditingkatkan lagi.",
-  },
-  {
-    id: 5,
-    time: "08/23/2025 06:45 PM",
-    story:
-      "Aku merasa sedih hari ini karena sahabatku pindah sekolah. Kami sudah berteman lama dan aku akan merindukannya. Tapi aku juga berharap dia bahagia di sekolah baru dan kita bisa tetap berkomunikasi.",
-    emosi: ["sedih", "rindu", "harap"],
-    category: "pertemanan",
-    think: "Meski berjauhan, persahabatan kita harus tetap dijaga.",
-  },
-  {
-    id: 6,
-    time: "08/22/2025 11:30 AM",
-    story:
-      "Tadi pagi aku terlambat bangun dan langsung buru-buru ke sekolah. Aku merasa panik dan takut telat masuk kelas. Untungnya sampai tepat waktu, tapi aku merasa lelah karena tidak sarapan.",
-    emosi: ["panik", "takut", "lelah"],
-    category: "sekolah",
-    think: "Besok harus bangun lebih pagi dan atur waktu dengan lebih baik.",
-  },
-  {
-    id: 7,
-    time: "08/21/2025 04:15 PM",
-    story:
-      "Aku ikut ekstrakurikuler basket dan hari ini ada pertandingan persahabatan. Aku merasa gugup tapi juga excited. Tim kita menang dan aku mencetak beberapa poin. Aku merasa sangat bahagia dan puas.",
-    emosi: ["gugup", "excited", "bahagia", "puas"],
-    category: "ekstrakurikuler",
-    think: "Latihan keras memang membuahkan hasil, terus semangat!",
-  },
-  {
-    id: 8,
-    time: "08/20/2025 08:30 PM",
-    story:
-      "Aku merasa cemas tentang masa depanku. Apa jurusan yang akan aku pilih nanti? Aku bingung dan takut salah pilih. Tapi aku juga mencoba untuk berpikir positif dan percaya bahwa semuanya akan baik-baik saja.",
-    emosi: ["cemas", "bingung", "takut", "positif"],
-    category: "pribadi",
-    think:
-      "Aku harus banyak mencari informasi dan konsultasi dengan orang tua dan guru.",
-  },
-];
+// Transform API data to JournalEntry format
+function transformApiDataToJournalEntries(apiData: SelfHelpResponse): JournalEntry[] {
+  if (!apiData.success || !apiData.data) {
+    return [];
+  }
 
-export default function GratitudeDataTable({}: JournalingDataTableProps) {
+  return apiData.data
+    .filter(item => item.type === "Daily Journaling")
+    .map(item => {
+      const content = item.content as DailyJournalingContent;
+      return {
+        id: item.id,
+        time: new Date(item.created_at).toLocaleString('id-ID', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).replace(/\//g, '/'),
+        story: content.mind,
+        emosi: content.emotions,
+        category: content.category,
+        think: content.story
+      };
+    })
+    .reverse(); // Show newest entries first
+}
+
+export default function GratitudeDataTable({ username }: JournalingDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredData, setFilteredData] =
-    useState<JournalEntry[]>(sampleJournalData);
+  const [apiData, setApiData] = useState<JournalEntry[]>([]);
+  const [filteredData, setFilteredData] = useState<JournalEntry[]>([]);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Apply search filter when search term changes
+  // Fetch data from API
   useEffect(() => {
-    const filtered = sampleJournalData.filter((entry) => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getSelfHelpData("Daily Journaling", username);
+        const transformedData = transformApiDataToJournalEntries(response);
+        setApiData(transformedData);
+        setFilteredData(transformedData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch data");
+        setApiData([]);
+        setFilteredData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      fetchData();
+    }
+  }, [username]);
+
+  // Apply search filter when search term or API data changes
+  useEffect(() => {
+    const filtered = apiData.filter((entry) => {
       const matchesSearch =
         entry.story.toLowerCase().includes(searchTerm.toLowerCase()) ||
         entry.think.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -135,7 +114,7 @@ export default function GratitudeDataTable({}: JournalingDataTableProps) {
       return matchesSearch;
     });
     setFilteredData(filtered);
-  }, [searchTerm]);
+  }, [searchTerm, apiData]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -271,57 +250,113 @@ export default function GratitudeDataTable({}: JournalingDataTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Controls Layout */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1 min-w-0">
-          <Input
-            placeholder="Cari cerita, emosi, atau pemikiran..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full"
-          />
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Memuat data...</p>
+          </div>
         </div>
+      )}
 
-        {/* Page Size Selector */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
-            Tampilkan:
-          </span>
-          <span className="text-sm font-medium text-gray-600 sm:hidden">
-            Per halaman:
-          </span>
-          <Select
-            value={currentPageSize.toString()}
-            onValueChange={(value) => setCurrentPageSize(Number(value))}
-          >
-            <SelectTrigger className="w-[80px] sm:w-[80px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Error State */}
+      {error && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const fetchData = async () => {
+                  try {
+                    setLoading(true);
+                    setError(null);
+                    const response = await getSelfHelpData("Daily Journaling", username);
+                    const transformedData = transformApiDataToJournalEntries(response);
+                    setApiData(transformedData);
+                    setFilteredData(transformedData);
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Failed to fetch data");
+                    setApiData([]);
+                    setFilteredData([]);
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                fetchData();
+              }}
+            >
+              Coba Lagi
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && filteredData.length === 0 && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-sm text-gray-600">Tidak ada data Daily Journaling yang tersedia.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Controls Layout */}
+      {!loading && !error && filteredData.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 min-w-0">
+            <Input
+              placeholder="Cari cerita, emosi, atau pemikiran..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
+              Tampilkan:
+            </span>
+            <span className="text-sm font-medium text-gray-600 sm:hidden">
+              Per halaman:
+            </span>
+            <Select
+              value={currentPageSize.toString()}
+              onValueChange={(value) => setCurrentPageSize(Number(value))}
+            >
+              <SelectTrigger className="w-[80px] sm:w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={filteredData}
-        searchColumn=""
-        searchPlaceholder=""
-        showColumnToggle={false}
-        showPagination={true}
-        pageSize={currentPageSize}
-        pageSizeOptions={[5, 10, 15, 20, 25, 50]}
-        showPageSizeSelector={false}
-      />
+      {!loading && !error && filteredData.length > 0 && (
+        <DataTable
+          columns={columns}
+          data={filteredData}
+          searchColumn=""
+          searchPlaceholder=""
+          showColumnToggle={false}
+          showPagination={true}
+          pageSize={currentPageSize}
+          pageSizeOptions={[5, 10, 15, 20, 25, 50]}
+          showPageSizeSelector={false}
+        />
+      )}
     </div>
   );
 }

@@ -1041,3 +1041,57 @@ export interface StudentMoodExportResponse {
     url: string;
   };
 }
+
+// Self Help API types
+
+// Content structure for Gratitude Journal
+export interface GratitudeJournalContent {
+  progress: string[];
+  achievement: string[];
+  apreciation: string;
+}
+
+// Content structure for Daily Journaling
+export interface DailyJournalingContent {
+  mind: string;
+  story: string;
+  category: string;
+  emotions: string[];
+}
+
+// Content structure for Grounding Technique
+export interface GroundingTechniqueContent {
+  one: string;
+  two: string[];
+  three: string[];
+  four: string[];
+  five: string[];
+}
+
+// Content structure for Sensory Relaxation
+export interface SensoryRelaxationContent {
+  activity: string[];
+  reflection: string;
+}
+
+// Union type for all possible content types
+export type SelfHelpContent = 
+  | GratitudeJournalContent 
+  | DailyJournalingContent 
+  | GroundingTechniqueContent 
+  | SensoryRelaxationContent;
+
+export interface SelfHelpItem {
+  id: number;
+  type: "Daily Journaling" | "Gratitude Journal" | "Grounding Technique" | "Sensory Relaxation";
+  content: SelfHelpContent;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SelfHelpResponse {
+  success: boolean;
+  message: string;
+  data: SelfHelpItem[];
+}
