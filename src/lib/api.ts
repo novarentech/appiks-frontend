@@ -72,6 +72,8 @@ import {
   CreateGroundingTechniqueResponse,
   CreateSensoryRelaxationRequest,
   CreateSensoryRelaxationResponse,
+  CreateStudentRequest,
+  CreateStudentResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -1099,6 +1101,14 @@ export async function getLatestSharingNotifications(): Promise<Notification[]> {
   });
 
   return notifications;
+}
+
+/**
+ * Create a new student user
+ */
+export async function createStudent(data: CreateStudentRequest): Promise<CreateStudentResponse> {
+  const response = await authPost("/user/student", data);
+  return response;
 }
 
 /**

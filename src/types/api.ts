@@ -1145,3 +1145,20 @@ export interface SelfHelpResponse {
   message: string;
   data: SelfHelpItem[];
 }
+
+// Create Student API types
+export interface CreateStudentRequest {
+  name: string;
+  identifier: string;
+  mentor_id: string;
+  counselor_id: string;
+  room_id: string;
+}
+
+export interface CreateStudentResponse {
+  name: string;
+  identifier: string;
+  mentor_id: string;
+  counselor_id: string;
+  room_id: string;
+}

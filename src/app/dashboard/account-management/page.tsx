@@ -25,6 +25,7 @@ import { AddEditUserDialog } from "@/components/dashboard/account-management/Add
 import { ViewUserDialog } from "@/components/dashboard/account-management/view-user-dialog";
 import { DeleteUserDialog } from "@/components/dashboard/account-management/DeleteUserDialog";
 import { BulkImportDialog } from "@/components/dashboard/account-management/BulkImportDialog";
+import { AddStudentDialog } from "@/components/dashboard/account-management/AddStudentDialog";
 import { toast } from "sonner";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -105,6 +106,9 @@ function AccountManagementPageContent() {
     open: boolean;
     role?: UserRole;
   }>({ open: false });
+  const [addStudentDialog, setAddStudentDialog] = useState<{
+    open: boolean;
+  }>({ open: false });
 
   // Load users from API
   const loadUsers = async () => {
@@ -157,12 +161,21 @@ function AccountManagementPageContent() {
   });
 
   // Handle functions
-  const handleAddAccount = (role: UserRole) => {
+  const handleAddAccount = (role: UserRole, isImport?: boolean) => {
     if (role === "siswa") {
-      setBulkImportDialog({ open: true, role });
+      if (isImport) {
+        setBulkImportDialog({ open: true, role });
+      } else {
+        setAddStudentDialog({ open: true });
+      }
     } else {
       setAddEditDialog({ open: true, role });
     }
+  };
+
+  const handleAddStudentSuccess = () => {
+    // Reload users after successful student creation
+    loadUsers();
   };
 
   const handleViewUser = (userItem: ComponentUser) => {
@@ -479,6 +492,13 @@ function AccountManagementPageContent() {
         }
         role={bulkImportDialog.role!}
         onImport={handleBulkImport}
+      />
+
+      {/* Add Student Dialog */}
+      <AddStudentDialog
+        open={addStudentDialog.open}
+        onOpenChange={(open) => setAddStudentDialog({ ...addStudentDialog, open })}
+        onSuccess={handleAddStudentSuccess}
       />
     </div>
   );
