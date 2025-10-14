@@ -31,28 +31,28 @@ const SAFE_RECOMMENDATIONS = [
     id: 1,
     title: "Mainkan Game",
     subtitle: "Yuk, coba game asyik ini",
-    color: "from-pink-200 to-violet-200",
+    color: "bg-sky-50 border-sky-500",
     icon: "/icon/ico-games.svg",
   },
   {
     id: 2,
     title: "Akses Video",
     subtitle: "Klik untuk nonton konten keren",
-    color: "from-green-100 to-green-50",
+    color: "bg-teal-50 border-teal-500",
     icon: "/icon/ico-video.svg",
   },
   {
     id: 3,
     title: "Navigator Masa Depan",
     subtitle: "Yuk Rakit Peta Petualangan Karirmu!",
-    color: "from-violet-100 to-violet-50",
+    color: "bg-violet-50 border-violet-500",
     icon: "/icon/ico-walk-2.webp",
   },
   {
     id: 4,
     title: "Quote of The Day",
     subtitle: "Baca & renungkan kata bijak hari ini",
-    color: "from-violet-100 to-violet-50",
+    color: "bg-green-50 border-green-500",
     icon: "/icon/ico-quotes.svg",
   },
 ] as const;
@@ -62,28 +62,29 @@ const UNSAFE_RECOMMENDATIONS = [
     id: 5,
     title: "Self Help",
     subtitle: "Tips dan teknik langsung untuk membantu mengelola emosi Anda",
-    color: "from-blue-100 to-blue-50",
+    color: "bg-rose-50 border-rose-500",
     icon: "/icon/ico-self-help.svg",
   },
   {
     id: 6,
     title: "Ekspedisi Menemukan Jati Diri",
     subtitle: "Mulai Petualangan Mengenal Kekuatan Super-Mu!",
-    color: "from-violet-100 to-violet-50",
+    color: "bg-violet-50 border-violet-500",
     icon: "/icon/ico-survey-2.webp",
   },
   {
     id: 7,
     title: "Anger Management",
     subtitle: "Teknik khusus untuk mengelola kemarahan dan frustrasi",
-    color: "from-red-100 to-red-50",
+    color: "bg-cyan-50 border-cyan-500",
     icon: "/icon/ico-anger-management.svg",
   },
   {
     id: 8,
     title: "Quote of The Day",
-    subtitle: "Dapatkan inspirasi harianmu. Baca & renungkan kata bijak hari ini",
-    color: "from-yellow-100 to-yellow-50",
+    subtitle:
+      "Dapatkan inspirasi harianmu. Baca & renungkan kata bijak hari ini",
+    color: "bg-green-50 border-green-500",
     icon: "/icon/ico-quotes.svg",
   },
   {
@@ -91,13 +92,13 @@ const UNSAFE_RECOMMENDATIONS = [
     title: "Curhat",
     subtitle:
       "Tempat aman buat cerita apa aja. Yuk, ceritain isi hati kamu di sini ! ",
-    color: "from-emerald-100 to-emerald-50",
+    color: "bg-emerald-50 border-emerald-500",
     icon: "/icon/ico-vent.svg",
   },
 ] as const;
 
 const SAFE_ROUTES: Record<number, string> = {
-  1: "/game",
+  1: "/games",
   2: "/videos",
   3: "/survey-walkthrough",
   4: "/quote",
@@ -295,7 +296,8 @@ export default function CheckIn() {
       // Setelah mood dipilih dan respons diterima, langsung ke step 2
       setCurrentStep(2);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to record mood";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to record mood";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -374,8 +376,8 @@ export default function CheckIn() {
                 </div>
               )}
               <Image
-                width="32"
-                height="32"
+                width="64"
+                height="64"
                 src={item.icon}
                 alt={item.label}
                 className="w-8 h-8 sm:w-10 sm:h-10"
@@ -404,26 +406,28 @@ export default function CheckIn() {
               key={rec.id}
               type="button"
               onClick={() => handleRecSelect(rec.id)}
-              className={`w-full rounded-lg border p-4 sm:p-5 flex items-center justify-between transition-all duration-200
+              className={`w-full rounded-lg border p-4 sm:p-5 flex items-center justify-between transition-all duration-200 
+                ${rec.color}
                 ${
                   active
                     ? "border-primary ring-2 ring-primary/40 bg-primary/5 scale-[1.02]"
                     : "border-border bg-background hover:border-primary/50 hover:shadow-md"
-                }`}
+                }
+                `}
               aria-pressed={active}
               aria-label={`Pilih ${rec.title}`}
             >
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <div
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center bg-gradient-to-br ${rec.color} flex-shrink-0`}
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center  flex-shrink-0`}
                   aria-hidden="true"
                 >
                   <Image
-                    width={32}
-                    height={32}
+                    width={120}
+                    height={120}
                     src={rec.icon}
                     alt={rec.title}
-                    className="w-10 h-10 sm:w-12 sm:h-12"
+                    className="w-20 h-20 sm:w-25 sm:h-25 object-contain "
                   />
                 </div>
                 <div className="text-left min-w-0">
