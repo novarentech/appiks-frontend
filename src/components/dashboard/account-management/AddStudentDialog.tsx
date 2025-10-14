@@ -23,11 +23,7 @@ import { User, RoomData } from "@/types/api";
 import { toast } from "sonner";
 import {
   UserPlus,
-  Users,
-  UserCheck,
-  DoorOpen,
   Loader2,
-  CheckCircle,
   AlertCircle,
 } from "lucide-react";
 
@@ -97,6 +93,8 @@ export function AddStudentDialog({ open, onOpenChange, onSuccess }: AddStudentDi
       newErrors.identifier = "NISN wajib diisi";
     } else if (!/^\d+$/.test(formData.identifier)) {
       newErrors.identifier = "NISN harus berupa angka";
+    } else if (formData.identifier.length !== 10) {
+      newErrors.identifier = "NISN wajib 10 karakter";
     }
 
     if (!formData.mentor_id) {
@@ -241,7 +239,7 @@ export function AddStudentDialog({ open, onOpenChange, onSuccess }: AddStudentDi
                     </SelectItem>
                   ) : (
                     mentors.map((mentor) => (
-                      <SelectItem key={mentor.id} value={mentor.id?.toString() || ""}>
+                      <SelectItem key={mentor.identifier} value={mentor.identifier?.toString() || ""}>
                         {mentor.name}
                       </SelectItem>
                     ))
@@ -284,7 +282,7 @@ export function AddStudentDialog({ open, onOpenChange, onSuccess }: AddStudentDi
                     </SelectItem>
                   ) : (
                     counselors.map((counselor) => (
-                      <SelectItem key={counselor.id} value={counselor.id?.toString() || ""}>
+                      <SelectItem key={counselor.identifier} value={counselor.identifier?.toString() || ""}>
                         {counselor.name}
                       </SelectItem>
                     ))
@@ -327,7 +325,7 @@ export function AddStudentDialog({ open, onOpenChange, onSuccess }: AddStudentDi
                     </SelectItem>
                   ) : (
                     rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id?.toString() || ""}>
+                      <SelectItem key={room.code} value={room.code?.toString() || ""}>
                         {room.name}
                       </SelectItem>
                     ))
