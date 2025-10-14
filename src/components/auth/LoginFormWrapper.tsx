@@ -136,7 +136,7 @@ function LoginFormContent({
                   <Input
                     id="username"
                     type="text"
-                    placeholder="masukkan username"
+                    placeholder="Masukkan username anda"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -147,7 +147,7 @@ function LoginFormContent({
                   <Input
                     id="password"
                     type="password"
-                    placeholder="masukkan password"
+                    placeholder="Masukkan password anda"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
