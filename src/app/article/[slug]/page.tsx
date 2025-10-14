@@ -228,7 +228,7 @@ function ArticleDetailPageContent() {
         </article>
 
         {/* Feedback Section */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden mt-6">
           <CardContent className="space-y-6">
             <h4 className="font-semibold text-gray-900">
               Apakah video ini bermanfaat?
