@@ -3,19 +3,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useSafetyCheck } from "@/contexts/SafetyCheckContext";
 import { useMoodRecordToday } from "@/hooks/useMoodRecordToday";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Calendar, ThumbsDown, ThumbsUp } from "lucide-react";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../ui/alert-dialog";
 
 export function SafetyCheckDialog() {
   const {
@@ -99,8 +92,8 @@ export function SafetyCheckDialog() {
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
-      <DialogContent className="sm:max-w-md overflow-hidden">
+    <AlertDialog open={isDialogOpen} onOpenChange={closeDialog}>
+      <AlertDialogContent className="sm:max-w-md overflow-hidden">
         <AnimatePresence mode="wait">
           {activeStep === 1 && (
             <motion.div
@@ -110,11 +103,11 @@ export function SafetyCheckDialog() {
               exit={{ opacity: 0, x: 50 }}
               transition={{ duration: 0.3 }}
             >
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold text-center">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-xl font-bold text-center">
                   Apakah Kamu merasa sudah aman ?
-                </DialogTitle>
-              </DialogHeader>
+                </AlertDialogTitle>
+              </AlertDialogHeader>
 
               <div className="flex flex-col items-center justify-center my-6">
                 <motion.div
@@ -139,13 +132,13 @@ export function SafetyCheckDialog() {
                 <p className="text-center font-semibold mt-4">
                   Kami Siap Membantu
                 </p>
-                <DialogDescription className="text-center">
+                <AlertDialogDescription className="text-center">
                   Jika belum, kami akan membantu menindaklanjuti agar Anda
                   mendapat dukungan yang sesuai.
-                </DialogDescription>
+                </AlertDialogDescription>
               </div>
 
-              <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button
                   onClick={() => handleFirstStepResponse(false)}
                   disabled={isSubmitting || loading}
@@ -160,7 +153,7 @@ export function SafetyCheckDialog() {
                 >
                   Ya, saya aman <ThumbsUp />
                 </Button>
-              </DialogFooter>
+              </AlertDialogFooter>
             </motion.div>
           )}
 
@@ -172,11 +165,11 @@ export function SafetyCheckDialog() {
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.3 }}
             >
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold text-center">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-xl font-bold text-center">
                   Apakah Kamu memerlukan bantuan dari BK?
-                </DialogTitle>
-              </DialogHeader>
+                </AlertDialogTitle>
+              </AlertDialogHeader>
 
               <div className="flex flex-col items-center justify-center my-6">
                 <motion.div
@@ -201,12 +194,12 @@ export function SafetyCheckDialog() {
                 <p className="text-center font-semibold mt-4">
                   Atur Jadwal Konseling mu
                 </p>
-                <DialogDescription className="text-center">
+                <AlertDialogDescription className="text-center">
                   Jika iya, silakan atur jadwal pertemuan dengan konselor.
-                </DialogDescription>
+                </AlertDialogDescription>
               </div>
 
-              <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button
                   onClick={() => handleSecondStepResponse(false)}
                   disabled={isSubmitting}
@@ -222,11 +215,11 @@ export function SafetyCheckDialog() {
                 >
                   Atur jadwal konseling <Calendar />
                 </Button>
-              </DialogFooter>
+              </AlertDialogFooter>
             </motion.div>
           )}
         </AnimatePresence>
-      </DialogContent>
-    </Dialog>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
