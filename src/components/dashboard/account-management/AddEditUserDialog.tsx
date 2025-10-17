@@ -255,7 +255,7 @@ export function AddEditUserDialog({
       if (value.trim().length >= 3 && validateUsername(value.trim()).isValid) {
         checkUsername(value.trim());
       }
-    }, 500); // 500ms delay
+    }, 5000); // 5 seconds delay
 
     setDebounceTimer(timer);
   }, [debounceTimer, clearCheck, checkUsername, validateUsername]);

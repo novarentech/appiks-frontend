@@ -138,7 +138,7 @@ const StudentProfile = () => {
       if (value.trim().length >= 3 && validateUsername(value.trim()).isValid) {
         checkUsername(value.trim());
       }
-    }, 500);
+    }, 5000);
 
     setDebounceTimer(timer);
   };
