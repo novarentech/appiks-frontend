@@ -480,7 +480,7 @@ export function AddEditUserDialog({
                   <Input
                     id="username"
                     value={formData.username}
-                    onChange={(e) => handleUsernameChange(e.target.value)}
+                    onChange={(e) => handleUsernameChange(e.target.value.toLowerCase())}
                     placeholder="username"
                     disabled={isChecking}
                     className={`pr-10 transition-colors ${

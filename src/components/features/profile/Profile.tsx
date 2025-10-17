@@ -429,7 +429,7 @@ export default function Profile() {
                   <div className="relative">
                     <Input
                       value={editData.username}
-                      onChange={(e) => handleUsernameChange(e.target.value)}
+                      onChange={(e) => handleUsernameChange(e.target.value.toLowerCase())}
                       placeholder="Masukkan username"
                       disabled={isChecking}
                       className={`pr-10 transition-colors ${

@@ -314,7 +314,7 @@ const DialogForm = memo(function DialogForm({
               <Input
                 placeholder="Username untuk login"
                 value={localForm.username || ""}
-                onChange={(e) => handleUsernameChange(e.target.value)}
+                onChange={(e) => handleUsernameChange(e.target.value.toLowerCase())}
                 disabled={readOnly || isChecking}
                 required
                 className={`pr-10 transition-colors ${
