@@ -381,7 +381,12 @@ export default function TeacherStudentData({}: StudentDataTableProps) {
   ];
 
   // Format phone number for WhatsApp
-  const formatPhoneForWhatsApp = (phone: string) => {
+  const formatPhoneForWhatsApp = (phone: string | null | undefined) => {
+    // Handle null or undefined phone numbers
+    if (!phone) {
+      return "";
+    }
+    
     // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, "");
     // If starts with 0, replace with 62
