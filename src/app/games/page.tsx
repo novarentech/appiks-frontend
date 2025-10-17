@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Loader2, LayoutDashboard, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   CloudPet,
   GameStats,
@@ -42,7 +44,19 @@ function GamesContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center">
+      <div className="relative min-h-screen w-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center">
+        {/* Top-left Dashboard Button */}
+        <div className="absolute top-4 left-4 z-20 hidden lg:block">
+          <Link href="/dashboard">
+            <Button
+              size="sm"
+              className="backdrop-blur-sm bg-white/20 text-white border border-white/30 hover:bg-white/30"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Button>
+          </Link>
+        </div>
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-white animate-spin mx-auto mb-4" />
           <p className="text-white text-lg">Memuat data game...</p>
@@ -54,7 +68,7 @@ function GamesContent() {
   return (
     <>
       {/* Main Game Page */}
-      <div className="min-h-screen w-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 relative overflow-hidden">
+      <div className="min-h-screen w-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 relative overflow-hidden py-4">
         {/* Enhanced Background Effects */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-16 left-12 w-32 h-32 bg-white/8 rounded-full blur-3xl animate-pulse" />
@@ -65,7 +79,25 @@ function GamesContent() {
         </div>
 
         {/* Header Section with Water Display */}
-        <WaterDisplay waterDrops={waterDrops} />
+        <div className="max-w-7xl mx-auto px-6 py-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 items-center">
+            <div className="justify-self-start hidden lg:block">
+              <Link href="/dashboard">
+                <Button
+                  size="lg"
+                  className="bg-white text-primary hover:bg-white/80"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Button>
+              </Link>
+            </div>
+            <div className="justify-self-center">
+              <WaterDisplay waterDrops={waterDrops} />
+            </div>
+            <div className="justify-self-end hidden lg:block" />
+          </div>
+        </div>
 
         {/* Main Content Grid */}
         <div className="relative z-10 px-6">
@@ -97,6 +129,18 @@ function GamesContent() {
                   onFoodStoreClick={() => setShowFoodStore(true)}
                   onDailyRewardClick={() => setShowDailyReward(true)}
                 />
+                {/* Mobile-only Dashboard Button */}
+                <div className="lg:hidden mt-4 mx-auto w-max">
+                  <Link href="/dashboard">
+                    <Button
+                      size="lg"
+                      className="bg-white text-primary hover:bg-white/80"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
