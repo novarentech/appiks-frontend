@@ -1,4 +1,10 @@
 # Dockerfile dengan multi-stage build untuk optimasi
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG API_BASE_URL
+
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV API_BASE_URL=$API_BASE_URL
+
 FROM node:22-alpine AS base
 
 # Install dependencies only when needed
