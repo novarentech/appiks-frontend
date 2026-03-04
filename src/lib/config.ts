@@ -1,7 +1,7 @@
 // Centralized configuration for API URLs and other constants
 
 // API Base URLs
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+export const API_BASE_URL = process.env.API_BASE_URL;
 
 // Auth Configuration
 export const JWT_SECRET = process.env.JWT_SECRET;
