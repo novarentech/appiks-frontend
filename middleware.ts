@@ -117,32 +117,10 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith(route)
     );
 
-    // Handle root path redirect - redirect to login or dashboard
+    // Handle root path access
     if (pathname === "/") {
-      console.log("🏠 Root path access, redirecting based on auth status");
-      
-      if (!session) {
-        // No session - redirect to login
-        const loginUrl = new URL("/login", request.url);
-        return NextResponse.redirect(loginUrl);
-      } else {
-        // Has session - redirect based on verification status
-        if (!session.user.verified) {
-          // Unverified user - redirect to fill-data
-          const fillDataUrl = new URL("/fill-data", request.url);
-          return NextResponse.redirect(fillDataUrl);
-        } else {
-          // Verified user - redirect based on role and mood status
-          if (session.user.role === "student" && session.user.token) {
-            const canCheckIn = await checkStudentMoodRecord(session.user.token);
-            const redirectUrl = canCheckIn ? "/checkin" : "/dashboard";
-            return NextResponse.redirect(new URL(redirectUrl, request.url));
-          } else {
-            // Non-student verified user - redirect to dashboard
-            return NextResponse.redirect(new URL("/dashboard", request.url));
-          }
-        }
-      }
+      console.log("🏠 Root path access, allowing access to landing page for all users");
+      return NextResponse.next();
     }
 
     // Protect routes that require authentication

@@ -8,15 +8,6 @@ const nextConfig: NextConfig = {
     removeConsole: true,
   },
 
-  async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/login",
-        permanent: false,
-      },
-    ];
-  },
 
   images: {
     remotePatterns: [
