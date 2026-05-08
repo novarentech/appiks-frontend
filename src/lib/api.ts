@@ -81,14 +81,13 @@ import {
   CirrusResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse, RoomByLevelResponse } from "@/types/api";
-// import { API_BASE_URL } from "@/lib/config";
+import { API_BASE_URL } from "@/lib/config";
 import { Bell, CheckCircle } from "lucide-react";
 import { Notification, CurhatNotification, CounselingNotification } from "@/types/notifications";
 
 /**
  * Get CSRF token from cookie
  */
-const API_BASE_URL = "https://api.appiks.id/api";
 export function getCSRFToken(): string | null {
   if (typeof document === "undefined") return null;
 
