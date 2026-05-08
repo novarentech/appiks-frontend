@@ -88,7 +88,7 @@ import { Notification, CurhatNotification, CounselingNotification } from "@/type
 /**
  * Get CSRF token from cookie
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.API_BASE_URL || "http://localhost:8000";
 export function getCSRFToken(): string | null {
   if (typeof document === "undefined") return null;
 
