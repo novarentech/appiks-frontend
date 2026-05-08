@@ -129,8 +129,6 @@ export async function authenticatedFetch(
     Authorization: `Bearer ${session.user.token}`,
     ...options.headers,
   };
-  console.log("ENV", process.env.API_BASE_URL);
-  console.log("ENV PUBLIC", process.env.NEXT_PUBLIC_API_BASE_URL);
 
   return fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,

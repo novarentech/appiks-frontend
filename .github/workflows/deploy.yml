@@ -31,7 +31,8 @@ jobs:
           context: .
           push: true
           tags: ${{secrets.DOCKER_USERNAME}}/${{github.event.repository.name}}:latest
-          build-args: API_BASE_URL=${{ secrets.API_URL }}
+          build-args: |
+            API_BASE_URL=${{ secrets.API_URL }}
             
   deploy:
     runs-on: ubuntu-latest
