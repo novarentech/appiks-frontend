@@ -81,13 +81,14 @@ import {
   CirrusResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse, RoomByLevelResponse } from "@/types/api";
-import { API_BASE_URL } from "@/lib/config";
+// import { API_BASE_URL } from "@/lib/config";
 import { Bell, CheckCircle } from "lucide-react";
 import { Notification, CurhatNotification, CounselingNotification } from "@/types/notifications";
 
 /**
  * Get CSRF token from cookie
  */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 export function getCSRFToken(): string | null {
   if (typeof document === "undefined") return null;
 
