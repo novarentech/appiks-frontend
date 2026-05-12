@@ -43,4 +43,4 @@ jobs:
           port: ${{ secrets.VPS_1_HOST_PORT }}
           script: |
             cd /media/appiks-dev
-            docker compose up frontend -d --pull-always --force-recreate
+            docker compose up frontend -d --pull always --force-recreate
