@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Deploy APPIKS Frontend to Production
 
 on:
   push:
@@ -9,13 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check API_URL secret
-        run: |
-              if [ -z "${{ secrets.API_URL }}" ]; then
-                echo "API_URL is empty"
-              else
-                echo "API_URL is set"
-              fi
       - name: Checkout repository
         uses: actions/checkout@v3
 
