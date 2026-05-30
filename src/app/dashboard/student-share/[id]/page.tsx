@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getSharingDetail } from "@/lib/api";
+import { getSharingDetail, markSharingFalsePositive } from "@/lib/api";
 import { Sharing } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,9 @@ export default function DetailCurhatanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState("");
+  const [falsePositiveReason, setFalsePositiveReason] = useState("");
+  const [isFalsePositiveSubmitting, setIsFalsePositiveSubmitting] = useState(false);
+  const [isFalsePositiveOpen, setIsFalsePositiveOpen] = useState(false);
 
   // Helper functions
   const mapPriorityToStatus = (priority: string) => {
@@ -139,6 +142,27 @@ export default function DetailCurhatanPage() {
 
     return () => clearInterval(interval);
   }, [data]);
+
+  const handleFalsePositiveSubmit = async () => {
+    if (!falsePositiveReason.trim()) return;
+    
+    try {
+      setIsFalsePositiveSubmitting(true);
+      const res = await markSharingFalsePositive(id, falsePositiveReason);
+      if (res.success) {
+        setIsFalsePositiveOpen(false);
+        setFalsePositiveReason("");
+        window.location.reload();
+      } else {
+        alert(res.message || "Gagal mengubah status.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat memproses permintaan.");
+    } finally {
+      setIsFalsePositiveSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -397,7 +421,7 @@ export default function DetailCurhatanPage() {
           )}
 
           {status !== "Aman" && (
-            <Dialog>
+            <Dialog open={isFalsePositiveOpen} onOpenChange={setIsFalsePositiveOpen}>
               <DialogTrigger asChild>
                 <Button
                   variant="outline"
@@ -422,16 +446,27 @@ export default function DetailCurhatanPage() {
                     placeholder="Jelaskan alasan pencabutan status ..."
                     className="mt-2 resize-none w-full"
                     rows={4}
+                    value={falsePositiveReason}
+                    onChange={(e) => setFalsePositiveReason(e.target.value)}
+                    disabled={isFalsePositiveSubmitting}
                   />
                 </div>
                 <DialogFooter className="mt-2 flex flex-row gap-3 sm:space-x-0">
                   <DialogClose asChild>
-                    <Button variant="outline" className="w-1/2 text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600">
+                    <Button variant="outline" className="w-1/2 text-red-500 border-red-300 hover:bg-red-50 hover:text-red-600" disabled={isFalsePositiveSubmitting}>
                       Batal
                     </Button>
                   </DialogClose>
-                  <Button className="w-1/2 bg-[#e53e51] hover:bg-red-600 text-white">
-                    Tandai Bukan Kondisi {status}
+                  <Button 
+                    className="w-1/2 bg-[#e53e51] hover:bg-red-600 text-white"
+                    onClick={handleFalsePositiveSubmit}
+                    disabled={isFalsePositiveSubmitting || !falsePositiveReason.trim()}
+                  >
+                    {isFalsePositiveSubmitting ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memproses</>
+                    ) : (
+                      `Tandai Bukan Kondisi ${status}`
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>

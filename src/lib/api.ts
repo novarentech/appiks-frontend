@@ -360,6 +360,17 @@ export async function replySharing(
 }
 
 /**
+ * Mark sharing/curhat as false positive
+ */
+export async function markSharingFalsePositive(
+  id: number,
+  reason: string
+): Promise<{ success: boolean; message: string; data: any }> {
+  const response = await authPatch(`/sharing/false-positive/${id}`, { reason });
+  return response;
+}
+
+/**
  * PATCH request with authentication
  */
 export async function authPatch(endpoint: string, data: unknown) {
