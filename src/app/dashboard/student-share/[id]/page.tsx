@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getSharingDetail, markSharingFalsePositive } from "@/lib/api";
+import { getSharingDetail, markSharingFalsePositive, replySharing } from "@/lib/api";
 import { Sharing } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,9 @@ export default function DetailCurhatanPage() {
   const [falsePositiveReason, setFalsePositiveReason] = useState("");
   const [isFalsePositiveSubmitting, setIsFalsePositiveSubmitting] = useState(false);
   const [isFalsePositiveOpen, setIsFalsePositiveOpen] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [isReplySubmitting, setIsReplySubmitting] = useState(false);
+  const [isReplyOpen, setIsReplyOpen] = useState(false);
 
   // Helper functions
   const mapPriorityToStatus = (priority: string) => {
@@ -161,6 +164,27 @@ export default function DetailCurhatanPage() {
       alert("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsFalsePositiveSubmitting(false);
+    }
+  };
+
+  const handleReplySubmit = async () => {
+    if (!replyText.trim()) return;
+    
+    try {
+      setIsReplySubmitting(true);
+      const res = await replySharing(id, replyText);
+      if (res.success) {
+        setIsReplyOpen(false);
+        setReplyText("");
+        window.location.reload();
+      } else {
+        alert(res.message || "Gagal mengirim balasan.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat memproses permintaan.");
+    } finally {
+      setIsReplySubmitting(false);
     }
   };
 
@@ -382,7 +406,7 @@ export default function DetailCurhatanPage() {
               </DialogContent>
             </Dialog>
           ) : (
-            <Dialog>
+            <Dialog open={isReplyOpen} onOpenChange={setIsReplyOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
                   {currentConfig.primaryBtnText}
@@ -404,16 +428,27 @@ export default function DetailCurhatanPage() {
                     placeholder="Tulis pesan Anda di sini ..."
                     className="mt-2 resize-none w-full"
                     rows={5}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    disabled={isReplySubmitting}
                   />
                 </div>
                 <DialogFooter className="mt-2 flex flex-row gap-3 sm:space-x-0">
                   <DialogClose asChild>
-                    <Button variant="outline" className="w-1/2 text-gray-700 border-gray-300 hover:bg-gray-50">
+                    <Button variant="outline" className="w-1/2 text-gray-700 border-gray-300 hover:bg-gray-50" disabled={isReplySubmitting}>
                       Batal
                     </Button>
                   </DialogClose>
-                  <Button className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white">
-                    Kirim Balasan
+                  <Button 
+                    className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleReplySubmit}
+                    disabled={isReplySubmitting || !replyText.trim()}
+                  >
+                    {isReplySubmitting ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengirim...</>
+                    ) : (
+                      "Kirim Balasan"
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
