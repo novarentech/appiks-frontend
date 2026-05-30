@@ -15,8 +15,9 @@ import CurhatReplyDialog from "@/components/dialogs/CurhatReplyDialog";
 import CurhatViewDialog from "@/components/dialogs/CurhatViewDialog";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState, useEffect, useCallback } from "react";
-import { Eye, MessageCircle, ArrowUpDown, Loader2 } from "lucide-react";
+import { Eye, MessageCircle, ArrowUpDown, Loader2, Search } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 // Types
 import { Sharing } from "@/types/api";
@@ -29,19 +30,51 @@ interface ConfidentTableProps {
 export default function ConfidentTable({
   onResponseSubmit,
 }: ConfidentTableProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [prioritasFilter, setPrioritasFilter] = useState("all");
   const [curhatData, setCurhatData] = useState<Sharing[]>([]);
   const [filteredData, setFilteredData] = useState<Sharing[]>([]);
   const [currentPageSize, setCurrentPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Dialog states
-  const [selectedCurhat, setSelectedCurhat] = useState<Sharing | null>(null);
-  const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  // Helper functions for new status
+  const mapPriorityToStatus = (priority: string) => {
+    const p = priority?.toLowerCase() || "rendah";
+    if (p === "tinggi" || p === "kritis") return "Kritis";
+    if (p === "sedang" || p === "prioritas") return "Prioritas";
+    return "Aman";
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "Kritis":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "Prioritas":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "Aman":
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getApiStatusBadgeVariant = (status: string) => {
+    const s = status?.toLowerCase() || "menunggu";
+    switch (s) {
+      case "dijadwalkan":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "menunggu":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "selesai":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "ditolak":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
 
   // Fetch data from API
   const fetchCurhatData = useCallback(async () => {
@@ -64,42 +97,17 @@ export default function ConfidentTable({
     }
   }, []);
 
-  // Reply to curhat
-  const replyToCurhat = useCallback(
-    async (id: number, text: string) => {
-      try {
-        const result = await replySharing(id, text);
-
-        if (result.success) {
-          // Refresh data after successful reply
-          await fetchCurhatData();
-          if (onResponseSubmit) {
-            onResponseSubmit(id, text);
-          }
-          return true;
-        } else {
-          setError(result.message || "Gagal mengirim balasan");
-          return false;
-        }
-      } catch (err) {
-        setError("Terjadi kesalahan saat mengirim balasan");
-        console.error("Error replying to curhat:", err);
-        return false;
-      }
-    },
-    [fetchCurhatData, onResponseSubmit]
-  );
+  // We no longer need inline reply functions since we navigate to detailed page
 
   // Initialize data
   useEffect(() => {
     fetchCurhatData();
   }, [fetchCurhatData]);
 
-  // Get unique values for filters
+  // Get unique values for filters based on mapped status
   const uniqueStatus = [
-    ...new Set(curhatData.map((item) => (item.reply ? "dibalas" : "terkirim"))),
+    ...new Set(curhatData.map((item) => mapPriorityToStatus(item.priority))),
   ];
-  const uniquePrioritas = [...new Set(curhatData.map((item) => item.priority))];
 
   // Apply filters
   useEffect(() => {
@@ -108,49 +116,19 @@ export default function ConfidentTable({
         item.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.user.identifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.title.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const mappedStatus = mapPriorityToStatus(item.priority);
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "terkirim" && !item.reply) ||
-        (statusFilter === "dibalas" && item.reply);
-      const matchesPrioritas =
-        prioritasFilter === "all" || item.priority === prioritasFilter;
+        mappedStatus.toLowerCase() === statusFilter.toLowerCase();
 
-      return matchesSearch && matchesStatus && matchesPrioritas;
+      return matchesSearch && matchesStatus;
     });
     setFilteredData(filtered);
-  }, [searchTerm, statusFilter, prioritasFilter, curhatData]);
+  }, [searchTerm, statusFilter, curhatData]);
 
-  // Helper functions
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      terkirim: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      dibalas: "bg-green-100 text-green-800 border-green-200",
-    };
-    return (
-      variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
-    );
-  };
-
-  const getPrioritasBadge = (prioritas: string) => {
-    const variants = {
-      rendah: "bg-blue-100 text-blue-800 border-blue-200",
-      sedang: "bg-orange-100 text-orange-800 border-orange-200",
-      tinggi: "bg-red-100 text-red-800 border-red-200",
-    };
-    return (
-      variants[prioritas as keyof typeof variants] ||
-      "bg-gray-100 text-gray-800"
-    );
-  };
-
-  const handleReply = (curhat: Sharing) => {
-    setSelectedCurhat(curhat);
-    setIsReplyDialogOpen(true);
-  };
-
-  const handleView = (curhat: Sharing) => {
-    setSelectedCurhat(curhat);
-    setIsViewDialogOpen(true);
+  const handleTinjau = (curhat: Sharing) => {
+    router.push(`/dashboard/student-share/${curhat.id}`);
   };
 
   // Column definitions
@@ -219,10 +197,31 @@ export default function ConfidentTable({
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="min-w-[200px] max-w-[300px]">
+        <div className="min-w-[200px] max-w-[200px]">
           <div className="font-medium truncate">{row.original.title}</div>
         </div>
       ),
+    },
+    {
+      accessorKey: "priority",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold"
+        >
+          Prioritas
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const priorityStatus = mapPriorityToStatus(row.original.priority);
+        return (
+          <Badge className={getStatusBadgeVariant(priorityStatus)}>
+            {priorityStatus}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -237,17 +236,14 @@ export default function ConfidentTable({
         </Button>
       ),
       cell: ({ row }) => {
-        const status = row.original.reply ? "dibalas" : "terkirim";
+        const apiStatus = row.original.status || "menunggu";
         return (
-          <div className="flex items-center space-x-3">
-            <Badge className={getStatusBadge(status)}>
-              {status === "terkirim" ? "Terkirim" : "Dibalas"}
-            </Badge>
-            <Badge className={getPrioritasBadge(row.original.priority)}>
-              {row.original.priority.charAt(0).toUpperCase() +
-                row.original.priority.slice(1)}
-            </Badge>
-          </div>
+          <Badge
+            variant="outline"
+            className={`capitalize ${getApiStatusBadgeVariant(apiStatus)}`}
+          >
+            {apiStatus}
+          </Badge>
         );
       },
     },
@@ -286,27 +282,15 @@ export default function ConfidentTable({
         const curhat = row.original;
         return (
           <div className="flex gap-2">
-            {!curhat.reply ? (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => handleReply(curhat)}
-                className="min-w-30 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-8"
-              >
-                <MessageCircle className="w-3 h-3 mr-1" />
-                Balas
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleView(curhat)}
-                className="min-w-30 text-green-600 border-green-200 hover:bg-green-50 text-xs px-3 py-1 h-8"
-              >
-                <Eye className="w-3 h-3 mr-1" />
-                Lihat Balasan
-              </Button>
-            )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handleTinjau(curhat)}
+              className="min-w-30 bg-blue-600 hover:bg-blue-700 text-white text-xs px-4 py-1 h-8 shadow-sm"
+            >
+              <Search className="w-3.5 h-3.5 mr-1.5" />
+              Tinjau
+            </Button>
           </div>
         );
       },
@@ -342,21 +326,7 @@ export default function ConfidentTable({
               <SelectItem value="all">Semua Status</SelectItem>
               {uniqueStatus.map((status) => (
                 <SelectItem key={status} value={status}>
-                  {status === "terkirim" ? "Terkirim" : "Dibalas"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={prioritasFilter} onValueChange={setPrioritasFilter}>
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue placeholder="Filter Prioritas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Prioritas</SelectItem>
-              {uniquePrioritas.map((prioritas) => (
-                <SelectItem key={prioritas} value={prioritas}>
-                  {prioritas.charAt(0).toUpperCase() + prioritas.slice(1)}
+                  {status}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -403,25 +373,6 @@ export default function ConfidentTable({
           showPageSizeSelector={false}
         />
       )}
-
-      {/* Dialogs */}
-      <CurhatReplyDialog
-        curhat={selectedCurhat}
-        isOpen={isReplyDialogOpen}
-        onClose={() => setIsReplyDialogOpen(false)}
-        onSubmit={async (id, text) => {
-          const success = await replyToCurhat(id, text);
-          if (success) {
-            setIsReplyDialogOpen(false);
-          }
-        }}
-      />
-
-      <CurhatViewDialog
-        curhat={selectedCurhat}
-        isOpen={isViewDialogOpen}
-        onClose={() => setIsViewDialogOpen(false)}
-      />
     </div>
   );
 }

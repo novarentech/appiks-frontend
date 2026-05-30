@@ -216,8 +216,12 @@ export interface Sharing {
   reply?: string;
   replied_at?: string;
   replied_by?: string;
-  priority: "rendah" | "tinggi";
+  priority: "rendah" | "sedang" | "tinggi" | string;
+  status: string;
   created_at: string;
+  deleted_at?: string | null;
+  cutdown_for_report?: any;
+  nlp?: any;
   user: SharingUser;
 }
 
@@ -232,7 +236,7 @@ export interface SharingListResponse {
 export interface SharingDetailResponse {
   success: boolean;
   message: string;
-  data: Sharing;
+  data: Sharing | Sharing[];
 }
 
 // Interface untuk response API reply sharing
