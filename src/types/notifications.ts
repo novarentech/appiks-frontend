@@ -7,7 +7,7 @@ export interface NotificationChanges {
   oldRoom: string;
 }
 
-export type NotificationType = "counseling" | "curhat";
+export type NotificationType = "counseling" | "curhat" | "rujukan";
 export type NotificationStatus =
   | "disetujui"
   | "dijadwal_ulang"
@@ -16,7 +16,10 @@ export type NotificationStatus =
   | "dibalas"
   | "dikirim"
   | "menunggu"
-  | "dijadwalkan";
+  | "dijadwalkan"
+  | "butuh_persetujuan"
+  | "menunggu_konfirmasi"
+  | "terkonfirmasi";
 
 export interface BaseNotification {
   id: number;
@@ -51,7 +54,16 @@ export interface CurhatNotification extends BaseNotification {
   replyDate?: string;
 }
 
-export type Notification = CounselingNotification | CurhatNotification;
+export interface ReferralNotification extends BaseNotification {
+  type: "rujukan";
+  psychologist: string;
+  location: string;
+  counselor: string;
+  referralReason: string;
+  referralDate: string;
+}
+
+export type Notification = CounselingNotification | CurhatNotification | ReferralNotification;
 
 export interface GroupConfig {
   title: string;
@@ -61,4 +73,4 @@ export interface GroupConfig {
   textColor: string;
 }
 
-export type GroupType = "counseling" | "curhat";
+export type GroupType = "counseling" | "curhat" | "rujukan";

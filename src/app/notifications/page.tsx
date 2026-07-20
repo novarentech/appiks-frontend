@@ -1,13 +1,14 @@
 "use client";
 
-import { Bell, ChevronLeft, Calendar, MessageCircle } from "lucide-react";
+import { Bell, ChevronLeft, Calendar, MessageCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NotificationItem } from "@/components/features/notifications/NotificationItem";
 import { getSharingList, getReportList } from "@/lib/api";
-import { Notification } from "@/types/notifications";
+import { getMockReferrals } from "@/lib/mockReferralData";
+import { Notification, ReferralNotification } from "@/types/notifications";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 
 export default function NotificationsPage() {
@@ -20,7 +21,7 @@ export default function NotificationsPage() {
 
 function NotificationsPageContent() {
   const router = useRouter();
-  const [filter, setFilter] = useState<"all" | "counseling" | "curhat">("all");
+  const [filter, setFilter] = useState<"counseling" | "curhat" | "rujukan">("counseling");
   const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,9 +149,11 @@ function NotificationsPageContent() {
             hasNewTag: index < 2, // Only latest 2 report have "tag baru"
           })) || [];
         
+        const referralMock = getMockReferrals();
+
         // Combine both types of notifications and sort by created_at for display
-        const allNotifications = [...curhatNotifications, ...counselingNotifications]
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const allNotifications = [...curhatNotifications, ...counselingNotifications, ...referralMock]
+          .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
         
         setNotifications(allNotifications);
       } catch (error) {
@@ -170,7 +173,6 @@ function NotificationsPageContent() {
   };
 
   const filteredNotifications = notifications.filter((notification) => {
-    if (filter === "all") return true;
     return notification.type === filter;
   });
 
@@ -211,12 +213,6 @@ function NotificationsPageContent() {
       >
         {[
           {
-            key: "all",
-            label: "Semua",
-            shortLabel: "Semua",
-            count: notifications.length,
-          },
-          {
             key: "counseling",
             label: "Jadwal Konseling",
             shortLabel: "Konseling",
@@ -227,6 +223,12 @@ function NotificationsPageContent() {
             label: "Status Curhat",
             shortLabel: "Curhat",
             count: notifications.filter((n) => n.type === "curhat").length,
+          },
+          {
+            key: "rujukan",
+            label: "Rujukan Psikolog",
+            shortLabel: "Rujukan",
+            count: notifications.filter((n) => n.type === "rujukan").length,
           },
         ].map((tab) => (
           <motion.button

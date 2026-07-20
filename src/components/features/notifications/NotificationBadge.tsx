@@ -1,7 +1,7 @@
 "use client";
 
-import { Calendar, Clock, Building, User } from "lucide-react";
-import { Notification } from "@/types/notifications";
+import { Calendar, Clock, Building, User, MapPin } from "lucide-react";
+import { Notification, ReferralNotification } from "@/types/notifications";
 
 interface NotificationBadgeProps {
   notification: Notification;
@@ -39,6 +39,30 @@ export function NotificationBadge({
         <div className={`bg-orange-100 text-orange-700 ${badgeClass} flex items-center gap-1`}>
           <User className="w-3 h-3" />
           {notification.teacher}
+        </div>
+      </div>
+    );
+  }
+
+  if (notification.type === "rujukan") {
+    const referral = notification as ReferralNotification;
+    return (
+      <div
+        className={`flex flex-wrap gap-1.5 ${
+          isSm ? "text-xs" : "text-xs sm:text-sm"
+        }`}
+      >
+        <div className={`bg-blue-100 text-blue-700 ${badgeClass} flex items-center gap-1`}>
+          <User className="w-3 h-3" />
+          {referral.psychologist}
+        </div>
+        <div className={`bg-purple-100 text-purple-700 ${badgeClass} flex items-center gap-1`}>
+          <MapPin className="w-3 h-3" />
+          {referral.location}
+        </div>
+        <div className={`bg-amber-100 text-amber-700 ${badgeClass} flex items-center gap-1`}>
+          <User className="w-3 h-3" />
+          {referral.counselor}
         </div>
       </div>
     );
