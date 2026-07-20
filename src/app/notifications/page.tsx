@@ -21,7 +21,7 @@ export default function NotificationsPage() {
 function NotificationsPageContent() {
   const router = useRouter();
   const [filter, setFilter] = useState<"all" | "counseling" | "curhat">("all");
-  const [expandedNotification, setExpandedNotification] = useState<number | null>(null);
+  const [expandedNotification, setExpandedNotification] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -165,7 +165,7 @@ function NotificationsPageContent() {
     fetchNotifications();
   }, []);
 
-  const toggleExpand = (id: number) => {
+  const toggleExpand = (id: string) => {
     setExpandedNotification(expandedNotification === id ? null : id);
   };
 
@@ -272,8 +272,8 @@ function NotificationsPageContent() {
           >
             <NotificationItem
               notification={notification}
-              onToggleExpand={toggleExpand}
-              isExpanded={expandedNotification === notification.id}
+              onToggleExpand={() => toggleExpand(`${notification.type}-${notification.id}`)}
+              isExpanded={expandedNotification === `${notification.type}-${notification.id}`}
               index={index}
               size="md"
             />
