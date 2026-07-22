@@ -18,7 +18,13 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Loader2, AlertTriangle, ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react";
 
 export default function DetailCurhatanPage() {
   const params = useParams();
@@ -35,6 +41,14 @@ export default function DetailCurhatanPage() {
   const [replyText, setReplyText] = useState("");
   const [isReplySubmitting, setIsReplySubmitting] = useState(false);
   const [isReplyOpen, setIsReplyOpen] = useState(false);
+  const [isHandling, setIsHandling] = useState(false);
+  const [isStartHandlingOpen, setIsStartHandlingOpen] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState<Date>();
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [scheduleRoom, setScheduleRoom] = useState("");
+  const [scheduleNote, setScheduleNote] = useState("");
+  const [isScheduleSubmitting, setIsScheduleSubmitting] = useState(false);
 
   // Helper functions
   const mapPriorityToStatus = (priority: string) => {
@@ -186,6 +200,17 @@ export default function DetailCurhatanPage() {
     } finally {
       setIsReplySubmitting(false);
     }
+  };
+
+  const handleScheduleSubmit = async () => {
+    if (!scheduleDate || !scheduleTime || !scheduleRoom) return;
+    setIsScheduleSubmitting(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsScheduleSubmitting(false);
+      setIsScheduleOpen(false);
+      alert("Pertemuan konseling berhasil diajukan!");
+    }, 1000);
   };
 
   if (loading) {
@@ -378,8 +403,8 @@ export default function DetailCurhatanPage() {
 
         {/* Actions */}
         <div className="flex flex-col space-y-3">
-          {status !== "Aman" ? (
-            <Dialog>
+          {status !== "Aman" && !isHandling ? (
+            <Dialog open={isStartHandlingOpen} onOpenChange={setIsStartHandlingOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
                   {currentConfig.primaryBtnText}
@@ -399,8 +424,113 @@ export default function DetailCurhatanPage() {
                       Batal
                     </Button>
                   </DialogClose>
-                  <Button className="w-1/2 bg-[#e53e51] hover:bg-red-600 text-white">
+                  <Button 
+                    className="w-1/2 bg-[#e53e51] hover:bg-red-600 text-white"
+                    onClick={() => {
+                      setIsHandling(true);
+                      setIsStartHandlingOpen(false);
+                    }}
+                  >
                     Ya, Mulai Tangani
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          ) : status !== "Aman" && isHandling ? (
+            <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold">
+                  Ajukan Pertemuan Konseling
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+                <DialogHeader className="mb-2">
+                  <DialogTitle className="text-2xl font-bold">Ajukan Pertemuan Konseling</DialogTitle>
+                  <DialogDescription className="text-gray-600 mt-2 text-base">
+                    Buat jadwal pertemuan dengan siswa untuk tindak lanjut kasus ini.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Tanggal <span className="text-red-500">*</span></Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full mt-2 justify-start text-left font-normal h-10",
+                            !scheduleDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {scheduleDate ? format(scheduleDate, "PPP") : <span>Pilih tanggal</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={scheduleDate}
+                          onSelect={setScheduleDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Waktu <span className="text-red-500">*</span></Label>
+                    <div className="relative mt-2">
+                      <Input 
+                        type="time" 
+                        value={scheduleTime}
+                        onChange={(e) => setScheduleTime(e.target.value)}
+                        className="w-full h-10 pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <Label className="text-sm font-semibold text-gray-700">Ruangan <span className="text-red-500">*</span></Label>
+                  <Select value={scheduleRoom} onValueChange={setScheduleRoom}>
+                    <SelectTrigger className="mt-2 w-full">
+                      <SelectValue placeholder="Pilih ruangan..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Ruang BK 1">Ruang BK 1</SelectItem>
+                      <SelectItem value="Ruang BK 2">Ruang BK 2</SelectItem>
+                      <SelectItem value="Klinik Sekolah">Klinik Sekolah</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="mt-4 mb-4">
+                  <Label className="text-sm font-semibold text-gray-700">Catatan Tambahan (Opsional)</Label>
+                  <Textarea 
+                    placeholder="Catatan tambahan..." 
+                    className="mt-2 resize-none w-full" 
+                    rows={3}
+                    value={scheduleNote}
+                    onChange={(e) => setScheduleNote(e.target.value)}
+                  />
+                </div>
+
+                <DialogFooter className="flex flex-row gap-3 sm:space-x-0 w-full">
+                  <DialogClose asChild>
+                    <Button variant="outline" className="w-1/2 text-[#5b61e2] border-[#5b61e2] hover:bg-blue-50 py-6 text-base font-semibold">
+                      Batal
+                    </Button>
+                  </DialogClose>
+                  <Button 
+                    className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold"
+                    onClick={handleScheduleSubmit}
+                    disabled={!scheduleDate || !scheduleTime || !scheduleRoom || isScheduleSubmitting}
+                  >
+                    {isScheduleSubmitting ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Proses...</>
+                    ) : (
+                      "Konfirmasi"
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -455,7 +585,7 @@ export default function DetailCurhatanPage() {
             </Dialog>
           )}
 
-          {status !== "Aman" && (
+          {status !== "Aman" && !isHandling && (
             <Dialog open={isFalsePositiveOpen} onOpenChange={setIsFalsePositiveOpen}>
               <DialogTrigger asChild>
                 <Button
