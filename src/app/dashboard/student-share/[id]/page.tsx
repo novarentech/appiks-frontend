@@ -50,6 +50,12 @@ export default function DetailCurhatanPage() {
   const [scheduleNote, setScheduleNote] = useState("");
   const [isScheduleSubmitting, setIsScheduleSubmitting] = useState(false);
 
+  const [isRecordCounselingOpen, setIsRecordCounselingOpen] = useState(false);
+  const [counselingMethod, setCounselingMethod] = useState("");
+  const [counselingNote, setCounselingNote] = useState("");
+  const [resolutionStatus, setResolutionStatus] = useState("");
+  const [isRecordSubmitting, setIsRecordSubmitting] = useState(false);
+
   // Helper functions
   const mapPriorityToStatus = (priority: string) => {
     const p = priority?.toLowerCase() || "rendah";
@@ -59,16 +65,23 @@ export default function DetailCurhatanPage() {
   };
 
   const getApiStatusBadgeVariant = (status: string) => {
-    const s = status?.toLowerCase() || "menunggu";
+    const s = status?.toLowerCase() || "belum ditinjau";
     switch (s) {
-      case "dijadwalkan":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "menunggu":
+      case "belum ditinjau":
+      case "belum ditanggapi":
         return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "selesai":
+      case "sedang ditangani":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "konseling dijadwalkan":
+        return "bg-indigo-50 text-indigo-700 border-indigo-200";
+      case "diselesaikan":
         return "bg-green-50 text-green-700 border-green-200";
-      case "ditolak":
+      case "jadwal ditolak siswa":
         return "bg-red-50 text-red-700 border-red-200";
+      case "menunggu persetujuan siswa":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      case "menunggu persetujuan rujukan":
+        return "bg-orange-50 text-orange-700 border-orange-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
     }
@@ -231,6 +244,23 @@ export default function DetailCurhatanPage() {
     }
   };
 
+  const handleRecordCounselingSubmit = async () => {
+    if (!counselingMethod || !counselingNote || !resolutionStatus) return;
+    
+    setIsRecordSubmitting(true);
+    // Simulate API call for now
+    setTimeout(() => {
+      setIsRecordSubmitting(false);
+      setIsRecordCounselingOpen(false);
+      alert("Hasil konseling berhasil dicatat!");
+      if (resolutionStatus === "Perlu Rujukan Profesional") {
+        router.push(`/rujukan/create?sharing_id=${id}`);
+      } else {
+        window.location.reload();
+      }
+    }, 1000);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -253,6 +283,7 @@ export default function DetailCurhatanPage() {
   }
 
   const status = mapPriorityToStatus(data.priority);
+  const apiStatus = data.status?.toLowerCase() || "belum ditinjau";
   const keywords = getKeywords(data.title + " " + data.description);
 
   // Status Configurations
@@ -421,7 +452,7 @@ export default function DetailCurhatanPage() {
 
         {/* Actions */}
         <div className="flex flex-col space-y-3">
-          {status !== "Aman" && !isHandling ? (
+          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" ? (
             <Dialog open={isStartHandlingOpen} onOpenChange={setIsStartHandlingOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
@@ -454,11 +485,95 @@ export default function DetailCurhatanPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : status !== "Aman" && isHandling ? (
+          ) : status !== "Aman" && apiStatus === "konseling dijadwalkan" ? (
+            <Dialog open={isRecordCounselingOpen} onOpenChange={setIsRecordCounselingOpen}>
+              <DialogTrigger asChild>
+                <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
+                  Catat Hasil Konseling
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+                <DialogHeader className="mb-2">
+                  <DialogTitle className="text-2xl font-bold">Catat Hasil Konseling</DialogTitle>
+                  <DialogDescription className="text-gray-600 mt-2 text-base">
+                    Dokumentasikan hasil sesi konseling dan tentukan tindak lanjut kasus siswa.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 mt-2">
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Metode Konseling <span className="text-red-500">*</span></Label>
+                    <Select value={counselingMethod} onValueChange={setCounselingMethod}>
+                      <SelectTrigger className="w-full mt-2 h-10">
+                        <SelectValue placeholder="Pilih metode konseling" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tatap Muka">Tatap Muka</SelectItem>
+                        <SelectItem value="Video Call">Video Call</SelectItem>
+                        <SelectItem value="Chat">Chat</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Catatan <span className="text-red-500">*</span></Label>
+                    <Textarea 
+                      placeholder="Tuliskan hasil observasi, kondisi emosional siswa, respons selama sesi, dan evaluasi Guru BK..." 
+                      className="mt-2 h-32 resize-none"
+                      value={counselingNote}
+                      onChange={(e) => setCounselingNote(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold text-gray-700">Status Resolusi Insiden <span className="text-red-500">*</span></Label>
+                    <Select value={resolutionStatus} onValueChange={setResolutionStatus}>
+                      <SelectTrigger className="w-full mt-2 h-10">
+                        <SelectValue placeholder="Pilih status resolusi insiden" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Perlu Rujukan Profesional">Perlu Rujukan Profesional</SelectItem>
+                        {status === "Kritis" && (
+                          <SelectItem value="Bukan Kondisi Kritis (Red Zone)">Bukan Kondisi Kritis (Red Zone)</SelectItem>
+                        )}
+                        {status === "Prioritas" && (
+                          <SelectItem value="Bukan Kondisi Prioritas (Yellow Zone)">Bukan Kondisi Prioritas (Yellow Zone)</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {resolutionStatus === "Perlu Rujukan Profesional" && (
+                      <p className="text-xs text-blue-600 mt-2 italic">Anda akan diarahkan ke form pengajuan rujukan setelah data disimpan</p>
+                    )}
+                    {resolutionStatus === "Bukan Kondisi Kritis (Red Zone)" && (
+                      <p className="text-xs text-green-600 mt-2 italic">Status zona merah (kritis) akan dicabut dari monitoring aktif</p>
+                    )}
+                    {resolutionStatus === "Bukan Kondisi Prioritas (Yellow Zone)" && (
+                      <p className="text-xs text-green-600 mt-2 italic">Status zona kuning (prioritas) akan dicabut dari monitoring aktif</p>
+                    )}
+                  </div>
+                </div>
+
+                <DialogFooter className="mt-6 flex flex-row gap-3 sm:space-x-0">
+                  <DialogClose asChild>
+                    <Button variant="outline" className="w-1/2 border-gray-300 hover:bg-gray-50 text-blue-600 font-semibold h-11">
+                      Batal
+                    </Button>
+                  </DialogClose>
+                  <Button 
+                    className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
+                    onClick={handleRecordCounselingSubmit}
+                    disabled={isRecordSubmitting || !counselingMethod || !counselingNote || !resolutionStatus}
+                  >
+                    {isRecordSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Simpan Hasil Konseling"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          ) : status !== "Aman" && (isHandling || apiStatus === "jadwal ditolak siswa") ? (
             <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
               <DialogTrigger asChild>
                 <Button className="w-full bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold">
-                  Ajukan Pertemuan Konseling
+                  {apiStatus === "jadwal ditolak siswa" ? "Ajukan Jadwal Konseling Kembali" : "Ajukan Pertemuan Konseling"}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
@@ -603,7 +718,7 @@ export default function DetailCurhatanPage() {
             </Dialog>
           )}
 
-          {status !== "Aman" && !isHandling && (
+          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && (
             <Dialog open={isFalsePositiveOpen} onOpenChange={setIsFalsePositiveOpen}>
               <DialogTrigger asChild>
                 <Button
