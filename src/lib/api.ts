@@ -365,8 +365,19 @@ export async function replySharing(
 export async function markSharingFalsePositive(
   id: number,
   reason: string
-): Promise<{ success: boolean; message: string; data: any }> {
+): Promise<{ success: boolean; message: string }> {
   const response = await authPatch(`/sharing/false-positive/${id}`, { reason });
+  return response;
+}
+
+/**
+ * Schedule counseling from sharing/curhat
+ */
+export async function scheduleSharing(
+  id: number,
+  data: { date: string; time: string; room: string; note?: string }
+): Promise<{ success: boolean; message: string }> {
+  const response = await authPost(`/sharing/schedule/${id}`, data);
   return response;
 }
 

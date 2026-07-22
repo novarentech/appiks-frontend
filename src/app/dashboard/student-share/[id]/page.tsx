@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getSharingDetail, markSharingFalsePositive, replySharing } from "@/lib/api";
+import { getSharingDetail, markSharingFalsePositive, replySharing, scheduleSharing } from "@/lib/api";
 import { Sharing } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -204,13 +204,31 @@ export default function DetailCurhatanPage() {
 
   const handleScheduleSubmit = async () => {
     if (!scheduleDate || !scheduleTime || !scheduleRoom) return;
-    setIsScheduleSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      setIsScheduleSubmitting(true);
+      const formattedDate = format(scheduleDate, "yyyy-MM-dd");
+      
+      const res = await scheduleSharing(id, {
+        date: formattedDate,
+        time: scheduleTime,
+        room: scheduleRoom,
+        note: scheduleNote
+      });
+
+      if (res.success) {
+        setIsScheduleOpen(false);
+        alert("Pertemuan konseling berhasil diajukan!");
+        window.location.reload();
+      } else {
+        alert(res.message || "Gagal mengajukan jadwal konseling.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat memproses permintaan.");
+    } finally {
       setIsScheduleSubmitting(false);
-      setIsScheduleOpen(false);
-      alert("Pertemuan konseling berhasil diajukan!");
-    }, 1000);
+    }
   };
 
   if (loading) {
