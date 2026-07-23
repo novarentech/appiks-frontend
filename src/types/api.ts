@@ -298,8 +298,8 @@ export interface Report {
   room: string;
   date: string;
   time: string;
-  status: "menunggu" | "disetujui" | "dijadwalkan" | "selesai" | "dibatalkan";
-  priority: "rendah" | "sedang" | "tinggi";
+  status: string;
+  priority: "rendah" | "sedang" | "tinggi" | string;
   notes: string;
   result: string;
   created_at: string;
@@ -422,8 +422,8 @@ export interface CounselingSchedule {
   room: string;
   date: string;
   time: string;
-  status: "menunggu" | "disetujui" | "dijadwalkan" | "selesai" | "dibatalkan";
-  priority: "rendah" | "sedang" | "tinggi";
+  status: string;
+  priority: "rendah" | "sedang" | "tinggi" | string;
   notes: string;
   result: string;
   created_at: string;

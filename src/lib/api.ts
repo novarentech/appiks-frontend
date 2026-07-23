@@ -1441,3 +1441,14 @@ export async function getLatestCounselingNotifications(): Promise<Notification[]
 
   return notifications;
 }
+
+/**
+ * Acknowledge counseling schedule (accept/reject)
+ */
+export async function acknowledgeCounselingSchedule(
+  id: number,
+  type: "accept" | "reject"
+): Promise<any> {
+  const response = await authPatch(`/student/counselings/${id}/acknowledge`, { type });
+  return response;
+}

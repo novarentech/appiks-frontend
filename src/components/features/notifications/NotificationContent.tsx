@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { acknowledgeCounselingSchedule } from "@/lib/api";
 
 import {
   Notification,
@@ -21,6 +23,23 @@ export function NotificationContent({
   size = "sm",
 }: NotificationContentProps) {
   const router = useRouter();
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+
+  const handleAcknowledge = async (id: number, type: "accept" | "reject") => {
+    try {
+      if (type === "accept") setIsAccepting(true);
+      else setIsRejecting(true);
+      await acknowledgeCounselingSchedule(id, type);
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to acknowledge schedule", error);
+    } finally {
+      setIsAccepting(false);
+      setIsRejecting(false);
+    }
+  };
+
   const isSm = size === "sm";
   const textSize = isSm ? "text-xs" : "text-sm";
   const headerSize = isSm ? "text-xs" : "text-sm";
@@ -48,6 +67,32 @@ export function NotificationContent({
         )}
 
         <ChangesSummary notification={counselingNotification} size={size} />
+
+        {counselingNotification.status === "menunggu" && (
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1 border-[#EA580C] text-[#EA580C] hover:bg-orange-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAcknowledge(counselingNotification.id, "reject");
+              }}
+              disabled={isAccepting || isRejecting}
+            >
+              {isRejecting ? "Memproses..." : "Tolak Jadwal"}
+            </Button>
+            <Button
+              className="flex-1 bg-[#EA580C] hover:bg-[#C2410C] text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAcknowledge(counselingNotification.id, "accept");
+              }}
+              disabled={isAccepting || isRejecting}
+            >
+              {isAccepting ? "Memproses..." : "Setujui Jadwal"}
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

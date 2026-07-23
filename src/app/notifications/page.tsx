@@ -84,39 +84,50 @@ function NotificationsPageContent() {
               year: 'numeric'
             }).replace(/\//g, '/');
 
-            let status: "disetujui" | "selesai" | "dibatalkan" | "menunggu" | "dijadwalkan" = "disetujui";
-            let statusText = "Disetujui";
-            let statusColor = "green";
-            let borderColor = "border-green-400";
+            let status: string = item.status;
+            let statusText = item.status;
+            let statusColor = "gray";
+            let borderColor = "border-gray-400";
 
-            switch (item.status) {
-              case "selesai":
-                status = "selesai";
-                statusText = "Selesai";
-                statusColor = "emerald";
-                borderColor = "border-emerald-400";
-                break;
-              case "dijadwalkan":
-                status = "dijadwalkan";
-                statusText = "Dijadwalkan";
-                statusColor = "blue";
-                borderColor = "border-blue-400";
-                break;
-              case "dibatalkan":
-                status = "dibatalkan";
-                statusText = "Dibatalkan";
-                statusColor = "red";
-                borderColor = "border-red-400";
-                break;
-              case "menunggu":
-                status = "menunggu";
-                statusText = "Menunggu";
+            switch (item.status?.toLowerCase()) {
+              case "belum ditinjau":
+              case "belum ditanggapi":
                 statusColor = "yellow";
                 borderColor = "border-yellow-400";
                 break;
+              case "sedang ditangani":
+                statusColor = "blue";
+                borderColor = "border-blue-400";
+                break;
+              case "konseling dijadwalkan":
+                statusColor = "indigo";
+                borderColor = "border-indigo-400";
+                break;
+              case "diselesaikan":
+              case "selesai": // fallback
+                statusColor = "emerald";
+                borderColor = "border-emerald-400";
+                break;
+              case "jadwal ditolak siswa":
+              case "dibatalkan": // fallback
+                statusColor = "red";
+                borderColor = "border-red-400";
+                break;
+              case "menunggu persetujuan siswa":
+              case "menunggu": // fallback
+                statusColor = "purple";
+                borderColor = "border-purple-400";
+                status = "menunggu"; // Important: keep internal status as "menunggu" to show action buttons
+                break;
+              case "menunggu persetujuan rujukan":
+                statusColor = "orange";
+                borderColor = "border-orange-400";
+                break;
+              case "dijadwalkan":
+                statusColor = "blue";
+                borderColor = "border-blue-400";
+                break;
               case "disetujui":
-                status = "disetujui";
-                statusText = "Disetujui";
                 statusColor = "green";
                 borderColor = "border-green-400";
                 break;
@@ -131,7 +142,7 @@ function NotificationsPageContent() {
               date: formattedDate,
               time: item.time,
               room: item.room,
-              status: status,
+              status: status as import("@/types/notifications").NotificationStatus,
               statusText: statusText,
               statusColor: statusColor,
               borderColor: borderColor,
