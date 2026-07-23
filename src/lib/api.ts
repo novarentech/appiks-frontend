@@ -404,7 +404,7 @@ export async function createCounseling(data: {
 export async function createReferralCounseling(data: {
   student_id: number;
   sharing_id: number;
-  room: string;
+
   notes: string;
   reason: string;
   psychologist_id: number;
@@ -1454,3 +1454,10 @@ export async function acknowledgeCounselingSchedule(
   return response;
 }
 
+/**
+ * Get counseling list (including external referrals)
+ */
+export async function getCounselingList(type: "internal" | "external"): Promise<any> {
+  const response = await authGet(`/counseling?type=${type}`);
+  return response;
+}

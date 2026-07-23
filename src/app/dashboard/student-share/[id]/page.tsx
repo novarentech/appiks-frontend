@@ -285,7 +285,7 @@ export default function DetailCurhatanPage() {
       setIsRecordSubmitting(true);
       
       const payload = {
-        counseling_id: 0, // Set to 0 or grab from data if available in the future
+        counseling_id: data?.counseling?.id || 0,
         session_mode: counselingMethod,
         clinical_notes: counselingNote,
         resolution_status: resolutionStatus
@@ -295,7 +295,7 @@ export default function DetailCurhatanPage() {
 
       if (res.success) {
         setIsRecordCounselingOpen(false);
-        if (resolutionStatus === "Perlu Rujukan Profesional") {
+        if (resolutionStatus === "Perlu Rujukan Professional") {
           setIsReferralOpen(true);
         } else {
           alert("Hasil konseling berhasil dicatat!");
@@ -313,7 +313,7 @@ export default function DetailCurhatanPage() {
   };
 
   const handleReferralSubmit = async () => {
-    if (!referralPsychologistId || !referralRoom || !referralReason) return;
+    if (!referralPsychologistId || !referralReason) return;
     
     try {
       setIsReferralSubmitting(true);
@@ -321,7 +321,7 @@ export default function DetailCurhatanPage() {
       const payload = {
         student_id: data!.user_id,
         sharing_id: id,
-        room: referralRoom,
+
         notes: referralNotes,
         reason: referralReason,
         psychologist_id: Number(referralPsychologistId)
@@ -450,6 +450,25 @@ export default function DetailCurhatanPage() {
             </div>
           </div>
         </div>
+
+        {/* Hasil Evaluasi (Bukan Urgent) */}
+        {apiStatus === "bukan urgent" && (
+          <div className="border rounded-lg mb-6">
+            <div className="p-4 border-b font-semibold">Hasil Evaluasi</div>
+            <div className="p-6 grid gap-6">
+              <div>
+                <div className="text-gray-500 text-sm mb-1">Status Resolusi</div>
+                <div className="font-semibold text-sm text-gray-900">Bukan Kondisi {status === "Aman" ? "Urgent" : status}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-sm mb-1">Alasan</div>
+                <div className="font-semibold text-sm text-gray-900 leading-relaxed">
+                  {data.nlp?.reason || "-"}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Identitas Siswa */}
         <div className="border rounded-lg mb-6">
@@ -646,7 +665,8 @@ export default function DetailCurhatanPage() {
         )}
 
         {/* Actions */}
-        <div className="flex flex-col space-y-3">
+        {apiStatus !== "menunggu persetujuan siswa" && (
+          <div className="flex flex-col space-y-3">
           {apiStatus === "sudah ditanggapi" && data.reply ? (
             <>
               <Button 
@@ -662,7 +682,7 @@ export default function DetailCurhatanPage() {
                 onClose={() => setIsViewReplyOpen(false)} 
               />
             </>
-          ) : status !== "Aman" && !isHandling && apiStatus !== "sedang ditangani" && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" ? (
+          ) : status !== "Aman" && !isHandling && apiStatus !== "sedang ditangani" && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" ? (
             <Dialog open={isStartHandlingOpen} onOpenChange={setIsStartHandlingOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
@@ -712,16 +732,14 @@ export default function DetailCurhatanPage() {
                 <div className="grid gap-4 mt-2">
                   <div>
                     <Label className="text-sm font-semibold text-gray-700">Metode Konseling <span className="text-red-500">*</span></Label>
-                    <Select value={referralPsychologistId} onValueChange={setReferralPsychologistId}>
+                    <Select value={counselingMethod} onValueChange={setCounselingMethod}>
                       <SelectTrigger className="w-full mt-2 h-10">
-                        <SelectValue placeholder={isLoadingPsychologists ? "Memuat data..." : "Pilih psikolog..."} />
+                        <SelectValue placeholder="Pilih metode" />
                       </SelectTrigger>
                       <SelectContent>
-                        {psychologists.map((psychologist) => (
-                          <SelectItem key={psychologist.id} value={psychologist.id?.toString() || ""}>
-                            {psychologist.name}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="Tatap Muka">Tatap Muka</SelectItem>
+                        <SelectItem value="Video Call">Video Call</SelectItem>
+                        <SelectItem value="Chat">Chat</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -743,7 +761,7 @@ export default function DetailCurhatanPage() {
                         <SelectValue placeholder="Pilih status resolusi insiden" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Perlu Rujukan Profesional">Perlu Rujukan Profesional</SelectItem>
+                        <SelectItem value="Perlu Rujukan Professional">Perlu Rujukan Professional</SelectItem>
                         {status === "Kritis" && (
                           <SelectItem value="Bukan Kondisi Kritis (Red Zone)">Bukan Kondisi Kritis (Red Zone)</SelectItem>
                         )}
@@ -752,7 +770,7 @@ export default function DetailCurhatanPage() {
                         )}
                       </SelectContent>
                     </Select>
-                    {resolutionStatus === "Perlu Rujukan Profesional" && (
+                    {resolutionStatus === "Perlu Rujukan Professional" && (
                       <p className="text-xs text-blue-600 mt-2 italic">Anda akan diarahkan ke form pengajuan rujukan setelah data disimpan</p>
                     )}
                     {resolutionStatus === "Bukan Kondisi Kritis (Red Zone)" && (
@@ -879,7 +897,7 @@ export default function DetailCurhatanPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : (
+          ) : apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" ? (
             <Dialog open={isReplyOpen} onOpenChange={setIsReplyOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
@@ -927,7 +945,8 @@ export default function DetailCurhatanPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          )}
+          ) : null}
+
 
           {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && apiStatus !== "sedang ditangani" && (
             <Dialog open={isFalsePositiveOpen} onOpenChange={setIsFalsePositiveOpen}>
@@ -988,7 +1007,7 @@ export default function DetailCurhatanPage() {
               <DialogHeader className="mb-2">
                 <DialogTitle className="text-2xl font-bold">Rujuk ke Psikolog</DialogTitle>
                 <DialogDescription className="text-gray-600 mt-2 text-base">
-                  Isi formulir ini untuk mengajukan rujukan profesional bagi siswa.
+                  Buat referral untuk siswa ini ke psikolog
                 </DialogDescription>
               </DialogHeader>
 
@@ -1010,16 +1029,6 @@ export default function DetailCurhatanPage() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700">Ruangan / Platform <span className="text-red-500">*</span></Label>
-                  <Input 
-                    placeholder="Contoh: Zoom, Klinik Sekolah..." 
-                    className="mt-2 h-10 w-full"
-                    value={referralRoom}
-                    onChange={(e) => setReferralRoom(e.target.value)}
-                  />
-                </div>
-
-                <div>
                   <Label className="text-sm font-semibold text-gray-700">Alasan Rujukan <span className="text-red-500">*</span></Label>
                   <Textarea 
                     placeholder="Sebutkan alasan detail mengapa siswa dirujuk..." 
@@ -1030,7 +1039,7 @@ export default function DetailCurhatanPage() {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-semibold text-gray-700">Catatan Tambahan</Label>
+                  <Label className="text-sm font-semibold text-gray-700">Catatan Tambahan (Opsional)</Label>
                   <Textarea 
                     placeholder="Tambahkan informasi lain bila ada..." 
                     className="mt-2 h-20 resize-none w-full"
@@ -1049,14 +1058,15 @@ export default function DetailCurhatanPage() {
                 <Button 
                   className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
                   onClick={handleReferralSubmit}
-                  disabled={isReferralSubmitting || !referralPsychologistId || !referralRoom || !referralReason}
+                  disabled={isReferralSubmitting || !referralPsychologistId || !referralReason}
                 >
-                  {isReferralSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Ajukan Rujukan"}
+                  {isReferralSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Kirim Rujukan"}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
+        )}
       </div>
     </div>
   );

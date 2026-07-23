@@ -6,8 +6,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NotificationItem } from "@/components/features/notifications/NotificationItem";
-import { getSharingList, getReportList } from "@/lib/api";
-import { getMockReferrals } from "@/lib/mockReferralData";
+import { getSharingList, getReportList, getCounselingList } from "@/lib/api";
 import { Notification, ReferralNotification } from "@/types/notifications";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 
@@ -29,9 +28,10 @@ function NotificationsPageContent() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const [sharingResponse, reportResponse] = await Promise.all([
+        const [sharingResponse, internalCounselingResponse, counselingResponse] = await Promise.all([
           getSharingList(),
-          getReportList()
+          getCounselingList("internal"),
+          getCounselingList("external")
         ]);
         
         // Transform and sort sharing data by created_at (newest first)
@@ -74,9 +74,9 @@ function NotificationsPageContent() {
             hasNewTag: index < 2, // Only latest 2 sharing have "tag baru"
           })) || [];
 
-        // Transform and sort report data by created_at (newest first)
-        const counselingNotifications = reportResponse.data
-          ?.map((item: import("@/types/api").Report) => {
+        // Transform and sort internal counseling data by created_at (newest first)
+        const counselingNotifications = internalCounselingResponse.data
+          ?.map((item: any) => {
             const createdDate = new Date(item.created_at);
             const formattedDate = createdDate.toLocaleDateString('id-ID', {
               day: '2-digit',
@@ -113,6 +113,10 @@ function NotificationsPageContent() {
                 statusColor = "red";
                 borderColor = "border-red-400";
                 break;
+              case "bukan urgent":
+                statusColor = "gray";
+                borderColor = "border-gray-400";
+                break;
               case "menunggu persetujuan siswa":
               case "menunggu": // fallback
                 statusColor = "purple";
@@ -137,11 +141,11 @@ function NotificationsPageContent() {
               id: item.id,
               type: "counseling" as const,
               title: "Jadwal Konseling",
-              description: item.topic,
+              description: item.sharing?.title || "Konseling Personal",
               teacher: item.counselor?.name || "System",
               date: formattedDate,
-              time: item.time,
-              room: item.room,
+              time: item.scheduled_at ? new Date(item.scheduled_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : "-",
+              room: item.room || "-",
               status: status as import("@/types/notifications").NotificationStatus,
               statusText: statusText,
               statusColor: statusColor,
@@ -154,16 +158,55 @@ function NotificationsPageContent() {
               createdAt: item.created_at, // For sorting
             };
           })
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .map((item, index) => ({
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .map((item: any, index: number) => ({
             ...item,
             hasNewTag: index < 2, // Only latest 2 report have "tag baru"
           })) || [];
         
-        const referralMock = getMockReferrals();
+        const referralNotifications = counselingResponse.data
+          ?.map((item: any) => {
+            const createdDate = new Date(item.created_at);
+            const formattedDate = createdDate.toLocaleDateString('id-ID', {
+              day: '2-digit', month: '2-digit', year: 'numeric'
+            }).replace(/\//g, '/');
+
+            let statusText = item.status;
+            let statusColor = "green";
+            let borderColor = "border-green-400";
+            
+            if (item.status === "selesai" || item.status === "diselesaikan") {
+              statusColor = "emerald";
+              borderColor = "border-emerald-400";
+              statusText = "Selesai";
+            }
+
+            return {
+              id: item.id,
+              type: "rujukan" as const,
+              title: "Rujukan Psikolog",
+              description: "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.",
+              teacher: item.counselor?.name || "Guru BK",
+              date: formattedDate,
+              status: item.status as any,
+              statusText: statusText,
+              statusColor: statusColor,
+              borderColor: borderColor,
+              icon: Users,
+              isNew: true,
+              psychologist: "Psikolog Eksternal", // Name not exposed in this payload, use generic or add API change later
+              location: item.room || "Klinik / Platform Eksternal",
+              counselor: item.counselor?.name || "Guru BK",
+              referralReason: item.reason || "Penanganan lebih lanjut",
+              referralDate: new Date(item.scheduled_at || item.created_at).toLocaleDateString('id-ID', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+              }).replace(/\//g, '/'),
+              createdAt: item.created_at,
+            };
+          }) || [];
 
         // Combine both types of notifications and sort by created_at for display
-        const allNotifications = [...curhatNotifications, ...counselingNotifications, ...referralMock]
+        const allNotifications = [...curhatNotifications, ...counselingNotifications, ...referralNotifications]
           .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
         
         setNotifications(allNotifications);
