@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Loader2, AlertTriangle, ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react";
+import CurhatViewDialog from "@/components/dialogs/CurhatViewDialog";
 
 export default function DetailCurhatanPage() {
   const params = useParams();
@@ -58,6 +59,7 @@ export default function DetailCurhatanPage() {
   const [counselingNote, setCounselingNote] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
   const [isRecordSubmitting, setIsRecordSubmitting] = useState(false);
+  const [isViewReplyOpen, setIsViewReplyOpen] = useState(false);
 
   const [isReferralOpen, setIsReferralOpen] = useState(false);
   const [referralPsychologistId, setReferralPsychologistId] = useState("");
@@ -97,29 +99,6 @@ export default function DetailCurhatanPage() {
     }
   };
 
-  const getKeywords = (text: string) => {
-    const keywords: string[] = [];
-    const textLower = text.toLowerCase();
-    if (textLower.includes("bunuh diri") || textLower.includes("mati"))
-      keywords.push("bunuh diri");
-    if (textLower.includes("tidak ingin hidup"))
-      keywords.push("tidak ingin hidup");
-    if (textLower.includes("menyakiti") || textLower.includes("sakit"))
-      keywords.push("menyakiti diri");
-    if (textLower.includes("stres") || textLower.includes("stress"))
-      keywords.push("stres");
-    if (textLower.includes("malas")) keywords.push("malas");
-    if (textLower.includes("capek") || textLower.includes("lelah"))
-      keywords.push("lelah");
-    
-    // Default mock if none found but status is critical/priority
-    if (keywords.length === 0) {
-       const status = mapPriorityToStatus(data?.priority || "");
-       if (status === "Kritis") return ["bunuh diri", "tidak ingin hidup", "menyakiti diri"];
-       if (status === "Prioritas") return ["stres", "malas"];
-    }
-    return keywords;
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -365,7 +344,8 @@ export default function DetailCurhatanPage() {
 
   const status = mapPriorityToStatus(data.priority);
   const apiStatus = data.status?.toLowerCase() || "belum ditinjau";
-  const keywords = getKeywords(data.title + " " + data.description);
+  const keywords: string[] = (data.nlp?.response?.matched_keywords || [])
+    .map((k: any) => typeof k === 'string' ? k : k.stem || k.keyword);
 
   // Status Configurations
   const config = {
@@ -518,22 +498,148 @@ export default function DetailCurhatanPage() {
           <div className="border rounded-lg mb-8">
             <div className="bg-gray-50/50 p-4 border-b font-semibold">Kata Kunci Terdeteksi</div>
             <div className="p-6 flex flex-wrap gap-2">
-              {keywords.map((kw, i) => (
-                <Badge
-                  key={i}
-                  variant="secondary"
-                  className="bg-red-50 text-red-600 hover:bg-red-100 font-normal px-3 py-1"
-                >
-                  {kw}
-                </Badge>
-              ))}
+              {keywords.length > 0 ? (
+                keywords.map((kw, i) => (
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="bg-red-50 text-red-600 hover:bg-red-100 font-normal px-3 py-1"
+                  >
+                    {kw}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-gray-500 font-semibold">-</span>
+              )}
             </div>
           </div>
         )}
 
+        {/* Detail Pengajuan Konseling / Informasi Rujukan / Catatan Hasil Konseling */}
+        {data.counseling && (
+          apiStatus === "menunggu persetujuan rujukan" ? (
+            <div className="border rounded-lg mb-8">
+              <div className="bg-gray-50/50 p-4 border-b font-semibold">Informasi Rujukan</div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <div className="text-gray-500 text-xs mb-1">Dikirim pada</div>
+                  <div className="font-semibold text-sm">
+                    {data.counseling.created_at 
+                      ? format(new Date(data.counseling.created_at), "MM/dd/yyyy hh:mm a") 
+                      : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs mb-1">Psikolog Tujuan</div>
+                  <div className="font-semibold text-sm">
+                    {data.counseling.psychologist?.name || (data.counseling.psychologist_id ? `Psikolog ID: ${data.counseling.psychologist_id}` : "-")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs mb-1">Alasan Rujukan</div>
+                  <div className="font-semibold text-sm leading-relaxed">{data.counseling.reason || "-"}</div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs mb-1">Catatan Tambahan</div>
+                  <div className="font-semibold text-sm leading-relaxed">{data.counseling.notes || "-"}</div>
+                </div>
+              </div>
+            </div>
+          ) : apiStatus === "diselesaikan" ? (
+            <div className="border rounded-lg mb-8">
+              <div className="bg-gray-50/50 p-4 border-b font-semibold">Catatan Hasil Konseling</div>
+              <div className="p-6">
+                <div className="grid grid-cols-3 gap-6 mb-6">
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Tanggal</div>
+                    <div className="font-semibold text-sm">
+                      {data.counseling.scheduled_at 
+                        ? format(new Date(data.counseling.scheduled_at), "MM/dd/yyyy") 
+                        : "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Waktu</div>
+                    <div className="font-semibold text-sm">
+                      {data.counseling.scheduled_at 
+                        ? format(new Date(data.counseling.scheduled_at), "hh:mm a") 
+                        : "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Ruangan</div>
+                    <div className="font-semibold text-sm">{data.counseling.room || "-"}</div>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Metode Konseling</div>
+                    <div className="font-semibold text-sm">{data.counseling.method || "-"}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Catatan</div>
+                    <div className="font-semibold text-sm leading-relaxed">{data.counseling.clinical_notes || data.counseling.notes || "-"}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Status Resolusi Insiden</div>
+                    <div className="font-semibold text-sm">{data.counseling.resolution || "-"}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="border rounded-lg mb-8">
+              <div className="bg-gray-50/50 p-4 border-b font-semibold">Detail Pengajuan Konseling</div>
+              <div className="p-6">
+                <div className="grid grid-cols-3 gap-6 mb-6">
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Tanggal</div>
+                    <div className="font-semibold text-sm">
+                      {data.counseling.scheduled_at 
+                        ? format(new Date(data.counseling.scheduled_at), "MM/dd/yyyy") 
+                        : "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Waktu</div>
+                    <div className="font-semibold text-sm">
+                      {data.counseling.scheduled_at 
+                        ? format(new Date(data.counseling.scheduled_at), "hh:mm a") 
+                        : "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 text-xs mb-1">Ruangan</div>
+                    <div className="font-semibold text-sm">{data.counseling.room || "-"}</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-500 text-xs mb-1">Catatan Tambahan</div>
+                  <div className="font-semibold text-sm leading-relaxed">{data.counseling.notes || "-"}</div>
+                </div>
+              </div>
+            </div>
+          )
+        )}
+
         {/* Actions */}
         <div className="flex flex-col space-y-3">
-          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" ? (
+          {apiStatus === "sudah ditanggapi" && data.reply ? (
+            <>
+              <Button 
+                variant="outline" 
+                className="py-6 text-base font-semibold border-teal-600 text-teal-600 hover:bg-teal-50"
+                onClick={() => setIsViewReplyOpen(true)}
+              >
+                Lihat Balasan
+              </Button>
+              <CurhatViewDialog 
+                curhat={data} 
+                isOpen={isViewReplyOpen} 
+                onClose={() => setIsViewReplyOpen(false)} 
+              />
+            </>
+          ) : status !== "Aman" && !isHandling && apiStatus !== "sedang ditangani" && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" ? (
             <Dialog open={isStartHandlingOpen} onOpenChange={setIsStartHandlingOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
@@ -649,7 +755,7 @@ export default function DetailCurhatanPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : status !== "Aman" && (isHandling || apiStatus === "jadwal ditolak siswa") ? (
+          ) : status !== "Aman" && (apiStatus === "sedang ditangani" || isHandling || apiStatus === "jadwal ditolak siswa") ? (
             <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
               <DialogTrigger asChild>
                 <Button className="w-full bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold">

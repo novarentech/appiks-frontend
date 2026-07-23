@@ -222,6 +222,7 @@ export interface Sharing {
   deleted_at?: string | null;
   cutdown_for_report?: any;
   nlp?: any;
+  counseling?: any;
   user: SharingUser;
 }
 
