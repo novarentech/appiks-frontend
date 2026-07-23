@@ -57,7 +57,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (!userInfo) return null;
 
             return {
-              id: userInfo.username,
+              id: String(userInfo.sub || userInfo.id || userInfo.user_id || userInfo.username),
               username: userInfo.username,
               verified: userInfo.verified,
               token: response.data.token,
@@ -111,6 +111,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             if (newUserInfo) {
               token.token = refreshResponse.data.token;
               token.expiresIn = refreshResponse.data.expiresIn;
+              token.id = String(newUserInfo.sub || newUserInfo.id || newUserInfo.user_id || newUserInfo.username);
               token.username = newUserInfo.username;
               token.verified = newUserInfo.verified;
               token.name = newUserInfo.name;

@@ -1453,3 +1453,4 @@ export async function acknowledgeCounselingSchedule(
   const response = await authPatch(`/student/counselings/${id}/acknowledge`, { type });
   return response;
 }
+

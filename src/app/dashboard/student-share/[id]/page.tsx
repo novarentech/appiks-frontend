@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { getSharingDetail, markSharingFalsePositive, replySharing, createCounseling, acknowledgeSharing, createCounselingLog, createReferralCounseling } from "@/lib/api";
-import { Sharing } from "@/types/api";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { getSharingDetail, markSharingFalsePositive, replySharing, createCounseling, acknowledgeSharing, createCounselingLog, createReferralCounseling, getUsersByType } from "@/lib/api";
+import { Sharing, User } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,6 +34,7 @@ export default function DetailCurhatanPage() {
   const router = useRouter();
   const id = Number(params.id);
   const { data: session } = useSession();
+  const { profileData } = useUserProfile();
 
   const [data, setData] = useState<Sharing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,8 @@ export default function DetailCurhatanPage() {
   const [referralReason, setReferralReason] = useState("");
   const [referralNotes, setReferralNotes] = useState("");
   const [isReferralSubmitting, setIsReferralSubmitting] = useState(false);
+  const [psychologists, setPsychologists] = useState<User[]>([]);
+  const [isLoadingPsychologists, setIsLoadingPsychologists] = useState(false);
 
   // Helper functions
   const mapPriorityToStatus = (priority: string) => {
@@ -128,7 +132,27 @@ export default function DetailCurhatanPage() {
     if (id) {
       fetchData();
     }
-  }, [id]);
+  }, [id, router]);
+
+  useEffect(() => {
+    const fetchPsychologists = async () => {
+      if (isReferralOpen && psychologists.length === 0) {
+        setIsLoadingPsychologists(true);
+        try {
+          const res = await getUsersByType("psychologist");
+          if (res.success && res.data) {
+            setPsychologists(res.data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch psychologists", error);
+        } finally {
+          setIsLoadingPsychologists(false);
+        }
+      }
+    };
+    
+    fetchPsychologists();
+  }, [isReferralOpen, psychologists.length]);
 
   useEffect(() => {
     if (!data) return;
@@ -234,7 +258,7 @@ export default function DetailCurhatanPage() {
         date: formattedDate,
         time: scheduleTime,
         student_id: data!.user_id,
-        counselor_id: Number(session?.user?.id) || 0,
+        counselor_id: profileData?.id || Number(session?.user?.id) || 0,
         sharing_id: id,
         room: scheduleRoom,
         notes: scheduleNote
@@ -242,7 +266,6 @@ export default function DetailCurhatanPage() {
 
       if (res.success) {
         setIsScheduleOpen(false);
-        alert("Pertemuan konseling berhasil diajukan!");
         window.location.reload();
       } else {
         alert(res.message || "Gagal mengajukan jadwal konseling.");
@@ -689,14 +712,16 @@ export default function DetailCurhatanPage() {
                 <div className="grid gap-4 mt-2">
                   <div>
                     <Label className="text-sm font-semibold text-gray-700">Metode Konseling <span className="text-red-500">*</span></Label>
-                    <Select value={counselingMethod} onValueChange={setCounselingMethod}>
+                    <Select value={referralPsychologistId} onValueChange={setReferralPsychologistId}>
                       <SelectTrigger className="w-full mt-2 h-10">
-                        <SelectValue placeholder="Pilih metode konseling" />
+                        <SelectValue placeholder={isLoadingPsychologists ? "Memuat data..." : "Pilih psikolog..."} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Tatap Muka">Tatap Muka</SelectItem>
-                        <SelectItem value="Video Call">Video Call</SelectItem>
-                        <SelectItem value="Chat">Chat</SelectItem>
+                        {psychologists.map((psychologist) => (
+                          <SelectItem key={psychologist.id} value={psychologist.id?.toString() || ""}>
+                            {psychologist.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -904,7 +929,7 @@ export default function DetailCurhatanPage() {
             </Dialog>
           )}
 
-          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && (
+          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && apiStatus !== "sedang ditangani" && (
             <Dialog open={isFalsePositiveOpen} onOpenChange={setIsFalsePositiveOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -972,11 +997,14 @@ export default function DetailCurhatanPage() {
                   <Label className="text-sm font-semibold text-gray-700">Psikolog Tujuan <span className="text-red-500">*</span></Label>
                   <Select value={referralPsychologistId} onValueChange={setReferralPsychologistId}>
                     <SelectTrigger className="w-full mt-2 h-10">
-                      <SelectValue placeholder="Pilih psikolog..." />
+                      <SelectValue placeholder={isLoadingPsychologists ? "Memuat data..." : "Pilih psikolog..."} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Psikolog Dr. Anna (ID: 1)</SelectItem>
-                      <SelectItem value="2">Psikolog Budi (ID: 2)</SelectItem>
+                      {psychologists.map((psychologist) => (
+                        <SelectItem key={psychologist.id} value={psychologist.id?.toString() || ""}>
+                          {psychologist.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

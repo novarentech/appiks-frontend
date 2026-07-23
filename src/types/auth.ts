@@ -91,6 +91,9 @@ export interface JWTPayload {
   role: string;
   exp: number;
   iat: number;
+  sub?: number | string;
+  id?: number | string;
+  user_id?: number | string;
   [key: string]: unknown;
 }
 
@@ -117,6 +120,7 @@ export interface UserProfileResponse {
   success: boolean;
   message: string;
   data: {
+    id: number;
     name: string;
     phone: string;
     username: string;
