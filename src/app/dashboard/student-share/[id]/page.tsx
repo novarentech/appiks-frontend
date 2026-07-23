@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getSharingDetail, markSharingFalsePositive, replySharing, scheduleSharing } from "@/lib/api";
+import { useSession } from "next-auth/react";
+import { getSharingDetail, markSharingFalsePositive, replySharing, createCounseling, acknowledgeSharing, createCounselingLog, createReferralCounseling } from "@/lib/api";
 import { Sharing } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ export default function DetailCurhatanPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
+  const { data: session } = useSession();
 
   const [data, setData] = useState<Sharing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +45,7 @@ export default function DetailCurhatanPage() {
   const [isReplyOpen, setIsReplyOpen] = useState(false);
   const [isHandling, setIsHandling] = useState(false);
   const [isStartHandlingOpen, setIsStartHandlingOpen] = useState(false);
+  const [isStartHandlingSubmitting, setIsStartHandlingSubmitting] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [scheduleDate, setScheduleDate] = useState<Date>();
   const [scheduleTime, setScheduleTime] = useState("");
@@ -55,6 +58,13 @@ export default function DetailCurhatanPage() {
   const [counselingNote, setCounselingNote] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
   const [isRecordSubmitting, setIsRecordSubmitting] = useState(false);
+
+  const [isReferralOpen, setIsReferralOpen] = useState(false);
+  const [referralPsychologistId, setReferralPsychologistId] = useState("");
+  const [referralRoom, setReferralRoom] = useState("");
+  const [referralReason, setReferralReason] = useState("");
+  const [referralNotes, setReferralNotes] = useState("");
+  const [isReferralSubmitting, setIsReferralSubmitting] = useState(false);
 
   // Helper functions
   const mapPriorityToStatus = (priority: string) => {
@@ -194,6 +204,25 @@ export default function DetailCurhatanPage() {
     }
   };
 
+  const handleStartHandlingSubmit = async () => {
+    try {
+      setIsStartHandlingSubmitting(true);
+      const res = await acknowledgeSharing(id);
+      if (res.success) {
+        setIsHandling(true);
+        setIsStartHandlingOpen(false);
+        window.location.reload();
+      } else {
+        alert(res.message || "Gagal memulai penanganan.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat memproses permintaan.");
+    } finally {
+      setIsStartHandlingSubmitting(false);
+    }
+  };
+
   const handleReplySubmit = async () => {
     if (!replyText.trim()) return;
     
@@ -222,11 +251,14 @@ export default function DetailCurhatanPage() {
       setIsScheduleSubmitting(true);
       const formattedDate = format(scheduleDate, "yyyy-MM-dd");
       
-      const res = await scheduleSharing(id, {
+      const res = await createCounseling({
         date: formattedDate,
         time: scheduleTime,
+        student_id: data!.user_id,
+        counselor_id: Number(session?.user?.id) || 0,
+        sharing_id: id,
         room: scheduleRoom,
-        note: scheduleNote
+        notes: scheduleNote
       });
 
       if (res.success) {
@@ -247,18 +279,67 @@ export default function DetailCurhatanPage() {
   const handleRecordCounselingSubmit = async () => {
     if (!counselingMethod || !counselingNote || !resolutionStatus) return;
     
-    setIsRecordSubmitting(true);
-    // Simulate API call for now
-    setTimeout(() => {
-      setIsRecordSubmitting(false);
-      setIsRecordCounselingOpen(false);
-      alert("Hasil konseling berhasil dicatat!");
-      if (resolutionStatus === "Perlu Rujukan Profesional") {
-        router.push(`/rujukan/create?sharing_id=${id}`);
+    try {
+      setIsRecordSubmitting(true);
+      
+      const payload = {
+        counseling_id: 0, // Set to 0 or grab from data if available in the future
+        session_mode: counselingMethod,
+        clinical_notes: counselingNote,
+        resolution_status: resolutionStatus
+      };
+
+      const res = await createCounselingLog(payload);
+
+      if (res.success) {
+        setIsRecordCounselingOpen(false);
+        if (resolutionStatus === "Perlu Rujukan Profesional") {
+          setIsReferralOpen(true);
+        } else {
+          alert("Hasil konseling berhasil dicatat!");
+          window.location.reload();
+        }
       } else {
-        window.location.reload();
+        alert(res.message || "Gagal mencatat hasil konseling.");
       }
-    }, 1000);
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat memproses permintaan.");
+    } finally {
+      setIsRecordSubmitting(false);
+    }
+  };
+
+  const handleReferralSubmit = async () => {
+    if (!referralPsychologistId || !referralRoom || !referralReason) return;
+    
+    try {
+      setIsReferralSubmitting(true);
+      
+      const payload = {
+        student_id: data!.user_id,
+        sharing_id: id,
+        room: referralRoom,
+        notes: referralNotes,
+        reason: referralReason,
+        psychologist_id: Number(referralPsychologistId)
+      };
+
+      const res = await createReferralCounseling(payload);
+
+      if (res.success) {
+        setIsReferralOpen(false);
+        alert("Rujukan berhasil diajukan!");
+        window.location.reload();
+      } else {
+        alert(res.message || "Gagal mengajukan rujukan.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan saat memproses permintaan.");
+    } finally {
+      setIsReferralSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -475,11 +556,10 @@ export default function DetailCurhatanPage() {
                   </DialogClose>
                   <Button 
                     className="w-1/2 bg-[#e53e51] hover:bg-red-600 text-white"
-                    onClick={() => {
-                      setIsHandling(true);
-                      setIsStartHandlingOpen(false);
-                    }}
+                    onClick={handleStartHandlingSubmit}
+                    disabled={isStartHandlingSubmitting}
                   >
+                    {isStartHandlingSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Ya, Mulai Tangani
                   </Button>
                 </DialogFooter>
@@ -770,6 +850,78 @@ export default function DetailCurhatanPage() {
               </DialogContent>
             </Dialog>
           )}
+
+          {/* Dialog Pengajuan Rujukan Psikolog */}
+          <Dialog open={isReferralOpen} onOpenChange={setIsReferralOpen}>
+            <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+              <DialogHeader className="mb-2">
+                <DialogTitle className="text-2xl font-bold">Rujuk ke Psikolog</DialogTitle>
+                <DialogDescription className="text-gray-600 mt-2 text-base">
+                  Isi formulir ini untuk mengajukan rujukan profesional bagi siswa.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4 mt-2">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Psikolog Tujuan <span className="text-red-500">*</span></Label>
+                  <Select value={referralPsychologistId} onValueChange={setReferralPsychologistId}>
+                    <SelectTrigger className="w-full mt-2 h-10">
+                      <SelectValue placeholder="Pilih psikolog..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Psikolog Dr. Anna (ID: 1)</SelectItem>
+                      <SelectItem value="2">Psikolog Budi (ID: 2)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Ruangan / Platform <span className="text-red-500">*</span></Label>
+                  <Input 
+                    placeholder="Contoh: Zoom, Klinik Sekolah..." 
+                    className="mt-2 h-10 w-full"
+                    value={referralRoom}
+                    onChange={(e) => setReferralRoom(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Alasan Rujukan <span className="text-red-500">*</span></Label>
+                  <Textarea 
+                    placeholder="Sebutkan alasan detail mengapa siswa dirujuk..." 
+                    className="mt-2 h-20 resize-none w-full"
+                    value={referralReason}
+                    onChange={(e) => setReferralReason(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Catatan Tambahan</Label>
+                  <Textarea 
+                    placeholder="Tambahkan informasi lain bila ada..." 
+                    className="mt-2 h-20 resize-none w-full"
+                    value={referralNotes}
+                    onChange={(e) => setReferralNotes(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="mt-6 flex flex-row gap-3 sm:space-x-0">
+                <DialogClose asChild>
+                  <Button variant="outline" className="w-1/2 border-gray-300 hover:bg-gray-50 text-blue-600 font-semibold h-11" disabled={isReferralSubmitting}>
+                    Batal
+                  </Button>
+                </DialogClose>
+                <Button 
+                  className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
+                  onClick={handleReferralSubmit}
+                  disabled={isReferralSubmitting || !referralPsychologistId || !referralRoom || !referralReason}
+                >
+                  {isReferralSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Ajukan Rujukan"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

@@ -371,13 +371,57 @@ export async function markSharingFalsePositive(
 }
 
 /**
- * Schedule counseling from sharing/curhat
+ * Acknowledge sharing/curhat (Mulai Penanganan)
  */
-export async function scheduleSharing(
-  id: number,
-  data: { date: string; time: string; room: string; note?: string }
+export async function acknowledgeSharing(
+  id: number
 ): Promise<{ success: boolean; message: string }> {
-  const response = await authPost(`/sharing/schedule/${id}`, data);
+  // Pass an empty object as data since authPatch requires it
+  const response = await authPatch(`/sharing/acknowledge/${id}`, {});
+  return response;
+}
+
+/**
+ * Create counseling schedule (Ajukan Pertemuan Konseling)
+ */
+export async function createCounseling(data: {
+  date: string;
+  time: string;
+  student_id: number;
+  counselor_id: number;
+  sharing_id: number;
+  room: string;
+  notes: string;
+}): Promise<{ success: boolean; message: string }> {
+  const response = await authPost(`/counseling`, data);
+  return response;
+}
+
+/**
+ * Create referral counseling (Rujuk ke Psikolog)
+ */
+export async function createReferralCounseling(data: {
+  student_id: number;
+  sharing_id: number;
+  room: string;
+  notes: string;
+  reason: string;
+  psychologist_id: number;
+}): Promise<{ success: boolean; message: string }> {
+  const response = await authPost(`/counseling`, data);
+  return response;
+}
+
+/**
+ * Create counseling log (Catat Hasil Konseling)
+ */
+export async function createCounselingLog(data: {
+  counseling_id: number;
+  session_mode: string;
+  clinical_notes: string;
+  resolution_status: string;
+}): Promise<{ success: boolean; message: string }> {
+  const response = await authPost(`/counseling-logs`, data);
   return response;
 }
 
