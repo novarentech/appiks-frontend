@@ -124,9 +124,9 @@ const FillData = () => {
         fullName: apiProfileData.name || "",
         username: apiProfileData.username || "",
         nisn: apiProfileData.identifier || "",
-        mentor: apiProfileData.mentor.name || "",
-        kelas: apiProfileData.room.name || "",
-        namaSekolah: apiProfileData.school.name || "",
+        mentor: apiProfileData.mentor?.name || "",
+        kelas: apiProfileData.room?.name || "",
+        namaSekolah: apiProfileData.school?.name || "",
         noTelp: apiProfileData.phone
           ? apiProfileData.phone.replace(/62/, "")
           : "",
