@@ -10,6 +10,7 @@ import {
   ShieldUserIcon,
   University,
   ScanEye,
+  Inbox,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -103,6 +104,28 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       title: "Jadwal Konseling",
       url: "/dashboard/counseling-schedule",
       icon: Calendar,
+    },
+  ],
+  psychologist: [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "Rujukan Masuk",
+      url: "/dashboard/rujukan-masuk",
+      icon: Inbox,
+    },
+    {
+      title: "Jadwal Konseling",
+      url: "/dashboard/counseling-schedule",
+      icon: Calendar,
+    },
+    {
+      title: "Data Siswa",
+      url: "/dashboard/student-data",
+      icon: Users,
     },
   ],
   headteacher: [

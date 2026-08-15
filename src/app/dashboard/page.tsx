@@ -9,6 +9,7 @@ import { CounselorDashboard } from "@/components/dashboard/CounselorDashboard";
 import { HeadTeacherDashboard } from "@/components/dashboard/HeadTeacherDashboard";
 import { SuperDashboard } from "@/components/dashboard/SuperDashboard";
 import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
+import { PsychologistDashboard } from "@/components/dashboard/PsychologistDashboard";
 
 export default function DashboardPage() {
   return (
@@ -34,6 +35,8 @@ function DashboardContent() {
         return <CounselorDashboard />;
       case "headteacher":
         return <HeadTeacherDashboard />;
+      case "psychologist":
+        return <PsychologistDashboard />;
       case "super":
         return <SuperDashboard />;
       default:

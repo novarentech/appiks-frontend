@@ -9,6 +9,7 @@ export type AppRole =
   | "student"
   | "teacher"
   | "counselor"
+  | "psychologist"
   | "headteacher"
   | "admin"
   | "super";
@@ -87,12 +88,17 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   },
 
   "counseling-schedule": {
-    allowedRoles: ["counselor"],
+    allowedRoles: ["counselor", "psychologist"],
     requireVerification: true,
     redirectTo: "/dashboard",
   },
   "student-share": {
     allowedRoles: ["counselor"],
+    requireVerification: true,
+    redirectTo: "/dashboard",
+  },
+  "rujukan-masuk": {
+    allowedRoles: ["psychologist"],
     requireVerification: true,
     redirectTo: "/dashboard",
   },
@@ -124,6 +130,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       "student",
       "teacher",
       "counselor",
+      "psychologist",
       "headteacher",
       "admin",
       "super",
@@ -136,6 +143,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       "student",
       "teacher",
       "counselor",
+      "psychologist",
       "headteacher",
       "admin",
       "super",
@@ -196,6 +204,8 @@ export function useRoleAccess(permissionType: keyof typeof ROLE_PERMISSIONS) {
             return "teacher";
           case "counselor":
             return "counselor";
+          case "psychologist":
+            return "psychologist";
           case "headteacher":
             return "headteacher";
           case "admin":

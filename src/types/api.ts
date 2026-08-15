@@ -652,6 +652,29 @@ export interface DashboardHeadTeacherResponse {
   };
 }
 
+// Interface untuk Psychologist Dashboard
+export interface DashboardPsychologistResponse {
+  success: boolean;
+  message: string;
+  data: {
+    pending_confirmation_count: number;
+    confirmed_schedule_count: number;
+    completed_case_count: number;
+  };
+}
+
+export interface Referral {
+  id: string;
+  student_name: string;
+  priority: "Kritis" | "Prioritas" | string;
+  status: "Menunggu Konfirmasi" | "Terkonfirmasi" | "Ditolak" | "Selesai" | "Kadaluarsa" | string;
+  remaining_time: string;
+  date: string;
+  time: string;
+  referrer_name: string;
+  is_expired: boolean;
+}
+
 // Create Quote API types
 export interface CreateQuoteRequest {
   text: string;

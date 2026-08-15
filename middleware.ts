@@ -16,6 +16,7 @@ const rolePermissions = {
   admin: ["/dashboard", "/profile", "/videos", "/education-content"],
   teacher: ["/dashboard", "/profile", "/videos", "/education-content"],
   counselor: ["/dashboard", "/profile", "/videos", "/education-content"],
+  psychologist: ["/dashboard", "/profile", "/videos", "/education-content"],
   head_teacher: ["/dashboard", "/profile", "/videos", "/education-content"],
   super: ["/dashboard", "/profile", "/videos", "/education-content"],
 };
