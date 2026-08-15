@@ -88,7 +88,12 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   },
 
   "counseling-schedule": {
-    allowedRoles: ["counselor", "psychologist"],
+    allowedRoles: ["counselor"],
+    requireVerification: true,
+    redirectTo: "/dashboard",
+  },
+  "kelola-jadwal": {
+    allowedRoles: ["psychologist"],
     requireVerification: true,
     redirectTo: "/dashboard",
   },

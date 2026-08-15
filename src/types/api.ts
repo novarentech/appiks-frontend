@@ -682,6 +682,15 @@ export interface Referral {
   ai_summary?: string;
 }
 
+export interface ScheduleSlot {
+  id: string;
+  date: string; // ISO date string (YYYY-MM-DD)
+  startTime: string; // "09:00"
+  endTime: string; // "10:00"
+  status: "Tersedia" | "Menunggu Konfirmasi" | "Terkonfirmasi";
+  studentName?: string; // e.g. "Siswa #A-2012"
+}
+
 // Create Quote API types
 export interface CreateQuoteRequest {
   text: string;

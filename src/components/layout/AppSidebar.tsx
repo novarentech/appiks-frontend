@@ -118,8 +118,8 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       icon: Inbox,
     },
     {
-      title: "Jadwal Konseling",
-      url: "/dashboard/counseling-schedule",
+      title: "Kelola Jadwal",
+      url: "/dashboard/kelola-jadwal",
       icon: Calendar,
     },
     {
