@@ -672,7 +672,14 @@ export interface Referral {
   date: string;
   time: string;
   referrer_name: string;
+  counselor_notes: string;
+  submitted_at: string;
   is_expired: boolean;
+  nis?: string;
+  class_name?: string;
+  student_story?: string;
+  detected_keywords?: string[];
+  ai_summary?: string;
 }
 
 // Create Quote API types
