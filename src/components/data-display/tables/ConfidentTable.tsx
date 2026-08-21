@@ -120,7 +120,7 @@ export default function ConfidentTable({
   useEffect(() => {
     const filtered = curhatData.filter((item) => {
       const matchesSearch =
-        item.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.user.identifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.title.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -156,12 +156,12 @@ export default function ConfidentTable({
         <div className="min-w-[150px] flex items-center space-x-3">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-sm font-medium text-blue-600">
-              {getInitials(row.original.user.name)}
+              {getInitials(row.original.user?.name || "Tanpa Nama")}
             </span>
           </div>
           <div className="flex flex-col">
             <span className="font-medium truncate">
-              {row.original.user.name}
+              <p>{row.original.user?.name || "Tanpa Nama"}</p>
             </span>
             <span className="font-mono text-sm">
               {row.original.user.identifier}
@@ -171,7 +171,8 @@ export default function ConfidentTable({
       ),
     },
     {
-      accessorKey: "user.room.name",
+      id: "kelas",
+      accessorFn: (row) => row.user?.room?.name || "-",
       header: ({ column }) => (
         <Button
           variant="ghost"

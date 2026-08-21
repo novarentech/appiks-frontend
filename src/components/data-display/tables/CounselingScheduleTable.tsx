@@ -116,23 +116,23 @@ export default function CounselingScheduleTable() {
   const uniqueStatus = [...new Set(schedules.map((item) => item.status))];
   const uniquePriorities = [...new Set(schedules.map((item) => item.priority))];
   const uniqueKelas = [
-    ...new Set(schedules.map((item) => item.user.room.name)),
+    ...new Set(schedules.map((item) => item.user?.room?.name || "-")),
   ];
 
   // Apply filters
   useEffect(() => {
     const filtered = schedules.filter((item) => {
       const matchesSearch =
-        item.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.topic.toLowerCase().includes(searchTerm.toLowerCase());
+        (item.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.user?.username || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.topic || "").toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus =
         statusFilter === "all" || item.status === statusFilter;
       const matchesPriority =
         priorityFilter === "all" || item.priority === priorityFilter;
       const matchesKelas =
-        kelasFilter === "all" || item.user.room.name === kelasFilter;
+        kelasFilter === "all" || (item.user?.room?.name || "-") === kelasFilter;
 
       return matchesSearch && matchesStatus && matchesPriority && matchesKelas;
     });
@@ -243,20 +243,21 @@ export default function CounselingScheduleTable() {
         <div className="min-w-[150px] flex items-center space-x-3">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-sm font-medium text-blue-600">
-              {getInitials(row.original.user.name)}
+              {getInitials(row.original.user?.name || "Tanpa Nama")}
             </span>
           </div>
           <span className="font-medium text-gray-900 truncate">
-            <p>{row.original.user.name}</p>
+            <p>{row.original.user?.name || "Tanpa Nama"}</p>
             <p className="text-xs text-foreground">
-              {row.original.user.username}
+              {row.original.user?.username || "-"}
             </p>
           </span>
         </div>
       ),
     },
     {
-      accessorKey: "user.room.name",
+      id: "kelas",
+      accessorFn: (row) => row.user?.room?.name || "-",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -272,7 +273,7 @@ export default function CounselingScheduleTable() {
           variant="outline"
           className="bg-blue-50 text-blue-700 border-blue-200"
         >
-          {row.original.user.room.name}
+          {row.original.user?.room?.name || "-"}
         </Badge>
       ),
     },

@@ -65,7 +65,7 @@ export default function ClassDetailTable({ roomCode }: ClassDetailTableProps) {
         student.name.toLowerCase().includes(search.toLowerCase()) ||
         student.username.toLowerCase().includes(search.toLowerCase()) ||
         student.identifier.toLowerCase().includes(search.toLowerCase()) ||
-        student.mentor.name.toLowerCase().includes(search.toLowerCase());
+        (student.mentor?.name || "").toLowerCase().includes(search.toLowerCase());
 
       return matchSearch;
     });
@@ -92,7 +92,7 @@ export default function ClassDetailTable({ roomCode }: ClassDetailTableProps) {
       accessorKey: "mentor",
       header: "Guru Wali",
       cell: ({ row }) => (
-        <span className="font-medium">{row.original.mentor.name}</span>
+        <span className="font-medium">{row.original.mentor?.name || "-"}</span>
       ),
     },
     {

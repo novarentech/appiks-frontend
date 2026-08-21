@@ -97,7 +97,7 @@ export default function TeacherStudentData({}: StudentDataTableProps) {
               id: index + 1,
               name: student.name,
               nisn: student.identifier,
-              kelas: student.room.name,
+              kelas: student.room?.name || "-",
               statusMood: isSafeMood ? "Aman" : "Tidak Aman",
               detailMood: getMoodLabel(moodStatus),
               aksi: "Lihat Pola Mood",
@@ -136,8 +136,8 @@ export default function TeacherStudentData({}: StudentDataTableProps) {
   useEffect(() => {
     const filtered = studentsData.filter((student) => {
       const matchesSearch =
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.nisn.toLowerCase().includes(searchTerm.toLowerCase());
+        (student.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (student.nisn || "").toLowerCase().includes(searchTerm.toLowerCase());
       const matchesKelas =
         kelasFilter === "all" || student.kelas === kelasFilter;
       const matchesStatusMood =
@@ -212,11 +212,11 @@ export default function TeacherStudentData({}: StudentDataTableProps) {
           <div className="flex items-center space-x-3 min-w-[150px]">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-medium text-blue-600">
-                {getInitials(student.name)}
+                {getInitials(student.name || "Tanpa Nama")}
               </span>
             </div>
             <span className="font-medium text-gray-900 truncate">
-              {student.name}
+              {student.name || "Tanpa Nama"}
             </span>
           </div>
         );
