@@ -11,10 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEffect, useState } from "react";
-import { mockReferrals } from "@/lib/mockPsychologistData";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Referral } from "@/types/api";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { getPsychologistReferrals } from "@/lib/api";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function RujukanMasukPage() {
   return (
@@ -29,26 +31,119 @@ function RujukanMasukContent() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [batasWaktuFilter, setBatasWaktuFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  const fetchReferrals = useCallback(async () => {
+    if (page === 1) setIsLoading(true);
+    else setIsFetchingMore(true);
+    try {
+      const response = await getPsychologistReferrals({
+        page,
+        limit: 10,
+        status: statusFilter,
+        priority: priorityFilter,
+        batas_waktu: batasWaktuFilter,
+        search,
+      });
+
+      if (response.success && response.data) {
+        const mappedReferrals: Referral[] = response.data.data.map((item) => {
+          const deadline = new Date(item.deadline_at);
+          const now = new Date();
+          const diffHours = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+          let priority = "Prioritas";
+          if (diffHours < 24) priority = "Kritis";
+
+          let status = "Menunggu Konfirmasi";
+          if (item.status === "confirmed") status = "Terkonfirmasi";
+          else if (item.status === "rejected") status = "Ditolak";
+          else if (item.status === "selesai") status = "Selesai";
+
+          let remainingTimeStr = "";
+          const isExpired = deadline.getTime() < now.getTime();
+          if (!isExpired) {
+            const diffDays = Math.floor(diffHours / 24);
+            const remainingHours = Math.floor(diffHours % 24);
+            remainingTimeStr = `${diffDays} hari ${remainingHours} jam`;
+          }
+
+          return {
+            id: item.id.toString(),
+            student_name: item.student?.name || "Tanpa Nama",
+            priority,
+            status,
+            remaining_time: remainingTimeStr,
+            date: item.slot?.slot_date || "-",
+            time: item.slot ? `${item.slot.slot_start_time.slice(0,5)} - ${item.slot.slot_end_time.slice(0,5)}` : "-",
+            referrer_name: item.counseling?.counselor?.name || "Guru BK",
+            counselor_notes: item.counseling?.notes || "-",
+            submitted_at: new Date(item.created_at).toLocaleDateString("id-ID", {
+              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+            }),
+            is_expired: isExpired,
+          };
+        });
+
+        if (page === 1) {
+          setReferrals(mappedReferrals);
+        } else {
+          setReferrals((prev) => {
+            const newIds = mappedReferrals.map((r) => r.id);
+            const filteredPrev = prev.filter((r) => !newIds.includes(r.id));
+            return [...filteredPrev, ...mappedReferrals];
+          });
+        }
+        
+        setTotalPages(response.data.meta.last_page || 1);
+      } else {
+        if (page === 1) setReferrals([]);
+        toast.error(response.message || "Gagal memuat daftar rujukan");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat memuat daftar rujukan");
+      if (page === 1) setReferrals([]);
+    } finally {
+      setIsLoading(false);
+      setIsFetchingMore(false);
+    }
+  }, [page, statusFilter, priorityFilter, batasWaktuFilter, search]);
 
   useEffect(() => {
-    // In a real app, this would be an API call with filters
-    const fetchReferrals = async () => {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setReferrals(mockReferrals);
-    };
+    // Reset page to 1 when filters change
+    setPage(1);
+  }, [statusFilter, priorityFilter, batasWaktuFilter, search]);
 
-    fetchReferrals();
-  }, []);
+  useEffect(() => {
+    // Adding a debounce for search and filter changes
+    const delayDebounceFn = setTimeout(() => {
+      fetchReferrals();
+    }, 500);
 
-  // Filter local data for demo purposes
-  const filteredReferrals = referrals.filter((referral) => {
-    const matchSearch = referral.student_name.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || referral.status.toLowerCase() === statusFilter.toLowerCase();
-    const matchPriority = priorityFilter === "all" || referral.priority.toLowerCase() === priorityFilter.toLowerCase();
-    
-    return matchSearch && matchStatus && matchPriority;
-  });
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchReferrals]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && page < totalPages && !isLoading && !isFetchingMore) {
+          setPage((p) => p + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [page, totalPages, isLoading, isFetchingMore]);
 
   return (
     <div className="space-y-6">
@@ -94,7 +189,7 @@ function RujukanMasukContent() {
           </SelectContent>
         </Select>
         
-        <Select>
+        <Select value={batasWaktuFilter} onValueChange={setBatasWaktuFilter}>
           <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="Batas Waktu" />
           </SelectTrigger>
@@ -107,15 +202,33 @@ function RujukanMasukContent() {
       </div>
 
       {/* List */}
-      <div className="space-y-4">
-        {filteredReferrals.length > 0 ? (
-          filteredReferrals.map((referral) => (
-            <ReferralCard key={referral.id} referral={referral} />
-          ))
-        ) : (
-          <div className="text-center py-12 bg-white border rounded-xl text-gray-500">
-            Tidak ada rujukan yang ditemukan.
+      <div className="space-y-4 relative min-h-[200px]">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px] rounded-xl">
+            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
           </div>
+        )}
+        
+        {referrals.length > 0 ? (
+          <>
+            {referrals.map((referral) => (
+              <ReferralCard key={referral.id} referral={referral} />
+            ))}
+            
+            {/* Infinite Scroll Target */}
+            <div ref={observerTarget} className="py-6 flex justify-center items-center">
+              {isFetchingMore && <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />}
+              {!isFetchingMore && page === totalPages && (
+                <span className="text-sm text-gray-400">Semua rujukan telah dimuat</span>
+              )}
+            </div>
+          </>
+        ) : (
+          !isLoading && (
+            <div className="text-center py-12 bg-white border rounded-xl text-gray-500">
+              Tidak ada rujukan yang ditemukan.
+            </div>
+          )
         )}
       </div>
     </div>

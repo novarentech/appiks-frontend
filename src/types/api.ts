@@ -1371,3 +1371,26 @@ export interface BackendReferralResponse {
   message: string;
   data: BackendReferralItem[];
 }
+
+export interface BackendReferralsPaginatedResponse {
+  success: boolean;
+  message: string;
+  data: {
+    data: BackendReferralItem[];
+    links: {
+      first: string | null;
+      last: string | null;
+      prev: string | null;
+      next: string | null;
+    };
+    meta: {
+      current_page: number;
+      from: number | null;
+      to: number | null;
+      per_page: number;
+      last_page: number;
+      total: number;
+      path: string;
+    };
+  };
+}

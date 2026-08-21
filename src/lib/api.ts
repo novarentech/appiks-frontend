@@ -82,6 +82,7 @@ import {
   BackendReferralResponse,
   BackendPsychologistSlotResponse,
   BackendReferralOverviewResponse,
+  BackendReferralsPaginatedResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse, RoomByLevelResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -1524,5 +1525,36 @@ export async function deletePsychologistSlot(slotId: string): Promise<any> {
  */
 export async function getReferralOverview(): Promise<BackendReferralOverviewResponse> {
   const response = await authGet("/psychologist/referrals-overview");
+  return response;
+}
+
+/**
+ * Get all psychologist referrals with pagination and filters
+ */
+export async function getPsychologistReferrals(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  priority?: string;
+  batas_waktu?: string;
+  search?: string;
+}): Promise<BackendReferralsPaginatedResponse> {
+  let url = "/psychologist/referrals";
+  if (params) {
+    const query = new URLSearchParams();
+    if (params.page) query.append("page", params.page.toString());
+    if (params.limit) query.append("limit", params.limit.toString());
+    if (params.status && params.status !== "all") query.append("status", params.status);
+    if (params.priority && params.priority !== "all") query.append("priority", params.priority);
+    if (params.batas_waktu && params.batas_waktu !== "all") query.append("batas_waktu", params.batas_waktu);
+    if (params.search) query.append("search", params.search);
+    
+    const queryString = query.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  }
+  
+  const response = await authGet(url);
   return response;
 }
