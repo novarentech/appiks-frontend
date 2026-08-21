@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Loader2, AlertTriangle, ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react";
 import CurhatViewDialog from "@/components/dialogs/CurhatViewDialog";
+import { toast } from "sonner";
 
 export default function DetailCurhatanPage() {
   const params = useParams();
@@ -193,15 +194,16 @@ export default function DetailCurhatanPage() {
       setIsFalsePositiveSubmitting(true);
       const res = await markSharingFalsePositive(id, falsePositiveReason);
       if (res.success) {
+        toast.success("Status berhasil diubah.");
         setIsFalsePositiveOpen(false);
         setFalsePositiveReason("");
         window.location.reload();
       } else {
-        alert(res.message || "Gagal mengubah status.");
+        toast.error(res.message || "Gagal mengubah status.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat memproses permintaan.");
+      toast.error("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsFalsePositiveSubmitting(false);
     }
@@ -212,15 +214,16 @@ export default function DetailCurhatanPage() {
       setIsStartHandlingSubmitting(true);
       const res = await acknowledgeSharing(id);
       if (res.success) {
+        toast.success("Berhasil memulai penanganan.");
         setIsHandling(true);
         setIsStartHandlingOpen(false);
         window.location.reload();
       } else {
-        alert(res.message || "Gagal memulai penanganan.");
+        toast.error(res.message || "Gagal memulai penanganan.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat memproses permintaan.");
+      toast.error("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsStartHandlingSubmitting(false);
     }
@@ -233,15 +236,16 @@ export default function DetailCurhatanPage() {
       setIsReplySubmitting(true);
       const res = await replySharing(id, replyText);
       if (res.success) {
+        toast.success("Balasan berhasil dikirim.");
         setIsReplyOpen(false);
         setReplyText("");
         window.location.reload();
       } else {
-        alert(res.message || "Gagal mengirim balasan.");
+        toast.error(res.message || "Gagal mengirim balasan.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat memproses permintaan.");
+      toast.error("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsReplySubmitting(false);
     }
@@ -265,14 +269,15 @@ export default function DetailCurhatanPage() {
       });
 
       if (res.success) {
+        toast.success("Jadwal konseling berhasil diajukan.");
         setIsScheduleOpen(false);
         window.location.reload();
       } else {
-        alert(res.message || "Gagal mengajukan jadwal konseling.");
+        toast.error(res.message || "Gagal mengajukan jadwal konseling.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat memproses permintaan.");
+      toast.error("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsScheduleSubmitting(false);
     }
@@ -296,17 +301,18 @@ export default function DetailCurhatanPage() {
       if (res.success) {
         setIsRecordCounselingOpen(false);
         if (resolutionStatus === "Perlu Rujukan Professional") {
+          toast.success("Hasil konseling berhasil dicatat! Silakan buat rujukan.");
           setIsReferralOpen(true);
         } else {
-          alert("Hasil konseling berhasil dicatat!");
+          toast.success("Hasil konseling berhasil dicatat!");
           window.location.reload();
         }
       } else {
-        alert(res.message || "Gagal mencatat hasil konseling.");
+        toast.error(res.message || "Gagal mencatat hasil konseling.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat memproses permintaan.");
+      toast.error("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsRecordSubmitting(false);
     }
@@ -331,14 +337,14 @@ export default function DetailCurhatanPage() {
 
       if (res.success) {
         setIsReferralOpen(false);
-        alert("Rujukan berhasil diajukan!");
+        toast.success("Rujukan berhasil diajukan!");
         window.location.reload();
       } else {
-        alert(res.message || "Gagal mengajukan rujukan.");
+        toast.error(res.message || "Gagal mengajukan rujukan.");
       }
     } catch (err) {
       console.error(err);
-      alert("Terjadi kesalahan saat memproses permintaan.");
+      toast.error("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsReferralSubmitting(false);
     }
