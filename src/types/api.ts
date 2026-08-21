@@ -700,6 +700,16 @@ export interface BackendPsychologistSlotResponse {
   data: BackendPsychologistSlot[];
 }
 
+export interface BackendReferralOverviewResponse {
+  success: boolean;
+  message: string;
+  data: {
+    pending: number;
+    confirmed: number;
+    selesai: number;
+  };
+}
+
 export interface ScheduleSlot {
   id: string;
   date: string; // ISO date string (YYYY-MM-DD)

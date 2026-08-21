@@ -81,6 +81,7 @@ import {
   CirrusResponse,
   BackendReferralResponse,
   BackendPsychologistSlotResponse,
+  BackendReferralOverviewResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse, RoomByLevelResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -1515,5 +1516,13 @@ export async function createPsychologistSlot(data: {
  */
 export async function deletePsychologistSlot(slotId: string): Promise<any> {
   const response = await authDelete(`/psychologist/slots/${slotId}`);
+  return response;
+}
+
+/**
+ * Get psychologist referrals overview summary
+ */
+export async function getReferralOverview(): Promise<BackendReferralOverviewResponse> {
+  const response = await authGet("/psychologist/referrals-overview");
   return response;
 }

@@ -1,7 +1,7 @@
 import { CalendarClock, CalendarCheck, CheckCircle } from "lucide-react";
 import DashboardPanel from "./DashboardPanel";
 import { useEffect, useState } from "react";
-import { mockPsychologistStats } from "@/lib/mockPsychologistData";
+import { getReferralOverview } from "@/lib/api";
 
 export default function PsychologistPanel() {
   const [stats, setStats] = useState([
@@ -29,35 +29,37 @@ export default function PsychologistPanel() {
   ]);
 
   useEffect(() => {
-    // In a real app, this would be an API call
-    // For now, we use mock data
     const fetchStats = async () => {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setStats([
-        {
-          icon: CalendarClock,
-          label: "MENUNGGU KONFIRMASI",
-          value: mockPsychologistStats.pending_confirmation_count,
-          bgColor: "bg-indigo-100",
-          textColor: "text-indigo-500",
-        },
-        {
-          icon: CalendarCheck,
-          label: "JADWAL TERKONFIRMASI",
-          value: mockPsychologistStats.confirmed_schedule_count,
-          bgColor: "bg-indigo-100",
-          textColor: "text-indigo-500",
-        },
-        {
-          icon: CheckCircle,
-          label: "KASUS SELESAI",
-          value: mockPsychologistStats.completed_case_count,
-          bgColor: "bg-indigo-100",
-          textColor: "text-indigo-500",
-        },
-      ]);
+      try {
+        const response = await getReferralOverview();
+        if (response.success && response.data) {
+          setStats([
+            {
+              icon: CalendarClock,
+              label: "MENUNGGU KONFIRMASI",
+              value: response.data.pending,
+              bgColor: "bg-indigo-100",
+              textColor: "text-indigo-500",
+            },
+            {
+              icon: CalendarCheck,
+              label: "JADWAL TERKONFIRMASI",
+              value: response.data.confirmed,
+              bgColor: "bg-indigo-100",
+              textColor: "text-indigo-500",
+            },
+            {
+              icon: CheckCircle,
+              label: "KASUS SELESAI",
+              value: response.data.selesai,
+              bgColor: "bg-indigo-100",
+              textColor: "text-indigo-500",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch referral overview:", error);
+      }
     };
 
     fetchStats();
