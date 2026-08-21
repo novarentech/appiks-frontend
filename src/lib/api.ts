@@ -1528,6 +1528,41 @@ export async function acknowledgeCounselingSchedule(
   return response;
 }
 
+export async function submitReferralConsent(
+  consentId: number,
+  isGranted: boolean,
+  scopes: string[]
+) {
+  const response = await authPatch(`/student/consents/${consentId}`, {
+    is_granted: isGranted,
+    scopes: scopes,
+  });
+  return response;
+}
+
+export async function getCounselingConsent(counselingId: number) {
+  const response = await authGet(`/student/counselings/${counselingId}/consent`);
+  return response;
+}
+
+export async function getReferralAvailableDates(counselingId: number) {
+  const response = await authGet(`/student/referrals/${counselingId}/available-dates`);
+  return response;
+}
+
+export async function getReferralAvailableSlots(counselingId: number, date: string) {
+  const response = await authGet(`/student/referrals/${counselingId}/available-slots?date=${date}`);
+  return response;
+}
+
+export async function bookReferralSchedule(counselingId: number, slotId: number) {
+  const response = await authPost(`/student/bookings`, {
+    counseling_id: counselingId,
+    slot_id: slotId
+  });
+  return response;
+}
+
 /**
  * Get counseling list (including external referrals)
  */

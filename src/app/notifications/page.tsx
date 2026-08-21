@@ -174,11 +174,36 @@ function NotificationsPageContent() {
             let statusText = item.status;
             let statusColor = "green";
             let borderColor = "border-green-400";
+            let mappedStatus = item.status;
             
-            if (item.status === "selesai" || item.status === "diselesaikan") {
-              statusColor = "emerald";
-              borderColor = "border-emerald-400";
-              statusText = "Selesai";
+            switch (item.status?.toLowerCase()) {
+              case "selesai":
+              case "diselesaikan":
+                statusColor = "emerald";
+                borderColor = "border-emerald-400";
+                statusText = "Selesai";
+                break;
+              case "menunggu persetujuan siswa":
+              case "menunggu":
+              case "pending":
+                statusColor = "orange";
+                borderColor = "border-orange-400";
+                statusText = "Menunggu Persetujuan";
+                mappedStatus = "menunggu";
+                break;
+              case "jadwal ditolak siswa":
+              case "dibatalkan":
+              case "rejected":
+                statusColor = "red";
+                borderColor = "border-red-400";
+                statusText = "Ditolak";
+                break;
+              case "disetujui":
+              case "confirmed":
+                statusColor = "blue";
+                borderColor = "border-blue-400";
+                statusText = "Disetujui";
+                break;
             }
 
             return {
@@ -188,7 +213,7 @@ function NotificationsPageContent() {
               description: "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.",
               teacher: item.counselor?.name || "Guru BK",
               date: formattedDate,
-              status: item.status as any,
+              status: mappedStatus as any,
               statusText: statusText,
               statusColor: statusColor,
               borderColor: borderColor,

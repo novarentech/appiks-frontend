@@ -159,7 +159,7 @@ export function NotificationContent({
           </p>
         </div>
 
-        {referralNotification.status === "butuh_persetujuan" && (
+        {referralNotification.status === "menunggu" && (
           <Button
             className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white"
             onClick={(e) => {
