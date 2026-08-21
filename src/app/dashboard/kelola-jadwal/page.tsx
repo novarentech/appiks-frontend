@@ -8,6 +8,9 @@ import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { CalendarPlus } from "lucide-react";
+import { createPsychologistSlot } from "@/lib/api";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function KelolaJadwalPage() {
   return (
@@ -19,6 +22,27 @@ export default function KelolaJadwalPage() {
 
 function KelolaJadwalContent() {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleAddSubmit = async (data: { date: Date; startTime: string; endTime: string }) => {
+    try {
+      const response = await createPsychologistSlot({
+        slot_date: format(data.date, "yyyy-MM-dd"),
+        slot_start_time: data.startTime,
+        slot_end_time: data.endTime,
+      });
+      if (response.success) {
+        toast.success("Slot jadwal berhasil ditambahkan");
+        setIsAddOpen(false);
+        setRefreshKey((prev) => prev + 1); // trigger remount
+      } else {
+        toast.error(response.message || "Gagal menambahkan slot");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat menambahkan slot");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -37,12 +61,12 @@ function KelolaJadwalContent() {
       <PsychologistPanel />
       
       {/* Table Kalender Mingguan */}
-      <WeeklyCalendar />
+      <WeeklyCalendar key={refreshKey} />
       
       <AddScheduleDialog 
         open={isAddOpen} 
         onOpenChange={setIsAddOpen} 
-        onAdd={() => console.log("Added")}
+        onAdd={handleAddSubmit}
         showRepeatOption={true}
       />
     </div>
