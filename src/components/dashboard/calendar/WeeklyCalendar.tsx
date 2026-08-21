@@ -4,8 +4,10 @@ import { useState } from "react"
 import { format, addDays, subDays, startOfWeek, endOfWeek, parseISO, isSameDay } from "date-fns"
 import { id } from "date-fns/locale"
 import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react"
-import { ScheduleSlot } from "@/types/api"
-import { getMockScheduleSlots } from "@/lib/mockScheduleData"
+import { ScheduleSlot, BackendPsychologistSlot } from "@/types/api"
+import { toast } from "sonner"
+import { createPsychologistSlot, deletePsychologistSlot, getPsychologistSlots } from "@/lib/api"
+import { useEffect } from "react"
 import { SlotCard } from "./SlotCard"
 import { AddScheduleDialog } from "./AddScheduleDialog"
 import { DeleteSlotDialog } from "./DeleteSlotDialog"
@@ -19,12 +21,46 @@ export function WeeklyCalendar() {
   // We only show 6 days: Senin to Sabtu
   const days = Array.from({ length: 6 }).map((_, i) => addDays(weekStart, i))
   
-  // Get dynamic mock data based on the week
-  const slots = getMockScheduleSlots(weekStart)
-
+  const [slots, setSlots] = useState<ScheduleSlot[]>([])
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(undefined)
   const [deleteSlot, setDeleteSlot] = useState<ScheduleSlot | null>(null)
+
+  const fetchSlots = async () => {
+    try {
+      const startFmt = format(days[0], "yyyy-MM-dd")
+      const endFmt = format(days[5], "yyyy-MM-dd")
+      const response = await getPsychologistSlots(startFmt, endFmt)
+      
+      if (response.success && response.data) {
+        // Map backend format to ScheduleSlot format
+        const mappedSlots: ScheduleSlot[] = response.data.map((item: BackendPsychologistSlot) => {
+          let status: ScheduleSlot["status"] = "Tersedia"
+          if (item.status === "tentative") status = "Menunggu Konfirmasi"
+          if (item.status === "booked") status = "Terkonfirmasi"
+
+          return {
+            id: item.id.toString(),
+            date: item.slot_date,
+            startTime: item.slot_start_time.substring(0, 5), // "08:00:00" -> "08:00"
+            endTime: item.slot_end_time.substring(0, 5),
+            status: status
+          }
+        })
+        setSlots(mappedSlots)
+      } else {
+        setSlots([])
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Gagal memuat jadwal dari server")
+      setSlots([])
+    }
+  }
+
+  useEffect(() => {
+    fetchSlots()
+  }, [currentDate]) // Fetch slots whenever week changes
 
   const nextWeek = () => setCurrentDate(addDays(currentDate, 7))
   const prevWeek = () => setCurrentDate(subDays(currentDate, 7))
@@ -35,14 +71,40 @@ export function WeeklyCalendar() {
   const endDateFmt = format(days[5], "d MMMM yyyy")
   const dateRangeStr = `Minggu ${startDateFmt} - ${endDateFmt}`
 
-  const handleDeleteConfirm = (slot: ScheduleSlot) => {
-    // In real app, call API
-    console.log("Deleted slot:", slot.id)
-    setDeleteSlot(null)
+  const handleDeleteConfirm = async (slot: ScheduleSlot) => {
+    try {
+      const response = await deletePsychologistSlot(slot.id)
+      if (response.success) {
+        toast.success("Slot berhasil dihapus")
+        setDeleteSlot(null)
+        fetchSlots()
+      } else {
+        toast.error(response.message || "Gagal menghapus slot")
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Terjadi kesalahan saat menghapus slot")
+    }
   }
 
-  const handleAddSubmit = () => {
-    console.log("Add schedule submitted")
+  const handleAddSubmit = async (data: { date: Date, startTime: string, endTime: string }) => {
+    try {
+      const response = await createPsychologistSlot({
+        slot_date: format(data.date, "yyyy-MM-dd"),
+        slot_start_time: data.startTime,
+        slot_end_time: data.endTime
+      })
+      if (response.success) {
+        toast.success("Slot jadwal berhasil ditambahkan")
+        setIsAddOpen(false)
+        fetchSlots()
+      } else {
+        toast.error(response.message || "Gagal menambahkan slot")
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Terjadi kesalahan saat menambahkan slot")
+    }
   }
 
   return (

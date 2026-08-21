@@ -682,6 +682,24 @@ export interface Referral {
   ai_summary?: string;
 }
 
+export interface BackendPsychologistSlot {
+  id: number;
+  psychologist_id: number;
+  slot_date: string;
+  slot_start_time: string;
+  slot_end_time: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface BackendPsychologistSlotResponse {
+  success: boolean;
+  message: string;
+  data: BackendPsychologistSlot[];
+}
+
 export interface ScheduleSlot {
   id: string;
   date: string; // ISO date string (YYYY-MM-DD)
@@ -1264,4 +1282,82 @@ export interface CirrusResponse {
   success: boolean;
   message: string;
   data: CirrusData;
+}
+
+export interface BackendReferralStudent {
+  id: number;
+  name: string | null;
+  phone: string | null;
+  username: string;
+  identifier: string;
+  verified: boolean;
+  role: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BackendReferralCounselor {
+  id: number;
+  name: string;
+  phone: string;
+  username: string;
+  identifier: string;
+  verified: boolean;
+  role: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BackendReferralCounseling {
+  id: number;
+  student_id: number;
+  counselor_id: number;
+  sharing_id: number;
+  room: string | null;
+  notes: string | null;
+  reason: string | null;
+  type: string;
+  resolution: string | null;
+  method: string | null;
+  status: string;
+  scheduled_at: string | null;
+  cutdown_at: string | null;
+  created_at: string;
+  updated_at: string;
+  counselor: BackendReferralCounselor;
+  logs: any[];
+}
+
+export interface BackendReferralSlot {
+  id: number;
+  psychologist_id: number;
+  slot_date: string;
+  slot_start_time: string;
+  slot_end_time: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface BackendReferralItem {
+  id: number;
+  counseling_id: number;
+  slot_id: number;
+  student_id: number;
+  status: string;
+  deadline_at: string;
+  location: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  student: BackendReferralStudent;
+  counseling: BackendReferralCounseling;
+  slot: BackendReferralSlot;
+}
+
+export interface BackendReferralResponse {
+  success: boolean;
+  message: string;
+  data: BackendReferralItem[];
 }

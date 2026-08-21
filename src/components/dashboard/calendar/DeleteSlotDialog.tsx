@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { ScheduleSlot } from "@/types/api"
 import {
   Dialog,
@@ -18,10 +19,12 @@ interface DeleteSlotDialogProps {
   slot: ScheduleSlot | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (slot: ScheduleSlot) => void
+  onConfirm: (slot: ScheduleSlot) => Promise<void>
 }
 
 export function DeleteSlotDialog({ slot, open, onOpenChange, onConfirm }: DeleteSlotDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   if (!slot) return null
 
   // Format date safely
@@ -30,8 +33,17 @@ export function DeleteSlotDialog({ slot, open, onOpenChange, onConfirm }: Delete
     dateFormatted = format(parseISO(slot.date), "EEEE, d MMMM yyyy", { locale: id })
   } catch (e) {}
 
+  const handleConfirm = async () => {
+    setIsSubmitting(true)
+    try {
+      await onConfirm(slot)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(val) => !isSubmitting && onOpenChange(val)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Hapus Slot?</DialogTitle>
@@ -52,11 +64,11 @@ export function DeleteSlotDialog({ slot, open, onOpenChange, onConfirm }: Delete
         </div>
 
         <DialogFooter className="flex gap-3 pt-4 sm:justify-between">
-          <Button variant="outline" className="flex-1 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" className="flex-1 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Batal
           </Button>
-          <Button className="flex-1 bg-[#DE3545] hover:bg-red-600 text-white" onClick={() => onConfirm(slot)}>
-            Hapus Slot
+          <Button className="flex-1 bg-[#DE3545] hover:bg-red-600 text-white" onClick={handleConfirm} disabled={isSubmitting}>
+            {isSubmitting ? "Menghapus..." : "Hapus Slot"}
           </Button>
         </DialogFooter>
       </DialogContent>

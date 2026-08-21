@@ -12,13 +12,75 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { decideReferral } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface ReferralCardProps {
   referral: Referral;
 }
 
 export default function ReferralCard({ referral }: ReferralCardProps) {
+  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isRejectOpen, setIsRejectOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const handleConfirm = async () => {
+    try {
+      setIsSubmitting(true);
+      const response = await decideReferral(referral.id, { action: "confirm" });
+      if (response.success) {
+        toast.success("Jadwal konseling berhasil dikonfirmasi");
+        setIsConfirmOpen(false);
+        router.refresh();
+      } else {
+        toast.error(response.message || "Gagal mengkonfirmasi jadwal");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat mengkonfirmasi jadwal");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) {
+      toast.error("Alasan penolakan harus diisi");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      const response = await decideReferral(referral.id, { action: "reject", reject_reason: rejectReason });
+      if (response.success) {
+        toast.success("Penolakan jadwal berhasil dikirim");
+        setIsRejectOpen(false);
+        router.refresh();
+      } else {
+        toast.error(response.message || "Gagal menolak jadwal");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat menolak jadwal");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Determine colors based on priority
   const getPriorityColor = (priority: string) => {
@@ -161,19 +223,79 @@ export default function ReferralCard({ referral }: ReferralCardProps) {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               {referral.status === "Menunggu Konfirmasi" && (
                 <>
-                  <Button
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[120px]"
-                    disabled={referral.is_expired}
-                  >
-                    Konfirmasi
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
-                    disabled={referral.is_expired}
-                  >
-                    Tolak Jadwal
-                  </Button>
+                  <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[120px]"
+                        disabled={referral.is_expired}
+                      >
+                        Konfirmasi
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Konfirmasi Jadwal Konsultasi</DialogTitle>
+                        <DialogDescription className="text-gray-600 mt-2">
+                          Apakah Anda yakin akan mengkonfirmasi jadwal konsultasi ini? Setelah dikonfirmasi notifikasi akan dikirim ke siswa dan Guru BK.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="bg-gray-50 border rounded-lg p-4 my-2">
+                        <div className="mb-3">
+                          <Label className="text-xs text-gray-500">Tanggal</Label>
+                          <p className="text-sm font-medium text-gray-800">{referral.date}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-500">Waktu</Label>
+                          <p className="text-sm font-medium text-gray-800">{referral.time}</p>
+                        </div>
+                      </div>
+                      <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
+                        <Button variant="outline" className="flex-1" onClick={() => setIsConfirmOpen(false)} disabled={isSubmitting}>
+                          Batal
+                        </Button>
+                        <Button className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white" onClick={handleConfirm} disabled={isSubmitting}>
+                          {isSubmitting ? "Memproses..." : "Ya, Konfirmasi"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
+                        disabled={referral.is_expired}
+                      >
+                        Tolak Jadwal
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Tolak Jadwal Konsultasi</DialogTitle>
+                        <DialogDescription className="text-gray-600 mt-2">
+                          Berikan alasan mengapa jadwal ini tidak dapat diterima. Alasan akan diteruskan ke siswa dan Guru BK.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="my-2">
+                        <Label className="text-sm font-medium text-red-600 mb-1 block">Alasan Penolakan*</Label>
+                        <Textarea 
+                          placeholder="Jelaskan alasan penolakan..."
+                          className="min-h-[100px]"
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                        />
+                      </div>
+                      <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
+                        <Button variant="outline" className="flex-1 border-red-200 text-red-500 hover:bg-red-50" onClick={() => setIsRejectOpen(false)} disabled={isSubmitting}>
+                          Batal
+                        </Button>
+                        <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white" onClick={handleReject} disabled={isSubmitting}>
+                          {isSubmitting ? "Memproses..." : "Kirim Penolakan"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </>
               )}
 

@@ -5,26 +5,71 @@ import PsychologistPanel from "./panels/PsychologistPanel";
 import ReferralAlert from "./ReferralAlert";
 import ReferralCard from "./ReferralCard";
 import { useEffect, useState } from "react";
-import { mockReferrals, mockPsychologistStats } from "@/lib/mockPsychologistData";
+import { mockPsychologistStats } from "@/lib/mockPsychologistData";
 import { Referral } from "@/types/api";
+import { getPendingReferrals } from "@/lib/api";
 
 export function PsychologistDashboard() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [alertCount, setAlertCount] = useState(0);
 
   useEffect(() => {
-    // In a real app, this would be an API call
     const fetchDashboardData = async () => {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Get only the first 2 referrals that need approval for the dashboard preview
-      const pendingReferrals = mockReferrals
-        .filter(r => r.status === "Menunggu Konfirmasi")
-        .slice(0, 2);
+      try {
+        const response = await getPendingReferrals();
+        if (response.success && response.data) {
+          const mappedReferrals: Referral[] = response.data.map((item) => {
+            // Determine priority
+            const deadline = new Date(item.deadline_at);
+            const now = new Date();
+            const diffHours = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+            let priority = "Prioritas";
+            if (diffHours < 24) priority = "Kritis";
+
+            // Determine status
+            let status = "Menunggu Konfirmasi";
+            if (item.status === "confirmed") status = "Terkonfirmasi";
+            else if (item.status === "rejected") status = "Ditolak";
+
+            // Calculate remaining time string
+            let remainingTimeStr = "";
+            const isExpired = deadline.getTime() < now.getTime();
+            if (!isExpired) {
+              const diffDays = Math.floor(diffHours / 24);
+              const remainingHours = Math.floor(diffHours % 24);
+              remainingTimeStr = `${diffDays} hari ${remainingHours} jam`;
+            }
+
+            return {
+              id: item.id.toString(),
+              student_name: item.student?.name || "Tanpa Nama",
+              priority,
+              status,
+              remaining_time: remainingTimeStr,
+              date: item.slot?.slot_date || "-",
+              time: item.slot ? `${item.slot.slot_start_time.slice(0,5)} - ${item.slot.slot_end_time.slice(0,5)}` : "-",
+              referrer_name: item.counseling?.counselor?.name || "Guru BK",
+              counselor_notes: item.counseling?.notes || "-",
+              submitted_at: new Date(item.created_at).toLocaleDateString("id-ID", {
+                day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+              }),
+              is_expired: isExpired,
+            };
+          });
+          
+          // Get only the first 2 referrals that need approval for the dashboard preview
+          const pendingReferrals = mappedReferrals
+            .filter(r => r.status === "Menunggu Konfirmasi")
+            .slice(0, 2);
+            
+          setReferrals(pendingReferrals);
+        }
         
-      setReferrals(pendingReferrals);
-      setAlertCount(mockPsychologistStats.pending_confirmation_count);
+        // Use real stat count if available, falling back to mock for now
+        setAlertCount(response.data?.length || mockPsychologistStats.pending_confirmation_count);
+      } catch (error) {
+        console.error("Error fetching referrals:", error);
+      }
     };
 
     fetchDashboardData();

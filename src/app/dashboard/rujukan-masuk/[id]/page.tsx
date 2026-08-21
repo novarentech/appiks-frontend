@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { mockReferrals } from "@/lib/mockPsychologistData";
 import { Referral } from "@/types/api";
+import { decideReferral } from "@/lib/api";
 import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import {
   Accordion,
   AccordionContent,
@@ -42,6 +44,10 @@ function RujukanMasukDetailContent() {
   const [referral, setReferral] = useState<Referral | null>(null);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isRejectOpen, setIsRejectOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     // In a real app, fetch from API
@@ -58,6 +64,49 @@ function RujukanMasukDetailContent() {
   if (!referral) return <div className="p-8 text-center text-red-500">Data tidak ditemukan.</div>;
 
   const showConfirmButtons = referral.status === "Menunggu Konfirmasi";
+
+  const handleConfirm = async () => {
+    try {
+      setIsSubmitting(true);
+      const response = await decideReferral(referral.id, { action: "confirm" });
+      if (response.success) {
+        toast.success("Jadwal konseling berhasil dikonfirmasi");
+        setIsConfirmOpen(false);
+        router.push("/dashboard/rujukan-masuk");
+      } else {
+        toast.error(response.message || "Gagal mengkonfirmasi jadwal");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat mengkonfirmasi jadwal");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) {
+      toast.error("Alasan penolakan harus diisi");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      const response = await decideReferral(referral.id, { action: "reject", reject_reason: rejectReason });
+      if (response.success) {
+        toast.success("Penolakan jadwal berhasil dikirim");
+        setIsRejectOpen(false);
+        router.push("/dashboard/rujukan-masuk");
+      } else {
+        toast.error(response.message || "Gagal menolak jadwal");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat menolak jadwal");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="mx-auto space-y-6 pb-20">
@@ -249,7 +298,7 @@ function RujukanMasukDetailContent() {
         {/* Action Buttons Footer */}
         {showConfirmButtons && (
           <div className="p-6 border-t flex flex-col gap-3">
-            <Dialog>
+            <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
               <DialogTrigger asChild>
                 <Button className="w-full bg-indigo-500 hover:bg-indigo-600 text-white h-12 text-md" disabled={referral.is_expired}>
                   Konfirmasi
@@ -273,17 +322,17 @@ function RujukanMasukDetailContent() {
                   </div>
                 </div>
                 <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
-                  <Button variant="outline" className="flex-1" onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}))}>
+                  <Button variant="outline" className="flex-1" onClick={() => setIsConfirmOpen(false)} disabled={isSubmitting}>
                     Batal
                   </Button>
-                  <Button className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white">
-                    Ya, Konfirmasi
+                  <Button className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white" onClick={handleConfirm} disabled={isSubmitting}>
+                    {isSubmitting ? "Memproses..." : "Ya, Konfirmasi"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
-            <Dialog>
+            <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full border-indigo-200 text-indigo-500 hover:bg-indigo-50 h-12 text-md" disabled={referral.is_expired}>
                   Tolak Jadwal
@@ -301,14 +350,16 @@ function RujukanMasukDetailContent() {
                   <Textarea 
                     placeholder="Jelaskan alasan penolakan..."
                     className="min-h-[100px]"
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
                   />
                 </div>
                 <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
-                  <Button variant="outline" className="flex-1 border-red-200 text-red-500 hover:bg-red-50" onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'Escape'}))}>
+                  <Button variant="outline" className="flex-1 border-red-200 text-red-500 hover:bg-red-50" onClick={() => setIsRejectOpen(false)} disabled={isSubmitting}>
                     Batal
                   </Button>
-                  <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white">
-                    Kirim Penolakan
+                  <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white" onClick={handleReject} disabled={isSubmitting}>
+                    {isSubmitting ? "Memproses..." : "Kirim Penolakan"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

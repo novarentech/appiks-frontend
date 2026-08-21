@@ -21,7 +21,7 @@ import {
 interface AddScheduleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAdd: () => void
+  onAdd: (data: { date: Date, startTime: string, endTime: string }) => Promise<void>
   showRepeatOption?: boolean
   initialDate?: Date
   disabledDate?: boolean
@@ -32,15 +32,33 @@ import { useEffect } from "react"
 
 export function AddScheduleDialog({ open, onOpenChange, onAdd, showRepeatOption, initialDate, disabledDate }: AddScheduleDialogProps) {
   const [date, setDate] = useState<Date | undefined>(initialDate)
+  const [startTime, setStartTime] = useState<string>("")
+  const [endTime, setEndTime] = useState<string>("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (open) {
       setDate(initialDate)
+      setStartTime("")
+      setEndTime("")
     }
   }, [open, initialDate])
 
+  const handleSubmit = async () => {
+    if (!date) return alert("Pilih tanggal terlebih dahulu")
+    if (!startTime || !endTime) return alert("Pilih jam mulai dan selesai")
+    
+    setIsSubmitting(true)
+    try {
+      await onAdd({ date, startTime, endTime })
+      onOpenChange(false)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(val) => !isSubmitting && onOpenChange(val)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Tambah Jadwal</DialogTitle>
@@ -58,7 +76,7 @@ export function AddScheduleDialog({ open, onOpenChange, onAdd, showRepeatOption,
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Jam Mulai <span className="text-red-500">*</span></Label>
-              <Select>
+              <Select value={startTime} onValueChange={setStartTime}>
                 <SelectTrigger>
                   <SelectValue placeholder="09:00 AM" />
                 </SelectTrigger>
@@ -78,7 +96,7 @@ export function AddScheduleDialog({ open, onOpenChange, onAdd, showRepeatOption,
 
             <div className="flex-1">
               <Label className="text-sm font-medium text-gray-700 mb-1.5 block">Jam Selesai <span className="text-red-500">*</span></Label>
-              <Select>
+              <Select value={endTime} onValueChange={setEndTime}>
                 <SelectTrigger>
                   <SelectValue placeholder="10:00 AM" />
                 </SelectTrigger>
@@ -116,14 +134,11 @@ export function AddScheduleDialog({ open, onOpenChange, onAdd, showRepeatOption,
         )}
 
         <div className="flex flex-row gap-3 mt-4">
-          <Button variant="outline" className="flex-1 text-indigo-500 border-indigo-200 hover:bg-indigo-50" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" className="flex-1 text-indigo-500 border-indigo-200 hover:bg-indigo-50" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Batal
           </Button>
-          <Button className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white" onClick={() => {
-            onAdd()
-            onOpenChange(false)
-          }}>
-            Tambahkan Jadwal
+          <Button className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Menyimpan..." : "Tambahkan Jadwal"}
           </Button>
         </div>
       </DialogContent>

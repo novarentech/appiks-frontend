@@ -79,6 +79,8 @@ import {
   BuyRequest,
   BuyResponse,
   CirrusResponse,
+  BackendReferralResponse,
+  BackendPsychologistSlotResponse,
 } from "@/types/api";
 import { RoomResponse, RoomStudentCountResponse, RoomByLevelResponse } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -1459,5 +1461,59 @@ export async function acknowledgeCounselingSchedule(
  */
 export async function getCounselingList(type: "internal" | "external"): Promise<any> {
   const response = await authGet(`/counseling?type=${type}`);
+  return response;
+}
+
+/**
+ * Get pending referrals for psychologist dashboard
+ */
+export async function getPendingReferrals(): Promise<BackendReferralResponse> {
+  const response = await authGet("/psychologist/referrals/pending");
+  return response;
+}
+
+/**
+ * Decide (confirm or reject) a psychologist referral
+ */
+export async function decideReferral(
+  id: string,
+  data: { action: "confirm" | "reject"; reject_reason?: string }
+): Promise<any> {
+  const response = await authPatch(`/psychologist/referrals/${id}/decide`, data);
+  return response;
+}
+
+/**
+ * Get psychologist schedule slots (with optional start and end date query)
+ */
+export async function getPsychologistSlots(
+  start?: string,
+  end?: string
+): Promise<BackendPsychologistSlotResponse> {
+  let url = "/psychologist/slots";
+  if (start && end) {
+    url += `?start=${start}&end=${end}`;
+  }
+  const response = await authGet(url);
+  return response;
+}
+
+/**
+ * Create a new psychologist schedule slot
+ */
+export async function createPsychologistSlot(data: {
+  slot_date: string;
+  slot_start_time: string;
+  slot_end_time: string;
+}): Promise<any> {
+  const response = await authPost("/psychologist/slots", data);
+  return response;
+}
+
+/**
+ * Delete a psychologist schedule slot
+ */
+export async function deletePsychologistSlot(slotId: string): Promise<any> {
+  const response = await authDelete(`/psychologist/slots/${slotId}`);
   return response;
 }
