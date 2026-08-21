@@ -7,7 +7,7 @@ import ReferralCard from "./ReferralCard";
 import { useEffect, useState } from "react";
 import { mockPsychologistStats } from "@/lib/mockPsychologistData";
 import { Referral } from "@/types/api";
-import { getPendingReferrals } from "@/lib/api";
+import { getPendingReferrals, getReferralOverview } from "@/lib/api";
 
 export function PsychologistDashboard() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
@@ -64,15 +64,24 @@ export function PsychologistDashboard() {
             
           setReferrals(pendingReferrals);
         }
-        
-        // Use real stat count if available, falling back to mock for now
-        setAlertCount(response.data?.length || mockPsychologistStats.pending_confirmation_count);
       } catch (error) {
         console.error("Error fetching referrals:", error);
       }
     };
 
+    const fetchOverview = async () => {
+      try {
+        const response = await getReferralOverview();
+        if (response.success && response.data) {
+          setAlertCount(response.data.pending);
+        }
+      } catch (error) {
+        console.error("Error fetching overview:", error);
+      }
+    }
+
     fetchDashboardData();
+    fetchOverview();
   }, []);
 
   return (
