@@ -121,6 +121,25 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
 
   const showTimer = referral.status === "Menunggu Konfirmasi";
 
+  // Helper to format date if it's an ISO string
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "-";
+    if (dateStr.includes("T")) {
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString("id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      } catch (e) {
+        return dateStr;
+      }
+    }
+    return dateStr;
+  };
+
   return (
     <Card className="p-5 flex flex-col w-full transition-all duration-200">
       <div className="flex flex-col md:flex-row gap-4 items-start w-full">
@@ -139,7 +158,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
           <div className="flex flex-wrap gap-2 text-xs text-gray-600">
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
               <Calendar className="w-3.5 h-3.5" />
-              <span>{referral.date}</span>
+              <span>{formatDate(referral.date)}</span>
             </div>
             <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
               <Clock className="w-3.5 h-3.5" />
@@ -225,7 +244,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
           </div>
 
           <p className="text-xs text-gray-400">
-            Diajukan pada : {referral.submitted_at}
+            Diajukan pada : {formatDate(referral.submitted_at)}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">

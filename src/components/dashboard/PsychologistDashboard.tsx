@@ -57,10 +57,9 @@ export function PsychologistDashboard() {
             };
           });
           
-          // Get only the first 2 referrals that need approval for the dashboard preview
+          // Get all pending referrals for the dashboard
           const pendingReferrals = mappedReferrals
-            .filter(r => r.status === "Menunggu Konfirmasi")
-            .slice(0, 2);
+            .filter(r => r.status === "Menunggu Konfirmasi");
             
           setReferrals(pendingReferrals);
         }
