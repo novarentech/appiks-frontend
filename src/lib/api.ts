@@ -83,11 +83,20 @@ import {
   BackendPsychologistSlotResponse,
   BackendReferralOverviewResponse,
   BackendReferralsPaginatedResponse,
+  BackendReferralSummaryResponse,
 } from "@/types/api";
-import { RoomResponse, RoomStudentCountResponse, RoomByLevelResponse } from "@/types/api";
+import {
+  RoomResponse,
+  RoomStudentCountResponse,
+  RoomByLevelResponse,
+} from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 import { Bell, CheckCircle } from "lucide-react";
-import { Notification, CurhatNotification, CounselingNotification } from "@/types/notifications";
+import {
+  Notification,
+  CurhatNotification,
+  CounselingNotification,
+} from "@/types/notifications";
 
 /**
  * Get CSRF token from cookie
@@ -120,7 +129,7 @@ export function addCSRFToken(headers: HeadersInit = {}): HeadersInit {
  */
 export async function authenticatedFetch(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response> {
   const session = await getSession();
 
@@ -213,7 +222,7 @@ export async function getBulkImportTemplate(): Promise<BulkTemplateResponse> {
 
   if (!response.ok) {
     throw new Error(
-      `GET /user/bulk/template failed with status ${response.status}`
+      `GET /user/bulk/template failed with status ${response.status}`,
     );
   }
 
@@ -232,7 +241,7 @@ export async function getAllUsers(): Promise<DashboardUserResponse> {
  * Upload bulk import file
  */
 export async function uploadBulkImportFile(
-  file: File
+  file: File,
 ): Promise<BulkImportResponse> {
   const session = await getSession();
 
@@ -268,7 +277,7 @@ export async function getDashboardReportGraph(): Promise<DashboardReportGraphRes
 
   if (!response.ok) {
     throw new Error(
-      `GET /dashboard/report-graph failed with status ${response.status}`
+      `GET /dashboard/report-graph failed with status ${response.status}`,
     );
   }
 
@@ -318,7 +327,7 @@ export async function recordMood(status: string): Promise<MoodRecordResponse> {
  */
 export async function getMoodPattern(
   username: string,
-  type: "weekly" | "monthly"
+  type: "weekly" | "monthly",
 ): Promise<MoodPatternResponse> {
   const response = await authGet(`/mood-record/pattern/${username}/${type}`);
   return response;
@@ -336,7 +345,7 @@ export async function getSharingList(): Promise<SharingListResponse> {
  * Get sharing/curhat detail by ID
  */
 export async function getSharingDetail(
-  id: number
+  id: number,
 ): Promise<SharingDetailResponse> {
   const response = await authGet(`/sharing/${id}`);
   return response;
@@ -358,7 +367,7 @@ export async function createSharing(data: {
  */
 export async function replySharing(
   id: number,
-  text: string
+  text: string,
 ): Promise<SharingReplyResponse> {
   const response = await authPatch(`/sharing/reply/${id}`, { text });
   return response;
@@ -369,7 +378,7 @@ export async function replySharing(
  */
 export async function markSharingFalsePositive(
   id: number,
-  reason: string
+  reason: string,
 ): Promise<{ success: boolean; message: string }> {
   const response = await authPatch(`/sharing/false-positive/${id}`, { reason });
   return response;
@@ -379,7 +388,7 @@ export async function markSharingFalsePositive(
  * Acknowledge sharing/curhat (Mulai Penanganan)
  */
 export async function acknowledgeSharing(
-  id: number
+  id: number,
 ): Promise<{ success: boolean; message: string }> {
   // Pass an empty object as data since authPatch requires it
   const response = await authPatch(`/sharing/acknowledge/${id}`, {});
@@ -459,7 +468,7 @@ export async function getReportList(): Promise<ReportListResponse> {
  */
 export async function confirmReport(
   id: number,
-  data: ReportConfirmRequest
+  data: ReportConfirmRequest,
 ): Promise<ReportConfirmResponse> {
   const response = await authPatch(`/report/confirm/${id}`, data);
   return response;
@@ -470,7 +479,7 @@ export async function confirmReport(
  */
 export async function closeReport(
   id: number,
-  data: ReportCloseRequest
+  data: ReportCloseRequest,
 ): Promise<ReportCloseResponse> {
   const response = await authPatch(`/report/close/${id}`, data);
   return response;
@@ -481,7 +490,7 @@ export async function closeReport(
  */
 export async function rescheduleReport(
   id: number,
-  data: ReportRescheduleRequest
+  data: ReportRescheduleRequest,
 ): Promise<ReportRescheduleResponse> {
   const response = await authPatch(`/report/reschedule/${id}`, data);
   return response;
@@ -492,7 +501,7 @@ export async function rescheduleReport(
  */
 export async function cancelReport(
   id: number,
-  data: ReportCancelRequest
+  data: ReportCancelRequest,
 ): Promise<ReportCancelResponse> {
   const response = await authPatch(`/report/cancel/${id}`, data);
   return response;
@@ -510,7 +519,7 @@ export async function getUsersByType(type: string): Promise<UserListResponse> {
  * Create a new counseling schedule report
  */
 export async function createReport(
-  data: CreateReportRequest
+  data: CreateReportRequest,
 ): Promise<CreateReportResponse> {
   const response = await authPost("/report", data);
   return response;
@@ -615,7 +624,7 @@ export async function getTags(): Promise<TagResponse> {
  * Get article detail by slug
  */
 export async function getArticleDetail(
-  slug: string
+  slug: string,
 ): Promise<ArticleDetailResponse> {
   const response = await authGet(`/article/${slug}`);
   return response;
@@ -625,7 +634,7 @@ export async function getArticleDetail(
  * Get article detail by ID
  */
 export async function getArticleDetailById(
-  id: string
+  id: string,
 ): Promise<ArticleDetailResponse> {
   const response = await authGet(`/article/${id}`);
   return response;
@@ -644,7 +653,7 @@ export async function getDashboardContent(): Promise<DashboardContentResponse> {
  */
 export async function updateArticle(
   id: string,
-  data: UpdateArticleRequest
+  data: UpdateArticleRequest,
 ): Promise<UpdateArticleResponse> {
   // Convert string ID to number as API expects integer
   const articleId = parseInt(id, 10);
@@ -681,12 +690,12 @@ export async function updateArticle(
           Authorization: `Bearer ${session.user.token}`,
         },
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(
-        `POST /article-update/${articleId} failed with status ${response.status}`
+        `POST /article-update/${articleId} failed with status ${response.status}`,
       );
     }
 
@@ -710,7 +719,7 @@ export async function updateArticle(
 
 // Create quote
 export async function createQuote(
-  data: CreateQuoteRequest
+  data: CreateQuoteRequest,
 ): Promise<CreateQuoteResponse> {
   const response = await authPost("/quote", data);
   return response;
@@ -718,7 +727,7 @@ export async function createQuote(
 
 // Create video
 export async function createVideo(
-  data: CreateVideoRequest
+  data: CreateVideoRequest,
 ): Promise<CreateVideoResponse> {
   const response = await authPost("/video", data);
   return response;
@@ -726,7 +735,7 @@ export async function createVideo(
 
 // Create article with file upload support
 export async function createArticle(
-  data: CreateArticleRequest
+  data: CreateArticleRequest,
 ): Promise<CreateArticleResponse> {
   const session = await getSession();
 
@@ -772,7 +781,7 @@ export async function deleteQuote(id: string): Promise<DeleteQuoteResponse> {
 
   if (!response.ok) {
     throw new Error(
-      `DELETE /quote/${id} failed with status ${response.status}`
+      `DELETE /quote/${id} failed with status ${response.status}`,
     );
   }
 
@@ -803,7 +812,7 @@ export async function deleteVideo(id: string): Promise<DeleteVideoResponse> {
 
   if (!response.ok) {
     throw new Error(
-      `DELETE /video/${id} failed with status ${response.status}`
+      `DELETE /video/${id} failed with status ${response.status}`,
     );
   }
 
@@ -822,7 +831,7 @@ export async function deleteVideo(id: string): Promise<DeleteVideoResponse> {
 
 // Delete article
 export async function deleteArticle(
-  id: string
+  id: string,
 ): Promise<DeleteArticleResponse> {
   const session = await getSession();
   if (!session?.user?.token) {
@@ -836,7 +845,7 @@ export async function deleteArticle(
 
   if (!response.ok) {
     throw new Error(
-      `DELETE /articles/${id} failed with status ${response.status}`
+      `DELETE /articles/${id} failed with status ${response.status}`,
     );
   }
 
@@ -888,7 +897,7 @@ export async function updateRoom(
   data: {
     name: string;
     level: string;
-  }
+  },
 ): Promise<RoomResponse> {
   const response = await authPut(`/room/${roomId}`, data);
   return response;
@@ -897,7 +906,9 @@ export async function updateRoom(
 /**
  * Delete a room/class
  */
-export async function deleteRoom(roomId: number): Promise<{ success: boolean; message: string }> {
+export async function deleteRoom(
+  roomId: number,
+): Promise<{ success: boolean; message: string }> {
   const response = await authDelete(`/room/${roomId}`);
   return response;
 }
@@ -905,11 +916,12 @@ export async function deleteRoom(roomId: number): Promise<{ success: boolean; me
 /**
  * Delete user by username
  */
-export async function deleteUser(username: string): Promise<{ success: boolean; message: string }> {
+export async function deleteUser(
+  username: string,
+): Promise<{ success: boolean; message: string }> {
   const response = await authDelete(`/user/${username}`);
   return response;
 }
-
 
 /**
  * Get room and student count data
@@ -959,7 +971,9 @@ export async function getProvinces(): Promise<ProvinceResponse> {
 /**
  * Get all cities by province name
  */
-export async function getCitiesByProvince(province: string): Promise<CityResponse> {
+export async function getCitiesByProvince(
+  province: string,
+): Promise<CityResponse> {
   const encodedProvince = encodeURIComponent(province);
   const response = await fetch(`${API_BASE_URL}/city/${encodedProvince}`, {
     method: "GET",
@@ -969,7 +983,9 @@ export async function getCitiesByProvince(province: string): Promise<CityRespons
   });
 
   if (!response.ok) {
-    throw new Error(`GET /city/${province} failed with status ${response.status}`);
+    throw new Error(
+      `GET /city/${province} failed with status ${response.status}`,
+    );
   }
 
   return response.json();
@@ -978,7 +994,9 @@ export async function getCitiesByProvince(province: string): Promise<CityRespons
 /**
  * Get all districts by city name
  */
-export async function getDistrictsByCity(city: string): Promise<DistrictResponse> {
+export async function getDistrictsByCity(
+  city: string,
+): Promise<DistrictResponse> {
   const encodedCity = encodeURIComponent(city);
   const response = await fetch(`${API_BASE_URL}/district/${encodedCity}`, {
     method: "GET",
@@ -988,7 +1006,9 @@ export async function getDistrictsByCity(city: string): Promise<DistrictResponse
   });
 
   if (!response.ok) {
-    throw new Error(`GET /district/${city} failed with status ${response.status}`);
+    throw new Error(
+      `GET /district/${city} failed with status ${response.status}`,
+    );
   }
 
   return response.json();
@@ -997,7 +1017,9 @@ export async function getDistrictsByCity(city: string): Promise<DistrictResponse
 /**
  * Get all villages by district name
  */
-export async function getVillagesByDistrict(district: string): Promise<VillageResponse> {
+export async function getVillagesByDistrict(
+  district: string,
+): Promise<VillageResponse> {
   const encodedDistrict = encodeURIComponent(district);
   const response = await fetch(`${API_BASE_URL}/village/${encodedDistrict}`, {
     method: "GET",
@@ -1007,7 +1029,9 @@ export async function getVillagesByDistrict(district: string): Promise<VillageRe
   });
 
   if (!response.ok) {
-    throw new Error(`GET /village/${district} failed with status ${response.status}`);
+    throw new Error(
+      `GET /village/${district} failed with status ${response.status}`,
+    );
   }
 
   return response.json();
@@ -1028,7 +1052,9 @@ export async function getSchools(): Promise<SchoolResponse> {
 /**
  * Create a new school
  */
-export async function createSchool(data: CreateSchoolRequest): Promise<SchoolDetailResponse> {
+export async function createSchool(
+  data: CreateSchoolRequest,
+): Promise<SchoolDetailResponse> {
   const response = await authPost("/school", data);
   return response;
 }
@@ -1036,7 +1062,10 @@ export async function createSchool(data: CreateSchoolRequest): Promise<SchoolDet
 /**
  * Update a school by ID
  */
-export async function updateSchool(schoolId: number, data: UpdateSchoolRequest): Promise<SchoolDetailResponse> {
+export async function updateSchool(
+  schoolId: number,
+  data: UpdateSchoolRequest,
+): Promise<SchoolDetailResponse> {
   const response = await authPut(`/school/${schoolId}`, data);
   return response;
 }
@@ -1044,7 +1073,9 @@ export async function updateSchool(schoolId: number, data: UpdateSchoolRequest):
 /**
  * Delete a school by ID
  */
-export async function deleteSchool(schoolId: number): Promise<DeleteSchoolResponse> {
+export async function deleteSchool(
+  schoolId: number,
+): Promise<DeleteSchoolResponse> {
   const response = await authDelete(`/school/${schoolId}`);
   return response;
 }
@@ -1054,7 +1085,7 @@ export async function deleteSchool(schoolId: number): Promise<DeleteSchoolRespon
  */
 export async function getSchoolMoodTrends(
   school: string,
-  type: "weekly" | "monthly"
+  type: "weekly" | "monthly",
 ): Promise<SchoolMoodTrendsResponse> {
   const response = await authGet(`/mood-trends/${school}/${type}`);
   return response;
@@ -1063,7 +1094,9 @@ export async function getSchoolMoodTrends(
 /**
  * Get school rooms/classes data
  */
-export async function getSchoolRooms(school: string): Promise<SchoolRoomsResponse> {
+export async function getSchoolRooms(
+  school: string,
+): Promise<SchoolRoomsResponse> {
   const response = await authGet(`/room/school/${school}`);
   return response;
 }
@@ -1079,7 +1112,9 @@ export async function getRoomByCode(code: string): Promise<RoomDetailResponse> {
 /**
  * Get rooms by level
  */
-export async function getRoomsByLevel(level: "X" | "XI" | "XII"): Promise<RoomByLevelResponse> {
+export async function getRoomsByLevel(
+  level: "X" | "XI" | "XII",
+): Promise<RoomByLevelResponse> {
   const response = await authGet(`/room/level/${level}`);
   return response;
 }
@@ -1101,16 +1136,19 @@ export async function createAdmin(data: {
 /**
  * Update a user
  */
-export async function updateUser(username: string, userData: {
-  username?: string;
-  phone?: string;
-  identifier?: string;
-  room_id?: string;
-  mentor_id?: string;
-  name?: string;
-  password?: string | null;
-  school_id?: number;
-}): Promise<{ success: boolean; message: string; data?: unknown }> {
+export async function updateUser(
+  username: string,
+  userData: {
+    username?: string;
+    phone?: string;
+    identifier?: string;
+    room_id?: string;
+    mentor_id?: string;
+    name?: string;
+    password?: string | null;
+    school_id?: number;
+  },
+): Promise<{ success: boolean; message: string; data?: unknown }> {
   const response = await authPatch(`/edit-user/${username}`, userData);
   return response;
 }
@@ -1134,7 +1172,9 @@ export async function getLatestSharingNotifications(): Promise<Notification[]> {
   });
 
   if (!response.ok) {
-    throw new Error(`GET /notification/latest-sharing failed with status ${response.status}`);
+    throw new Error(
+      `GET /notification/latest-sharing failed with status ${response.status}`,
+    );
   }
 
   const apiResponse = await response.json();
@@ -1144,45 +1184,51 @@ export async function getLatestSharingNotifications(): Promise<Notification[]> {
   }
 
   // Transform API data to match Notification interface
-  const notifications: CurhatNotification[] = apiResponse.data.map((item: {
-    id: number;
-    title: string;
-    description: string;
-    reply: string | null;
-    replied_by: string | null;
-    replied_at: string | null;
-    created_at: string;
-  }) => {
-    const createdDate = new Date(item.created_at);
-    const formattedDate = createdDate.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).replace(/\//g, '/');
+  const notifications: CurhatNotification[] = apiResponse.data.map(
+    (item: {
+      id: number;
+      title: string;
+      description: string;
+      reply: string | null;
+      replied_by: string | null;
+      replied_at: string | null;
+      created_at: string;
+    }) => {
+      const createdDate = new Date(item.created_at);
+      const formattedDate = createdDate
+        .toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+        .replace(/\//g, "/");
 
-    // Determine status based on reply
-    const status: "dibalas" | "dikirim" = item.reply ? "dibalas" : "dikirim";
-    const statusText = item.reply ? "Dibalas" : "Dikirim";
-    const statusColor = item.reply ? "blue" : "amber";
+      // Determine status based on reply
+      const status: "dibalas" | "dikirim" = item.reply ? "dibalas" : "dikirim";
+      const statusText = item.reply ? "Dibalas" : "Dikirim";
+      const statusColor = item.reply ? "blue" : "amber";
 
-    return {
-      id: item.id,
-      type: "curhat" as const,
-      title: "Status Curhatmu",
-      description: item.title,
-      teacher: item.replied_by || "System", // Since API doesn't provide teacher info
-      date: formattedDate,
-      status: status,
-      statusText: statusText,
-      statusColor: statusColor,
-      borderColor: item.reply ? "border-blue-400" : "border-amber-400",
-      icon: Bell,
-      isNew: true, // Always show as new since user wants fresh data
-      curhatDescription: item.description,
-      reply: item.reply,
-      replyDate: item.replied_at ? new Date(item.replied_at).toLocaleString('id-ID') : undefined,
-    };
-  });
+      return {
+        id: item.id,
+        type: "curhat" as const,
+        title: "Status Curhatmu",
+        description: item.title,
+        teacher: item.replied_by || "System", // Since API doesn't provide teacher info
+        date: formattedDate,
+        status: status,
+        statusText: statusText,
+        statusColor: statusColor,
+        borderColor: item.reply ? "border-blue-400" : "border-amber-400",
+        icon: Bell,
+        isNew: true, // Always show as new since user wants fresh data
+        curhatDescription: item.description,
+        reply: item.reply,
+        replyDate: item.replied_at
+          ? new Date(item.replied_at).toLocaleString("id-ID")
+          : undefined,
+      };
+    },
+  );
 
   return notifications;
 }
@@ -1218,7 +1264,9 @@ export async function getCirrusData(): Promise<CirrusResponse> {
 /**
  * Create a new student user
  */
-export async function createStudent(data: CreateStudentRequest): Promise<CreateStudentResponse> {
+export async function createStudent(
+  data: CreateStudentRequest,
+): Promise<CreateStudentResponse> {
   const response = await authPost("/user/student", data);
   return response;
 }
@@ -1234,7 +1282,10 @@ export async function getMoodRecordExportToday(): Promise<MoodRecordExportRespon
 /**
  * Get student mood record export URL
  */
-export async function getStudentMoodExport(username: string, type: "weekly" | "monthly"): Promise<StudentMoodExportResponse> {
+export async function getStudentMoodExport(
+  username: string,
+  type: "weekly" | "monthly",
+): Promise<StudentMoodExportResponse> {
   const response = await authGet(`/mood_record/export/${username}/${type}`);
   return response;
 }
@@ -1242,7 +1293,9 @@ export async function getStudentMoodExport(username: string, type: "weekly" | "m
 /**
  * Get student sharing/curhat data by username
  */
-export async function getStudentSharingData(username: string): Promise<StudentSharingResponse> {
+export async function getStudentSharingData(
+  username: string,
+): Promise<StudentSharingResponse> {
   const response = await authGet(`/sharing/student/${username}`);
   return response;
 }
@@ -1250,7 +1303,9 @@ export async function getStudentSharingData(username: string): Promise<StudentSh
 /**
  * Get student report/counseling data by username
  */
-export async function getStudentReportData(username: string): Promise<StudentReportResponse> {
+export async function getStudentReportData(
+  username: string,
+): Promise<StudentReportResponse> {
   const response = await authGet(`/report/student/${username}`);
   return response;
 }
@@ -1292,8 +1347,12 @@ export async function getDashboardSharingCount(): Promise<{
  * Get self-help data by type and username
  */
 export async function getSelfHelpData(
-  type: "Daily Journaling" | "Gratitude Journal" | "Grounding Technique" | "Sensory Relaxation",
-  username: string
+  type:
+    | "Daily Journaling"
+    | "Gratitude Journal"
+    | "Grounding Technique"
+    | "Sensory Relaxation",
+  username: string,
 ): Promise<SelfHelpResponse> {
   const encodedType = encodeURIComponent(type);
   const response = await authGet(`/self-help/${encodedType}/${username}`);
@@ -1304,7 +1363,7 @@ export async function getSelfHelpData(
  * Create daily journaling entry
  */
 export async function createDailyJournaling(
-  data: CreateDailyJournalingRequest
+  data: CreateDailyJournalingRequest,
 ): Promise<CreateDailyJournalingResponse> {
   const response = await authPost("/self-help/daily-journaling", data);
   return response;
@@ -1314,7 +1373,7 @@ export async function createDailyJournaling(
  * Create gratitude journaling entry
  */
 export async function createGratitudeJournaling(
-  data: CreateGratitudeJournalingRequest
+  data: CreateGratitudeJournalingRequest,
 ): Promise<CreateGratitudeJournalingResponse> {
   const response = await authPost("/self-help/gratitude-journaling", data);
   return response;
@@ -1324,7 +1383,7 @@ export async function createGratitudeJournaling(
  * Create grounding technique entry
  */
 export async function createGroundingTechnique(
-  data: CreateGroundingTechniqueRequest
+  data: CreateGroundingTechniqueRequest,
 ): Promise<CreateGroundingTechniqueResponse> {
   const response = await authPost("/self-help/grounding-technique", data);
   return response;
@@ -1334,7 +1393,7 @@ export async function createGroundingTechnique(
  * Create sensory relaxation entry
  */
 export async function createSensoryRelaxation(
-  data: CreateSensoryRelaxationRequest
+  data: CreateSensoryRelaxationRequest,
 ): Promise<CreateSensoryRelaxationResponse> {
   const response = await authPost("/self-help/sensory-relaxation", data);
   return response;
@@ -1343,7 +1402,9 @@ export async function createSensoryRelaxation(
 /**
  * Get latest counseling schedule notifications
  */
-export async function getLatestCounselingNotifications(): Promise<Notification[]> {
+export async function getLatestCounselingNotifications(): Promise<
+  Notification[]
+> {
   const session = await getSession();
 
   if (!session?.user?.token) {
@@ -1359,7 +1420,9 @@ export async function getLatestCounselingNotifications(): Promise<Notification[]
   });
 
   if (!response.ok) {
-    throw new Error(`GET /notification/latest-report failed with status ${response.status}`);
+    throw new Error(
+      `GET /notification/latest-report failed with status ${response.status}`,
+    );
   }
 
   const apiResponse = await response.json();
@@ -1369,80 +1432,85 @@ export async function getLatestCounselingNotifications(): Promise<Notification[]
   }
 
   // Transform API data to match Notification interface
-  const notifications: CounselingNotification[] = apiResponse.data.map((item: {
-    id: number;
-    topic: string;
-    room: string;
-    date: string;
-    time: string;
-    status: string;
-    priority: string;
-    notes: string;
-    result: string;
-    created_at: string;
-    counselor: {
-      name: string;
-    };
-  }) => {
-    const createdDate = new Date(item.created_at);
-    const formattedDate = createdDate.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).replace(/\//g, '/');
+  const notifications: CounselingNotification[] = apiResponse.data.map(
+    (item: {
+      id: number;
+      topic: string;
+      room: string;
+      date: string;
+      time: string;
+      status: string;
+      priority: string;
+      notes: string;
+      result: string;
+      created_at: string;
+      counselor: {
+        name: string;
+      };
+    }) => {
+      const createdDate = new Date(item.created_at);
+      const formattedDate = createdDate
+        .toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+        .replace(/\//g, "/");
 
-    // Map API status to notification status
-    let status: "disetujui" | "dijadwal_ulang" | "selesai" | "dibatalkan" = "disetujui";
-    let statusText = "Disetujui";
-    let statusColor = "green";
-    let borderColor = "border-green-400";
+      // Map API status to notification status
+      let status: "disetujui" | "dijadwal_ulang" | "selesai" | "dibatalkan" =
+        "disetujui";
+      let statusText = "Disetujui";
+      let statusColor = "green";
+      let borderColor = "border-green-400";
 
-    switch (item.status) {
-      case "selesai":
-        status = "selesai";
-        statusText = "Selesai";
-        statusColor = "emerald";
-        borderColor = "border-emerald-400";
-        break;
-      case "dijadwalkan":
-        status = "disetujui";
-        statusText = "Disetujui";
-        statusColor = "green";
-        borderColor = "border-green-400";
-        break;
-      case "dibatalkan":
-        status = "dibatalkan";
-        statusText = "Dibatalkan";
-        statusColor = "red";
-        borderColor = "border-red-400";
-        break;
-      case "dijadwal_ulang":
-        status = "dijadwal_ulang";
-        statusText = "Dijadwal Ulang";
-        statusColor = "orange";
-        borderColor = "border-orange-400";
-        break;
-    }
+      switch (item.status) {
+        case "selesai":
+          status = "selesai";
+          statusText = "Selesai";
+          statusColor = "emerald";
+          borderColor = "border-emerald-400";
+          break;
+        case "dijadwalkan":
+          status = "disetujui";
+          statusText = "Disetujui";
+          statusColor = "green";
+          borderColor = "border-green-400";
+          break;
+        case "dibatalkan":
+          status = "dibatalkan";
+          statusText = "Dibatalkan";
+          statusColor = "red";
+          borderColor = "border-red-400";
+          break;
+        case "dijadwal_ulang":
+          status = "dijadwal_ulang";
+          statusText = "Dijadwal Ulang";
+          statusColor = "orange";
+          borderColor = "border-orange-400";
+          break;
+      }
 
-    return {
-      id: item.id,
-      type: "counseling" as const,
-      title: "Jadwal Konseling",
-      description: item.topic,
-      teacher: item.counselor.name,
-      date: formattedDate,
-      time: item.time,
-      room: item.room,
-      status: status,
-      statusText: statusText,
-      statusColor: statusColor,
-      borderColor: borderColor,
-      icon: CheckCircle,
-      isNew: true,
-      notes: item.notes,
-      noteDate: formattedDate,
-    };
-  });
+      return {
+        id: item.id,
+        type: "counseling" as const,
+        title: "Jadwal Konseling",
+        description: item.topic,
+        teacher: item.counselor.name,
+        date: formattedDate,
+        time: item.time,
+        room: item.room,
+        status: status,
+        statusText: statusText,
+        statusColor: statusColor,
+        borderColor: borderColor,
+        icon: CheckCircle,
+        isNew: true,
+        notes: item.notes,
+        noteDate: formattedDate,
+      };
+    },
+  );
 
   return notifications;
 }
@@ -1452,16 +1520,20 @@ export async function getLatestCounselingNotifications(): Promise<Notification[]
  */
 export async function acknowledgeCounselingSchedule(
   id: number,
-  type: "accept" | "reject"
+  type: "accept" | "reject",
 ): Promise<any> {
-  const response = await authPatch(`/student/counselings/${id}/acknowledge`, { type });
+  const response = await authPatch(`/student/counselings/${id}/acknowledge`, {
+    type,
+  });
   return response;
 }
 
 /**
  * Get counseling list (including external referrals)
  */
-export async function getCounselingList(type: "internal" | "external"): Promise<any> {
+export async function getCounselingList(
+  type: "internal" | "external",
+): Promise<any> {
   const response = await authGet(`/counseling?type=${type}`);
   return response;
 }
@@ -1479,9 +1551,12 @@ export async function getPendingReferrals(): Promise<BackendReferralResponse> {
  */
 export async function decideReferral(
   id: string,
-  data: { action: "confirm" | "reject"; reject_reason?: string }
+  data: { action: "confirm" | "reject"; reject_reason?: string },
 ): Promise<any> {
-  const response = await authPatch(`/psychologist/referrals/${id}/decide`, data);
+  const response = await authPatch(
+    `/psychologist/referrals/${id}/decide`,
+    data,
+  );
   return response;
 }
 
@@ -1490,7 +1565,7 @@ export async function decideReferral(
  */
 export async function getPsychologistSlots(
   start?: string,
-  end?: string
+  end?: string,
 ): Promise<BackendPsychologistSlotResponse> {
   let url = "/psychologist/slots";
   if (start && end) {
@@ -1544,17 +1619,60 @@ export async function getPsychologistReferrals(params?: {
     const query = new URLSearchParams();
     if (params.page) query.append("page", params.page.toString());
     if (params.limit) query.append("limit", params.limit.toString());
-    if (params.status && params.status !== "all") query.append("status", params.status);
-    if (params.priority && params.priority !== "all") query.append("priority", params.priority);
-    if (params.batas_waktu && params.batas_waktu !== "all") query.append("batas_waktu", params.batas_waktu);
+    if (params.status && params.status !== "all")
+      query.append("status", params.status);
+    if (params.priority && params.priority !== "all")
+      query.append("priority", params.priority);
+    if (params.batas_waktu && params.batas_waktu !== "all")
+      query.append("batas_waktu", params.batas_waktu);
     if (params.search) query.append("search", params.search);
-    
+
     const queryString = query.toString();
     if (queryString) {
       url += `?${queryString}`;
     }
   }
-  
+
   const response = await authGet(url);
+  return response;
+}
+
+/**
+ * Get a single psychologist referral by ID
+ */
+export async function getPsychologistReferralById(
+  id: string,
+): Promise<{ success: boolean; data?: any; message?: string }> {
+  const response = await authGet(`/psychologist/referrals/${id}`);
+  return response;
+}
+
+/**
+ * Get referral AI summary
+ */
+export async function getReferralSummary(
+  counselingId: string,
+): Promise<BackendReferralSummaryResponse> {
+  const response = await authGet(
+    `/psychologist/referrals/${counselingId}/summary`,
+  );
+  return response;
+}
+
+/**
+ * Submit feedback and clinical notes for AI summary
+ */
+export async function submitReferralFeedback(
+  counselingId: string,
+  data: {
+    clinical_notes?: string;
+    rating?: string | null;
+    improvement_feedback?: string;
+  },
+): Promise<any> {
+  const response = await authPost(
+    `/psychologist/referrals/${counselingId}/feedback`,
+    data,
+  );
   return response;
 }

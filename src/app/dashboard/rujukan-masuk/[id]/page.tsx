@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
-import { mockReferrals } from "@/lib/mockPsychologistData";
-import { Referral } from "@/types/api";
-import { decideReferral } from "@/lib/api";
+import { Referral, BackendReferralSummaryData } from "@/types/api";
+import { decideReferral, getReferralSummary, submitReferralFeedback } from "@/lib/api";
 import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,22 +41,83 @@ function RujukanMasukDetailContent() {
   const id = params.id as string;
   
   const [referral, setReferral] = useState<Referral | null>(null);
+  const [summary, setSummary] = useState<BackendReferralSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [clinicalNotesInput, setClinicalNotesInput] = useState("");
+  const [improvementFeedbackInput, setImprovementFeedbackInput] = useState("");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    // In a real app, fetch from API
-    const fetchReferral = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const found = mockReferrals.find((r) => r.id === id);
-      setReferral(found || null);
-      setLoading(false);
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch AI Summary
+        const summaryRes = await getReferralSummary(id);
+        if (summaryRes.success && summaryRes.data) {
+          setSummary(summaryRes.data);
+        }
+
+        // Populate referral data purely from summary API as requested
+        if (summaryRes.success && summaryRes.data) {
+          const item = summaryRes.data;
+
+          let statusVal = "Menunggu Konfirmasi";
+          const rawStatus = item.student?.status || item.sharing?.status || "";
+          if (rawStatus === "confirmed") statusVal = "Terkonfirmasi";
+          else if (rawStatus === "rejected") statusVal = "Ditolak";
+          else if (rawStatus !== "pending" && rawStatus !== "") statusVal = rawStatus; // Fallback to raw string if not matching known english keys
+
+          const priorityVal = (item.student?.priority || item.sharing?.priority) === "tinggi" ? "Kritis" : "Prioritas";
+          
+          const mappedReferral: Referral = {
+            id: id,
+            student_name: item.student?.name || "Tanpa Nama",
+            priority: priorityVal,
+            status: statusVal,
+            remaining_time: "-", // Calculated dynamically during render now
+            date: item.student?.reported_at ? new Date(item.student.reported_at).toLocaleDateString("id-ID", {
+              day: "numeric", month: "long", year: "numeric"
+            }) : "-",
+            time: item.student?.reported_at ? new Date(item.student.reported_at).toLocaleTimeString("id-ID", {
+              hour: "2-digit", minute: "2-digit"
+            }) : "-",
+            referrer_name: item.student?.counselor_name || "-",
+            counselor_notes: item.raw_payload?.assesment_logs?.[0]?.clinical_notes || "-", 
+            submitted_at: item.student?.reported_at ? new Date(item.student.reported_at).toLocaleDateString("id-ID", {
+              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+            }) : (item.sharing?.created_at ? new Date(item.sharing.created_at).toLocaleDateString("id-ID", {
+              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+            }) : (item.generated_at ? new Date(item.generated_at).toLocaleDateString("id-ID", {
+              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+            }) : "-")),
+            is_expired: false, // Calculated dynamically during render now
+            nis: item.student?.nis || "-",
+            class_name: item.student?.class || "-",
+            student_story: item.sharing?.description || undefined,
+            detected_keywords: item.sharing?.nlp?.response?.matched_keywords?.map((k: any) => k.stem) || undefined,
+          };
+          
+          setReferral(mappedReferral);
+        } else {
+          setReferral(null);
+        }
+      } catch (error) {
+        console.error("Error fetching detail:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchReferral();
+    fetchData();
   }, [id]);
 
   if (loading) return <div className="p-8 text-center">Memuat data...</div>;
@@ -72,7 +132,8 @@ function RujukanMasukDetailContent() {
       if (response.success) {
         toast.success("Jadwal konseling berhasil dikonfirmasi");
         setIsConfirmOpen(false);
-        router.push("/dashboard/rujukan-masuk");
+        // Lakukan refresh dengan mengganti router.push dengan window.location.href
+        window.location.href = "/dashboard/rujukan-masuk";
       } else {
         toast.error(response.message || "Gagal mengkonfirmasi jadwal");
       }
@@ -96,7 +157,8 @@ function RujukanMasukDetailContent() {
       if (response.success) {
         toast.success("Penolakan jadwal berhasil dikirim");
         setIsRejectOpen(false);
-        router.push("/dashboard/rujukan-masuk");
+        // Lakukan refresh dengan mengganti router.push dengan window.location.href
+        window.location.href = "/dashboard/rujukan-masuk";
       } else {
         toast.error(response.message || "Gagal menolak jadwal");
       }
@@ -107,6 +169,74 @@ function RujukanMasukDetailContent() {
       setIsSubmitting(false);
     }
   };
+
+  const handleFeedbackSubmit = async () => {
+    if (!clinicalNotesInput.trim() && !feedback && !improvementFeedbackInput.trim()) {
+      toast.error("Isi minimal salah satu form sebelum menyimpan");
+      return;
+    }
+
+    try {
+      setIsSubmittingFeedback(true);
+      
+      const payload: any = {};
+      if (clinicalNotesInput.trim()) payload.clinical_notes = clinicalNotesInput;
+      if (feedback) payload.rating = feedback === 'up' ? 'good' : 'bad';
+      if (improvementFeedbackInput.trim()) payload.improvement_feedback = improvementFeedbackInput;
+
+      const response = await submitReferralFeedback(id, payload);
+      
+      if (response.success) {
+        toast.success("Catatan klinis & feedback berhasil disimpan");
+        // Refetch summary to update UI
+        const summaryRes = await getReferralSummary(id);
+        if (summaryRes.success && summaryRes.data) {
+          setSummary(summaryRes.data);
+        }
+      } else {
+        toast.error(response.message || "Gagal menyimpan feedback");
+      }
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast.error("Terjadi kesalahan saat menyimpan data");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  let parsedSummary = null;
+  if (summary?.summary_text) {
+    try {
+      parsedSummary = JSON.parse(summary.summary_text);
+    } catch (e) {
+      console.warn("Summary text is not valid JSON, it will be rendered as plain text.");
+      parsedSummary = null;
+    }
+  }
+
+  // Calculate dynamic countdown
+  let dynamicRemainingTimeStr = "-";
+  let dynamicIsExpired = false;
+  
+  const deadlineStr = summary?.student?.deadline_at || summary?.deadline_at || summary?.sharing?.deadline_at;
+  
+  if (deadlineStr) {
+    const deadline = new Date(deadlineStr);
+    const diffMs = deadline.getTime() - currentTime.getTime();
+    
+    dynamicIsExpired = diffMs <= 0;
+    if (!dynamicIsExpired) {
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+      const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);
+      
+      if (diffDays > 0) {
+        dynamicRemainingTimeStr = `${diffDays} hari ${diffHours} jam`;
+      } else {
+        dynamicRemainingTimeStr = `${diffHours} jam ${diffMinutes} menit`;
+      }
+    }
+  }
 
   return (
     <div className="mx-auto space-y-6 pb-20">
@@ -127,12 +257,14 @@ function RujukanMasukDetailContent() {
               <Badge variant="secondary" className="bg-red-50 text-red-600 border-red-100 hover:bg-red-100 font-normal">
                 {referral.priority}
               </Badge>
-              <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Sisa Waktu Respon</p>
+              {dynamicRemainingTimeStr !== "-" && (
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Sisa Waktu Respon</p>
+              )}
             </div>
-            {showConfirmButtons && !referral.is_expired && (
-              <p className="text-red-500 font-bold text-lg">{referral.remaining_time}</p>
+            {dynamicRemainingTimeStr !== "-" && !dynamicIsExpired && (
+              <p className="text-red-500 font-bold text-lg">{dynamicRemainingTimeStr}</p>
             )}
-            {referral.is_expired && (
+            {dynamicIsExpired && (
               <p className="text-gray-500 font-bold">Kadaluarsa</p>
             )}
           </div>
@@ -228,70 +360,170 @@ function RujukanMasukDetailContent() {
           <div className="border rounded-lg p-5">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-gray-800" />
+                <Sparkles className="w-5 h-5 text-indigo-600" />
                 <h4 className="font-semibold text-gray-800">Ringkasan AI</h4>
               </div>
-              <Badge variant="outline" className="text-gray-400 font-normal text-xs bg-gray-50">Read Only</Badge>
+              <div className="flex items-center gap-2">
+                {summary?.llm_provider && (
+                  <Badge variant="outline" className="text-gray-500 font-normal text-xs bg-gray-50 border-gray-200">
+                    {summary.llm_provider}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-gray-400 font-normal text-xs bg-gray-50">Read Only</Badge>
+              </div>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {referral.ai_summary || "Belum ada ringkasan AI untuk kasus ini."}
-            </div>
+            
+            {parsedSummary ? (
+              <div className="bg-gray-50 p-5 rounded-lg border border-gray-100 text-sm text-gray-700 leading-relaxed grid gap-4">
+                {parsedSummary.chief_complaint && (
+                  <div>
+                    <span className="font-semibold text-indigo-900 block mb-1">Keluhan Utama</span>
+                    <p>{parsedSummary.chief_complaint}</p>
+                  </div>
+                )}
+                {parsedSummary.assessment && (
+                  <div>
+                    <span className="font-semibold text-indigo-900 block mb-1">Asesmen</span>
+                    <p>{parsedSummary.assessment}</p>
+                  </div>
+                )}
+                {parsedSummary.plan && (
+                  <div>
+                    <span className="font-semibold text-indigo-900 block mb-1">Rencana (Plan)</span>
+                    <p>{parsedSummary.plan}</p>
+                  </div>
+                )}
+                {parsedSummary.resolution && (
+                  <div>
+                    <span className="font-semibold text-indigo-900 block mb-1">Resolusi</span>
+                    <p>{parsedSummary.resolution}</p>
+                  </div>
+                )}
+                <div className="flex items-center gap-4 pt-2 border-t border-gray-200 mt-2">
+                  {parsedSummary.session_count && (
+                    <div className="text-xs text-gray-500">
+                      Rekomendasi Sesi: <span className="font-medium text-gray-700">{parsedSummary.session_count}x</span>
+                    </div>
+                  )}
+                  {parsedSummary.psychologist && (
+                    <div className="text-xs text-gray-500">
+                      Psikolog: <span className="font-medium text-gray-700">{parsedSummary.psychologist}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {summary?.summary_text || referral.ai_summary || "Belum ada ringkasan AI untuk kasus ini."}
+              </div>
+            )}
           </div>
 
           {/* Tambah Catatan Klinis */}
           <div className="border rounded-lg p-5">
-            <h4 className="font-semibold text-gray-800">Tambah Catatan Klinis</h4>
-            <p className="text-sm text-gray-500 mb-4">Catatan Anda ditambahkan sebagai anotasi profesional, ringkasan AI tidak akan diubah.</p>
-            <Textarea 
-              placeholder="Tuliskan observasi, koreksi konteks, atau catatan profesional Anda terkait ringkasan AI ini..."
-              className="min-h-[100px] bg-white resize-none"
-            />
-            <div className="flex justify-end mt-4">
-              <Button className="bg-indigo-300 hover:bg-indigo-400 text-white min-w-[120px]">
-                Simpan
-              </Button>
-            </div>
+            <h4 className="font-semibold text-gray-800">
+              {summary?.clinical_notes ? "Catatan Klinis" : "Tambah Catatan Klinis"}
+            </h4>
+            {summary?.clinical_notes ? (
+              <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 leading-relaxed mt-4">
+                {summary.clinical_notes}
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-500 mb-4 mt-1">Catatan Anda ditambahkan sebagai anotasi profesional, ringkasan AI tidak akan diubah.</p>
+                <Textarea 
+                  placeholder="Tuliskan observasi, koreksi konteks, atau catatan profesional Anda terkait ringkasan AI ini..."
+                  className="min-h-[100px] bg-white resize-none"
+                  value={clinicalNotesInput}
+                  onChange={(e) => setClinicalNotesInput(e.target.value)}
+                  disabled={isSubmittingFeedback}
+                />
+                <div className="flex justify-end mt-4">
+                  <Button 
+                    className="bg-indigo-300 hover:bg-indigo-400 text-white min-w-[120px]"
+                    onClick={handleFeedbackSubmit}
+                    disabled={isSubmittingFeedback}
+                  >
+                    {isSubmittingFeedback ? "Menyimpan..." : "Simpan"}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Feedback Kualitas AI */}
           <div className="border rounded-lg p-5">
             <h4 className="font-semibold text-gray-800">Feedback Kualitas AI</h4>
-            <p className="text-sm text-gray-500 mb-4">Bantu kami meningkatkan kualitas ringkasan AI berdasarkan pengalaman konseling Anda.</p>
-            
-            <div className="mb-4">
-              <p className="text-sm font-medium mb-2">Penilaian Ringkasan AI</p>
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  className={`flex gap-2 ${feedback === 'up' ? 'border-green-500 text-green-600 bg-green-50' : 'text-green-600 border-green-200 hover:bg-green-50'}`}
-                  onClick={() => setFeedback('up')}
-                >
-                  Membantu <ThumbsUp className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className={`flex gap-2 ${feedback === 'down' ? 'border-red-500 text-red-600 bg-red-50' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
-                  onClick={() => setFeedback('down')}
-                >
-                  Kurang Akurat <ThumbsDown className="w-4 h-4" />
-                </Button>
+            {summary?.rating || summary?.improvement_feedback ? (
+              <div className="mt-4 space-y-4">
+                {summary.rating && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Penilaian Ringkasan AI</p>
+                    <Badge variant="outline" className={`py-1 px-3 ${summary.rating === 'good' ? 'border-green-500 text-green-600 bg-green-50' : 'border-red-500 text-red-600 bg-red-50'}`}>
+                      {summary.rating === 'good' ? (
+                        <div className="flex items-center gap-1.5"><ThumbsUp className="w-3.5 h-3.5" /> Membantu</div>
+                      ) : (
+                        <div className="flex items-center gap-1.5"><ThumbsDown className="w-3.5 h-3.5" /> Kurang Akurat</div>
+                      )}
+                    </Badge>
+                  </div>
+                )}
+                {summary.improvement_feedback && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Masukan untuk Perbaikan</p>
+                    <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700">
+                      {summary.improvement_feedback}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-500 mb-4 mt-1">Bantu kami meningkatkan kualitas ringkasan AI berdasarkan pengalaman konseling Anda.</p>
+                
+                <div className="mb-4">
+                  <p className="text-sm font-medium mb-2">Penilaian Ringkasan AI</p>
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      className={`flex gap-2 ${feedback === 'up' ? 'border-green-500 text-green-600 bg-green-50' : 'text-green-600 border-green-200 hover:bg-green-50'}`}
+                      onClick={() => setFeedback('up')}
+                    >
+                      Membantu <ThumbsUp className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className={`flex gap-2 ${feedback === 'down' ? 'border-red-500 text-red-600 bg-red-50' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
+                      onClick={() => setFeedback('down')}
+                    >
+                      Kurang Akurat <ThumbsDown className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
 
-            <div>
-              <p className="text-sm font-medium mb-2">Masukan untuk Perbaikan Ringkasan (opsional)</p>
-              <Textarea 
-                placeholder="Jelaskan konteks yang kurang tepat atau saran peningkatan AI..."
-                className="min-h-[80px] bg-white resize-none"
-              />
-              <p className="text-xs text-gray-400 mt-2">Feedback ini tidak mengubah ringkasan secara langsung.</p>
-            </div>
+                <div>
+                  <p className="text-sm font-medium mb-2">Masukan untuk Perbaikan Ringkasan (opsional)</p>
+                  <Textarea 
+                    placeholder="Jelaskan konteks yang kurang tepat atau saran peningkatan AI..."
+                    className="min-h-[80px] bg-white resize-none"
+                    value={improvementFeedbackInput}
+                    onChange={(e) => setImprovementFeedbackInput(e.target.value)}
+                    disabled={isSubmittingFeedback}
+                  />
+                  <p className="text-xs text-gray-400 mt-2">Feedback ini tidak mengubah ringkasan secara langsung.</p>
+                </div>
 
-            <div className="flex justify-end mt-4">
-              <Button className="bg-indigo-300 hover:bg-indigo-400 text-white min-w-[120px]">
-                Kirim Feedback
-              </Button>
-            </div>
+                <div className="flex justify-end mt-4">
+                  <Button 
+                    className="bg-indigo-300 hover:bg-indigo-400 text-white min-w-[120px]"
+                    onClick={handleFeedbackSubmit}
+                    disabled={isSubmittingFeedback}
+                  >
+                    {isSubmittingFeedback ? "Memproses..." : "Kirim Feedback"}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -300,7 +532,7 @@ function RujukanMasukDetailContent() {
           <div className="p-6 border-t flex flex-col gap-3">
             <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full bg-indigo-500 hover:bg-indigo-600 text-white h-12 text-md" disabled={referral.is_expired}>
+                <Button className="w-full bg-indigo-500 hover:bg-indigo-600 text-white h-12 text-md" disabled={dynamicIsExpired}>
                   Konfirmasi
                 </Button>
               </DialogTrigger>
@@ -334,7 +566,7 @@ function RujukanMasukDetailContent() {
 
             <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full border-indigo-200 text-indigo-500 hover:bg-indigo-50 h-12 text-md" disabled={referral.is_expired}>
+                <Button variant="outline" className="w-full border-indigo-200 text-indigo-500 hover:bg-indigo-50 h-12 text-md" disabled={dynamicIsExpired}>
                   Tolak Jadwal
                 </Button>
               </DialogTrigger>

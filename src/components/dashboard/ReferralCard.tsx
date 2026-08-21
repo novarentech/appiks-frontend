@@ -29,9 +29,10 @@ import { useRouter } from "next/navigation";
 
 interface ReferralCardProps {
   referral: Referral;
+  onActionSuccess?: () => void;
 }
 
-export default function ReferralCard({ referral }: ReferralCardProps) {
+export default function ReferralCard({ referral, onActionSuccess }: ReferralCardProps) {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -46,7 +47,11 @@ export default function ReferralCard({ referral }: ReferralCardProps) {
       if (response.success) {
         toast.success("Jadwal konseling berhasil dikonfirmasi");
         setIsConfirmOpen(false);
-        router.refresh();
+        if (onActionSuccess) {
+          onActionSuccess();
+        } else {
+          window.location.reload();
+        }
       } else {
         toast.error(response.message || "Gagal mengkonfirmasi jadwal");
       }
@@ -70,7 +75,11 @@ export default function ReferralCard({ referral }: ReferralCardProps) {
       if (response.success) {
         toast.success("Penolakan jadwal berhasil dikirim");
         setIsRejectOpen(false);
-        router.refresh();
+        if (onActionSuccess) {
+          onActionSuccess();
+        } else {
+          window.location.reload();
+        }
       } else {
         toast.error(response.message || "Gagal menolak jadwal");
       }
@@ -301,9 +310,11 @@ export default function ReferralCard({ referral }: ReferralCardProps) {
 
               {referral.status === "Terkonfirmasi" && (
                 <>
-                  <Button className="bg-green-600 hover:bg-green-700 text-white min-w-[120px]">
-                    Buka Laporan AI
-                  </Button>
+                  <Link href={`/dashboard/rujukan-masuk/${referral.id}`}>
+                    <Button className="bg-green-600 hover:bg-green-700 text-white min-w-[120px]">
+                      Buka Laporan AI
+                    </Button>
+                  </Link>
                   <Button
                     variant="outline"
                     className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
@@ -314,12 +325,14 @@ export default function ReferralCard({ referral }: ReferralCardProps) {
               )}
 
               {referral.status === "Selesai" && (
-                <Button
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 min-w-[120px]"
-                >
-                  Lihat Laporan
-                </Button>
+                <Link href={`/dashboard/rujukan-masuk/${referral.id}`}>
+                  <Button
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 min-w-[120px]"
+                  >
+                    Lihat Laporan
+                  </Button>
+                </Link>
               )}
             </div>
 

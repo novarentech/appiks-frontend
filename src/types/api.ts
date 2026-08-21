@@ -1394,3 +1394,45 @@ export interface BackendReferralsPaginatedResponse {
     };
   };
 }
+
+export interface BackendReferralSummaryData {
+  student: {
+    name: string;
+    nis: string;
+    class: string | null;
+    counselor_name: string | null;
+    status?: string;
+    priority?: string;
+    deadline_at?: string;
+    reported_at?: string;
+  };
+  sharing?: {
+    id: number;
+    title: string;
+    description: string;
+    priority: string;
+    status: string;
+    created_at: string;
+    deadline_at?: string;
+    nlp?: {
+      flag: string;
+      response?: {
+        matched_keywords?: Array<{ stem: string; zone: string; weight: number }>;
+      };
+    };
+  };
+  generated_at: string;
+  deadline_at?: string;
+  llm_provider: string;
+  summary_text: string;
+  raw_payload: any;
+  clinical_notes: string | null;
+  rating: string | null;
+  improvement_feedback: string | null;
+}
+
+export interface BackendReferralSummaryResponse {
+  success: boolean;
+  message: string;
+  data: BackendReferralSummaryData;
+}

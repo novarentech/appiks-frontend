@@ -36,6 +36,7 @@ function RujukanMasukContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const fetchReferrals = useCallback(async () => {
@@ -78,7 +79,7 @@ function RujukanMasukContent() {
             priority,
             status,
             remaining_time: remainingTimeStr,
-            date: item.slot?.slot_date || "-",
+            date: item.slot?.slot_date ? new Date(item.slot.slot_date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-",
             time: item.slot ? `${item.slot.slot_start_time.slice(0,5)} - ${item.slot.slot_end_time.slice(0,5)}` : "-",
             referrer_name: item.counseling?.counselor?.name || "Guru BK",
             counselor_notes: item.counseling?.notes || "-",
@@ -112,12 +113,12 @@ function RujukanMasukContent() {
       setIsLoading(false);
       setIsFetchingMore(false);
     }
-  }, [page, statusFilter, priorityFilter, batasWaktuFilter, search]);
+  }, [page, statusFilter, priorityFilter, batasWaktuFilter, search, refreshKey]);
 
   useEffect(() => {
-    // Reset page to 1 when filters change
+    // Reset page to 1 when filters or refreshKey change
     setPage(1);
-  }, [statusFilter, priorityFilter, batasWaktuFilter, search]);
+  }, [statusFilter, priorityFilter, batasWaktuFilter, search, refreshKey]);
 
   useEffect(() => {
     // Adding a debounce for search and filter changes
@@ -212,7 +213,11 @@ function RujukanMasukContent() {
         {referrals.length > 0 ? (
           <>
             {referrals.map((referral) => (
-              <ReferralCard key={referral.id} referral={referral} />
+              <ReferralCard 
+                key={referral.id} 
+                referral={referral} 
+                onActionSuccess={() => setRefreshKey(prev => prev + 1)}
+              />
             ))}
             
             {/* Infinite Scroll Target */}

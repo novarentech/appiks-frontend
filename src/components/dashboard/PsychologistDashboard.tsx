@@ -5,13 +5,13 @@ import PsychologistPanel from "./panels/PsychologistPanel";
 import ReferralAlert from "./ReferralAlert";
 import ReferralCard from "./ReferralCard";
 import { useEffect, useState } from "react";
-import { mockPsychologistStats } from "@/lib/mockPsychologistData";
 import { Referral } from "@/types/api";
 import { getPendingReferrals, getReferralOverview } from "@/lib/api";
 
 export function PsychologistDashboard() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [alertCount, setAlertCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -82,7 +82,7 @@ export function PsychologistDashboard() {
 
     fetchDashboardData();
     fetchOverview();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="space-y-6">
@@ -106,7 +106,11 @@ export function PsychologistDashboard() {
         <div className="p-6 space-y-4">
           {referrals.length > 0 ? (
             referrals.map((referral) => (
-              <ReferralCard key={referral.id} referral={referral} />
+              <ReferralCard 
+                key={referral.id} 
+                referral={referral} 
+                onActionSuccess={() => setRefreshKey(prev => prev + 1)}
+              />
             ))
           ) : (
             <div className="text-center py-8 text-gray-500">
