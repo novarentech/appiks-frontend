@@ -122,11 +122,6 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       url: "/dashboard/kelola-jadwal",
       icon: Calendar,
     },
-    {
-      title: "Data Siswa",
-      url: "/dashboard/student-data",
-      icon: Users,
-    },
   ],
   headteacher: [
     {
@@ -221,7 +216,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               const Icon = item.icon;
               const active = isActive(item.url);
               const hasActiveSubItem = item.items?.some((subItem) =>
-                isSubActive(subItem.url)
+                isSubActive(subItem.url),
               );
 
               return (
@@ -232,7 +227,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       className={cn(
                         "font-medium",
                         (active || hasActiveSubItem) &&
-                          "bg-sidebar-accent text-sidebar-accent-foreground"
+                          "bg-sidebar-accent text-sidebar-accent-foreground",
                       )}
                     >
                       <Icon className="size-4" />
@@ -248,7 +243,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               href={subItem.url}
                               className={cn(
                                 isSubActive(subItem.url) &&
-                                  "bg-sidebar-accent text-sidebar-accent-foreground"
+                                  "bg-sidebar-accent text-sidebar-accent-foreground",
                               )}
                             >
                               {subItem.title}
