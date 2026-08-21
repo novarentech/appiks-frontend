@@ -42,6 +42,7 @@ export function PsychologistDashboard() {
 
             return {
               id: item.id.toString(),
+              counseling_id: item.counseling_id?.toString() || item.counseling?.id?.toString(),
               student_name: item.student?.name || "Tanpa Nama",
               priority,
               status,

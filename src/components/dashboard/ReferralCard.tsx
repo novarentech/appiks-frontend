@@ -329,7 +329,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
 
               {referral.status === "Terkonfirmasi" && (
                 <>
-                  <Link href={`/dashboard/rujukan-masuk/${referral.id}`}>
+                  <Link href={`/dashboard/rujukan-masuk/${referral.counseling_id}`}>
                     <Button className="bg-green-600 hover:bg-green-700 text-white min-w-[120px]">
                       Buka Laporan AI
                     </Button>
@@ -344,7 +344,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
               )}
 
               {referral.status === "Selesai" && (
-                <Link href={`/dashboard/rujukan-masuk/${referral.id}`}>
+                <Link href={`/dashboard/rujukan-masuk/${referral.counseling_id}`}>
                   <Button
                     variant="outline"
                     className="border-gray-300 text-gray-700 min-w-[120px]"
@@ -357,7 +357,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
 
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
               <Link 
-                href={`/dashboard/rujukan-masuk/${referral.id}`}
+                href={`/dashboard/rujukan-masuk/${referral.counseling_id}`}
                 className="text-blue-600 font-semibold text-sm hover:underline"
               >
                 Lihat Detail

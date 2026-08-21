@@ -665,6 +665,7 @@ export interface DashboardPsychologistResponse {
 
 export interface Referral {
   id: string;
+  counseling_id?: string;
   student_name: string;
   priority: "Kritis" | "Prioritas" | string;
   status: "Menunggu Konfirmasi" | "Terkonfirmasi" | "Ditolak" | "Selesai" | "Kadaluarsa" | string;
