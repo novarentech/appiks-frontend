@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PsychologistSchedulePanel } from "@/components/dashboard/panels/PsychologistSchedulePanel";
+import PsychologistPanel from "@/components/dashboard/panels/PsychologistPanel";
 import { WeeklyCalendar } from "@/components/dashboard/calendar/WeeklyCalendar";
 import { AddScheduleDialog } from "@/components/dashboard/calendar/AddScheduleDialog";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
@@ -34,7 +34,7 @@ function KelolaJadwalContent() {
       />
 
       {/* Panel Statistik Khusus Psikolog */}
-      <PsychologistSchedulePanel />
+      <PsychologistPanel />
       
       {/* Table Kalender Mingguan */}
       <WeeklyCalendar />
