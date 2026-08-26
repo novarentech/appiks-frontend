@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { Referral, BackendReferralSummaryData } from "@/types/api";
 import { decideReferral, getReferralSummary, submitReferralFeedback } from "@/lib/api";
-import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown } from "lucide-react";
+import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -417,6 +417,52 @@ function RujukanMasukDetailContent() {
                 {summary?.summary_text || referral.ai_summary || "Belum ada ringkasan AI untuk kasus ini."}
               </div>
             )}
+          </div>
+
+          {/* Persetujuan Privasi Siswa */}
+          <div className="border border-gray-200 rounded-xl p-5 mb-6 bg-white">
+            <h4 className="font-semibold text-gray-900 text-base mb-1">Persetujuan Privasi Siswa</h4>
+            <p className="text-sm text-gray-500 mb-5">
+              Data berikut dibagikan atas persetujuan siswa untuk mendukung evaluasi klinis.
+            </p>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                <div className="mt-0.5 text-gray-500">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
+                  <p className="text-sm text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                <div className="mt-0.5 text-gray-500">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
+                  <p className="text-sm text-gray-500 mt-0.5">Teks curhat yang terdeteksi memerlukan perhatian khusus (disamarkan)</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                <div className="mt-0.5 text-gray-500">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
+                  <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <p className="text-sm text-gray-500">
+                Tidak ada data yang dibagikan
+              </p>
+            </div>
           </div>
 
           {/* Tambah Catatan Klinis */}
