@@ -1642,6 +1642,25 @@ export async function decideReferral(
   return response;
 }
 
+export interface RescheduleReferralRequest {
+  slot_id: number;
+  reason: string;
+}
+
+/**
+ * Reschedule a referral
+ */
+export async function rescheduleReferral(
+  id: string,
+  data: RescheduleReferralRequest,
+): Promise<any> {
+  const response = await authPatch(
+    `/psychologist/referrals/${id}/reschedule`,
+    data,
+  );
+  return response;
+}
+
 /**
  * Get psychologist schedule slots (with optional start and end date query)
  */
