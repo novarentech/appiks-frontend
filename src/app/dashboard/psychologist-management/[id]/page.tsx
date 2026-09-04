@@ -46,7 +46,6 @@ function EditPsychologistContent() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [originalUsername, setOriginalUsername] = useState("");
 
   useEffect(() => {
     const fetchPsychologist = async () => {
@@ -68,7 +67,6 @@ function EditPsychologistContent() {
             const specs = psychologist.psychologist_profile?.specialization;
             // Since it is now single string, just take the first part if it's comma separated from old data
             setSelectedSpecialization(specs ? specs.split(",")[0].trim() : "");
-            setOriginalUsername(psychologist.username);
           } else {
             toast.error("Psikolog tidak ditemukan");
             router.push("/dashboard/psychologist-management");
@@ -100,7 +98,7 @@ function EditPsychologistContent() {
 
     try {
       setIsSaving(true);
-      const res = await updatePsychologist(originalUsername, {
+      const res = await updatePsychologist(psychologistId, {
         name,
         email,
         str_number: strNumber,
@@ -114,8 +112,6 @@ function EditPsychologistContent() {
       if (res.success) {
         toast.success(res.message || "Psikolog berhasil diperbarui");
         setIsEditing(false);
-        // Refresh original username in case email/username changed
-        setOriginalUsername(email);
         setPassword("");
       } else {
         toast.error(res.message || "Gagal memperbarui psikolog");

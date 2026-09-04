@@ -940,17 +940,17 @@ export async function createPsychologist(
 }
 
 export async function updatePsychologist(
-  identifier: string,
+  id: number | string,
   data: UpdatePsychologistRequest
 ): Promise<{ success: boolean; message: string }> {
-  const response = await authPut(`/admin/psychologists/${identifier}`, data);
+  const response = await authPut(`/admin/psychologists/${id}`, data);
   return response;
 }
 
 export async function deletePsychologist(
-  identifier: string
+  id: number | string
 ): Promise<{ success: boolean; message: string }> {
-  const response = await authDelete(`/admin/psychologists/${identifier}`);
+  const response = await authDelete(`/admin/psychologists/${id}`);
   return response;
 }
 

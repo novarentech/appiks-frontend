@@ -89,10 +89,10 @@ function PsychologistListContent() {
   }, [data, searchTerm, institutionFilter]);
 
   const handleDeleteConfirm = async () => {
-    if (!deleteDialog.item?.username) return;
+    if (!deleteDialog.item?.id) return;
     try {
       setDeleteLoading(true);
-      const res = await deletePsychologist(deleteDialog.item.username);
+      const res = await deletePsychologist(deleteDialog.item.id);
       if (res.success) {
         toast.success(res.message || "Psikolog berhasil dihapus");
         setDeleteDialog({ open: false });
