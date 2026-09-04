@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, Pencil } from "lucide-react";
-import { specializationOptions } from "@/data/mockPsychologists";
+import { specializationOptions } from "@/data/constants";
 import { getPsychologists, updatePsychologist } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
