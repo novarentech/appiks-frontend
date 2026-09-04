@@ -134,6 +134,11 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       url: "/dashboard/school-data",
       icon: UserCog,
     },
+    {
+      title: "Monitoring Penanganan",
+      url: "/dashboard/monitoring-penanganan",
+      icon: ScanEye, // using ScanEye as requested or Activity
+    },
   ],
   super: [
     {

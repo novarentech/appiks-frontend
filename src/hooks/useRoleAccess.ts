@@ -86,6 +86,11 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
     requireVerification: true,
     redirectTo: "/dashboard",
   },
+  "monitoring-penanganan": {
+    allowedRoles: ["headteacher"],
+    requireVerification: true,
+    redirectTo: "/dashboard",
+  },
 
   "counseling-schedule": {
     allowedRoles: ["counselor"],
