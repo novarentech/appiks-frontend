@@ -57,7 +57,9 @@ function PsychologistListContent() {
   const fetchPsychologists = async () => {
     try {
       setLoading(true);
-      const res = await getPsychologists();
+      // Mengirimkan parameter page dan limit ke API
+      // Untuk saat ini diatur ke limit yang cukup besar agar client-side pagination DataTable tetap berjalan
+      const res = await getPsychologists(1, 100);
       if (res.success && res.data) {
         setData(res.data);
       }

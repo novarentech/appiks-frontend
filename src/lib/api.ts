@@ -927,8 +927,13 @@ export async function cancelLeave(
 // Psychologist API
 // ==========================================
 
-export async function getPsychologists(): Promise<PsychologistListResponse> {
-  const response = await authGet("/admin/psychologists");
+export async function getPsychologists(page?: number, limit?: number): Promise<PsychologistListResponse> {
+  const params = new URLSearchParams();
+  if (page !== undefined) params.append("page", page.toString());
+  if (limit !== undefined) params.append("limit", limit.toString());
+  
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+  const response = await authGet(`/admin/psychologists${queryString}`);
   return response;
 }
 
