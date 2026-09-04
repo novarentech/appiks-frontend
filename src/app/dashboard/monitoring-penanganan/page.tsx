@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { mockMonitoringStats, mockMonitoringCases } from "@/data/mockMonitoring";
 import { MonitoringCaseCard } from "@/components/dashboard/MonitoringCaseCard";
+import DashboardPanel from "@/components/dashboard/panels/DashboardPanel";
 
 export default function MonitoringPenangananPage() {
   return (
@@ -38,20 +39,33 @@ function MonitoringPenangananContent() {
     year: "numeric",
   });
 
-  const getStatIcon = (type: string) => {
-    switch (type) {
+  const statsForPanel = mockMonitoringStats.map((stat) => {
+    let icon;
+    switch (stat.iconType) {
       case "aktif":
-        return <Users className="w-5 h-5" />;
+        icon = Users;
+        break;
       case "selesai":
-        return <CheckCircle className="w-5 h-5" />;
+        icon = CheckCircle;
+        break;
       case "rujukan":
-        return <Activity className="w-5 h-5" />;
+        icon = Activity;
+        break;
       case "sla":
-        return <User className="w-5 h-5" />;
+        icon = User;
+        break;
       default:
-        return <Users className="w-5 h-5" />;
+        icon = Users;
     }
-  };
+
+    return {
+      icon,
+      label: stat.title,
+      value: stat.value,
+      bgColor: "bg-indigo-200",
+      textColor: "text-indigo-500",
+    };
+  });
 
   const filteredCases = mockMonitoringCases.filter((item) => {
     const matchesSearch = item.studentName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -77,24 +91,7 @@ function MonitoringPenangananContent() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-        {mockMonitoringStats.map((stat, index) => (
-          <div 
-            key={index} 
-            className={`flex items-center gap-4 ${index !== mockMonitoringStats.length - 1 ? 'md:border-r border-gray-100' : ''}`}
-          >
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-              {getStatIcon(stat.iconType)}
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">
-                {stat.title}
-              </p>
-              <h3 className="text-2xl font-bold text-indigo-600">{stat.value}</h3>
-            </div>
-          </div>
-        ))}
-      </div>
+      <DashboardPanel items={statsForPanel} />
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
