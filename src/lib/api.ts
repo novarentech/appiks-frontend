@@ -89,6 +89,9 @@ import {
   RoomResponse,
   RoomStudentCountResponse,
   RoomByLevelResponse,
+  PsychologistListResponse,
+  CreatePsychologistRequest,
+  UpdatePsychologistRequest,
 } from "@/types/api";
 import { API_BASE_URL } from "@/lib/config";
 import { Bell, CheckCircle } from "lucide-react";
@@ -912,6 +915,45 @@ export async function deleteRoom(
   const response = await authDelete(`/room/${roomId}`);
   return response;
 }
+
+export async function cancelLeave(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  const response = await authPatch(`/leave/${id}/cancel`, {});
+  return response;
+}
+
+// ==========================================
+// Psychologist API
+// ==========================================
+
+export async function getPsychologists(): Promise<PsychologistListResponse> {
+  const response = await authGet("/admin/psychologists");
+  return response;
+}
+
+export async function createPsychologist(
+  data: CreatePsychologistRequest
+): Promise<{ success: boolean; message: string }> {
+  const response = await authPost("/admin/psychologists", data);
+  return response;
+}
+
+export async function updatePsychologist(
+  identifier: string,
+  data: UpdatePsychologistRequest
+): Promise<{ success: boolean; message: string }> {
+  const response = await authPut(`/admin/psychologists/${identifier}`, data);
+  return response;
+}
+
+export async function deletePsychologist(
+  identifier: string
+): Promise<{ success: boolean; message: string }> {
+  const response = await authDelete(`/admin/psychologists/${identifier}`);
+  return response;
+}
+
 
 /**
  * Delete user by username

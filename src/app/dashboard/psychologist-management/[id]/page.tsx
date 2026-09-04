@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { Eye, EyeOff, Building2, Pencil } from "lucide-react";
-import { mockPsychologists, specializationOptions } from "@/data/mockPsychologists";
+import { Eye, EyeOff, Loader2, Pencil } from "lucide-react";
+import { specializationOptions } from "@/data/mockPsychologists";
+import { getPsychologists, updatePsychologist } from "@/lib/api";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,37 +41,100 @@ function EditPsychologistContent() {
   const [strNumber, setStrNumber] = useState("");
   const [institution, setInstitution] = useState("");
   const [phone, setPhone] = useState("");
-  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [selectedSpecialization, setSelectedSpecialization] = useState<string>("");
   
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [originalUsername, setOriginalUsername] = useState("");
 
   useEffect(() => {
-    // Simulate fetching data
-    if (psychologistId) {
-      const psychologist = mockPsychologists.find((p) => p.id === psychologistId);
-      if (psychologist) {
-        setEmail(psychologist.email);
-        setName(psychologist.name);
-        setStrNumber(psychologist.strNumber);
-        setInstitution(psychologist.institution);
-        setPhone(psychologist.phoneNumber);
-        setSelectedSpecializations(psychologist.specializations || []);
-        // Password usually isn't fetched, keeping it blank for edit
+    const fetchPsychologist = async () => {
+      try {
+        setLoading(true);
+        const res = await getPsychologists();
+        if (res.success && res.data) {
+          const psychologist = res.data.find(
+            (p) => p.id.toString() === psychologistId
+          );
+          
+          if (psychologist) {
+            setEmail(psychologist.username); // email using username field based on schema
+            setName(psychologist.name);
+            setStrNumber(psychologist.psychologist_profile?.str_number || "");
+            setInstitution(psychologist.psychologist_profile?.institution_name || "");
+            setPhone(psychologist.phone);
+            
+            const specs = psychologist.psychologist_profile?.specialization;
+            // Since it is now single string, just take the first part if it's comma separated from old data
+            setSelectedSpecialization(specs ? specs.split(",")[0].trim() : "");
+            setOriginalUsername(psychologist.username);
+          } else {
+            toast.error("Psikolog tidak ditemukan");
+            router.push("/dashboard/psychologist-management");
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Gagal memuat data psikolog");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
+    };
+
+    if (psychologistId) {
+      fetchPsychologist();
     }
-  }, [psychologistId]);
+  }, [psychologistId, router]);
 
   const toggleSpecialization = (spec: string) => {
     if (!isEditing) return;
-    setSelectedSpecializations((prev) =>
-      prev.includes(spec) ? prev.filter((s) => s !== spec) : [...prev, spec]
-    );
+    setSelectedSpecialization((prev) => (prev === spec ? "" : spec));
+  };
+
+  const handleSave = async () => {
+    if (!email || !name || !strNumber || !institution || !phone) {
+      toast.error("Harap lengkapi semua field yang wajib");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const res = await updatePsychologist(originalUsername, {
+        name,
+        email,
+        str_number: strNumber,
+        specialization: selectedSpecialization,
+        institution_name: institution,
+        phone_number: phone,
+        is_active: true,
+        ...(password ? { password } : {}),
+      });
+
+      if (res.success) {
+        toast.success(res.message || "Psikolog berhasil diperbarui");
+        setIsEditing(false);
+        // Refresh original username in case email/username changed
+        setOriginalUsername(email);
+        setPassword("");
+      } else {
+        toast.error(res.message || "Gagal memperbarui psikolog");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan sistem saat menyimpan data");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (loading) {
-    return <div className="p-6">Memuat data...</div>;
+    return (
+      <div className="flex justify-center items-center py-8 h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#6C63FF]" />
+        <span className="ml-2 text-gray-600">Memuat data psikolog...</span>
+      </div>
+    );
   }
 
   return (
@@ -88,8 +153,8 @@ function EditPsychologistContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Kiri: Akun Kredensial */}
           <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            <div className="border-b pb-2">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Akun Kredensial
               </h2>
               <p className="text-sm text-gray-500 mt-1">
@@ -161,8 +226,8 @@ function EditPsychologistContent() {
 
           {/* Kanan: Informasi Profesional */}
           <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            <div className="border-b pb-2">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Informasi Profesional
               </h2>
               <p className="text-sm text-gray-500 mt-1">
@@ -208,7 +273,7 @@ function EditPsychologistContent() {
                 </Label>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {specializationOptions.map((spec) => {
-                    const isSelected = selectedSpecializations.includes(spec);
+                    const isSelected = selectedSpecialization === spec;
                     return (
                       <button
                         key={spec}
@@ -287,9 +352,22 @@ function EditPsychologistContent() {
               >
                 Batal
               </Button>
-              <Button className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[150px]">
-                <Pencil className="w-4 h-4 mr-2" />
-                Simpan Perubahan
+              <Button
+                className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[150px]"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Simpan Perubahan
+                  </>
+                )}
               </Button>
             </>
           )}

@@ -1,21 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UserPlus, Eye, Trash2, Search, Building2 } from "lucide-react";
-import { mockPsychologists } from "@/data/mockPsychologists";
-import { Psychologist } from "@/types/psychologist";
+import { getPsychologists, deletePsychologist } from "@/lib/api";
+import { PsychologistData } from "@/types/api";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -46,23 +48,67 @@ function PsychologistListContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [institutionFilter, setInstitutionFilter] = useState("all");
   const [pageSize, setPageSize] = useState(10);
+  
+  const [data, setData] = useState<PsychologistData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; item?: PsychologistData }>({ open: false });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const institutions = useMemo(() => {
-    return Array.from(new Set(mockPsychologists.map((p) => p.institution)));
+  const fetchPsychologists = async () => {
+    try {
+      setLoading(true);
+      const res = await getPsychologists();
+      if (res.success && res.data) {
+        setData(res.data);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal memuat data psikolog");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPsychologists();
   }, []);
 
+  const institutions = useMemo(() => {
+    return Array.from(new Set(data.map((p) => p.psychologist_profile?.institution_name).filter(Boolean)));
+  }, [data]);
+
   const filteredPsychologists = useMemo(() => {
-    return mockPsychologists.filter((p) => {
+    return data.filter((p) => {
       const matchesSearch = p.name
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesInstitution =
-        institutionFilter === "all" || p.institution === institutionFilter;
+        institutionFilter === "all" || p.psychologist_profile?.institution_name === institutionFilter;
       return matchesSearch && matchesInstitution;
     });
-  }, [searchTerm, institutionFilter]);
+  }, [data, searchTerm, institutionFilter]);
 
-  const columns: ColumnDef<Psychologist>[] = [
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.item?.username) return;
+    try {
+      setDeleteLoading(true);
+      const res = await deletePsychologist(deleteDialog.item.username);
+      if (res.success) {
+        toast.success(res.message || "Psikolog berhasil dihapus");
+        setDeleteDialog({ open: false });
+        fetchPsychologists();
+      } else {
+        toast.error(res.message || "Gagal menghapus psikolog");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat menghapus psikolog");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const columns: ColumnDef<PsychologistData>[] = [
     {
       accessorKey: "name",
       header: "Nama Psikolog",
@@ -71,17 +117,17 @@ function PsychologistListContent() {
     {
       accessorKey: "email",
       header: "Email",
-      cell: ({ row }) => <div>{row.original.email}</div>,
+      cell: ({ row }) => <div>{row.original.username}</div>,
     },
     {
       accessorKey: "strNumber",
       header: "STR",
-      cell: ({ row }) => <div>{row.original.strNumber}</div>,
+      cell: ({ row }) => <div>{row.original.psychologist_profile?.str_number}</div>,
     },
     {
       accessorKey: "institution",
       header: "Institusi",
-      cell: ({ row }) => <div>{row.original.institution}</div>,
+      cell: ({ row }) => <div>{row.original.psychologist_profile?.institution_name}</div>,
     },
     {
       id: "actions",
@@ -115,6 +161,7 @@ function PsychologistListContent() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => setDeleteDialog({ open: true, item })}
                     className="h-8 w-8 p-0 bg-red-100 text-red-700 hover:bg-red-200"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -200,15 +247,62 @@ function PsychologistListContent() {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={filteredPsychologists}
-        showColumnToggle={false}
-        showPagination={true}
-        pageSize={pageSize}
-        pageSizeOptions={[5, 10, 20, 50]}
-        showPageSizeSelector={false}
-      />
+      {loading ? (
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-[#6C63FF]" />
+          <span className="ml-2 text-gray-600">Memuat data psikolog...</span>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredPsychologists}
+          showColumnToggle={false}
+          showPagination={true}
+          pageSize={pageSize}
+          pageSizeOptions={[5, 10, 20, 50]}
+          showPageSizeSelector={false}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              <svg className="h-6 w-6 text-red-600 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Hapus Psikolog Mitra
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            Apakah Anda yakin ingin menghapus psikolog{" "}
+            <span className="font-semibold">{deleteDialog.item?.name}</span>?
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={deleteLoading}>
+                Batal
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              className="bg-red-500 hover:bg-red-600 text-white"
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                "Hapus"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

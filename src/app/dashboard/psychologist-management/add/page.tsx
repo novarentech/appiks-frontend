@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Building2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { specializationOptions } from "@/data/mockPsychologists";
+import { createPsychologist } from "@/lib/api";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,14 +31,51 @@ export default function AddPsychologistPage() {
 function AddPsychologistContent() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedSpecializations, setSelectedSpecializations] = useState<
-    string[]
-  >([]);
+  const [selectedSpecialization, setSelectedSpecialization] = useState<string>("");
+  
+  // Form fields
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [strNumber, setStrNumber] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [phone, setPhone] = useState("");
+  
+  const [loading, setLoading] = useState(false);
 
   const toggleSpecialization = (spec: string) => {
-    setSelectedSpecializations((prev) =>
-      prev.includes(spec) ? prev.filter((s) => s !== spec) : [...prev, spec]
-    );
+    setSelectedSpecialization((prev) => (prev === spec ? "" : spec));
+  };
+
+  const handleSubmit = async () => {
+    if (!email || !name || !strNumber || !institution || !phone) {
+      toast.error("Harap lengkapi semua field yang wajib");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await createPsychologist({
+        name,
+        email,
+        str_number: strNumber,
+        specialization: selectedSpecialization,
+        institution_name: institution,
+        phone_number: phone,
+      });
+
+      if (res.success) {
+        toast.success(res.message || "Psikolog berhasil ditambahkan");
+        router.push("/dashboard/psychologist-management");
+      } else {
+        toast.error(res.message || "Gagal menambahkan psikolog");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan sistem saat menyimpan data");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,8 +93,8 @@ function AddPsychologistContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Kiri: Akun Kredensial */}
           <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            <div className="border-b pb-2">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Akun Kredensial
               </h2>
               <p className="text-sm text-gray-500 mt-1">
@@ -72,6 +111,8 @@ function AddPsychologistContent() {
                   id="email"
                   type="email"
                   placeholder="Contoh: budi.santoso@klinik.id"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
@@ -84,6 +125,8 @@ function AddPsychologistContent() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Masukkan kata sandi"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                   <button
                     type="button"
@@ -117,8 +160,8 @@ function AddPsychologistContent() {
 
           {/* Kanan: Informasi Profesional */}
           <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            <div className="border-b pb-2">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Informasi Profesional
               </h2>
               <p className="text-sm text-gray-500 mt-1">
@@ -135,6 +178,8 @@ function AddPsychologistContent() {
                   id="name"
                   type="text"
                   placeholder="Contoh: Dr. Budi Santoso, M.Psi., Psikolog"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </div>
 
@@ -149,6 +194,8 @@ function AddPsychologistContent() {
                   id="strNumber"
                   type="text"
                   placeholder="Contoh: STR-PSI-00201"
+                  value={strNumber}
+                  onChange={(e) => setStrNumber(e.target.value)}
                 />
               </div>
 
@@ -158,7 +205,7 @@ function AddPsychologistContent() {
                 </Label>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {specializationOptions.map((spec) => {
-                    const isSelected = selectedSpecializations.includes(spec);
+                    const isSelected = selectedSpecialization === spec;
                     return (
                       <button
                         key={spec}
@@ -188,6 +235,8 @@ function AddPsychologistContent() {
                   id="institution"
                   type="text"
                   placeholder="Contoh: Puskesmas Gejayan"
+                  value={institution}
+                  onChange={(e) => setInstitution(e.target.value)}
                 />
               </div>
 
@@ -199,6 +248,8 @@ function AddPsychologistContent() {
                   id="phone"
                   type="text"
                   placeholder="Contoh: 0812345678910"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
             </div>
@@ -213,8 +264,19 @@ function AddPsychologistContent() {
           >
             Batal
           </Button>
-          <Button className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[100px]">
-            + Tambah
+          <Button
+            className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[100px]"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Menyimpan...
+              </>
+            ) : (
+              "+ Tambah"
+            )}
           </Button>
         </div>
       </div>

@@ -1437,3 +1437,56 @@ export interface BackendReferralSummaryResponse {
   message: string;
   data: BackendReferralSummaryData;
 }
+
+// Psychologist Management API types
+export interface PsychologistProfileData {
+  id: number;
+  user_id: number;
+  str_number: string;
+  specialization: string;
+  institution_name: string;
+  phone_number: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface PsychologistData {
+  id: number;
+  name: string;
+  phone: string;
+  username: string;
+  identifier: string;
+  verified: boolean;
+  role: string;
+  created_at: string;
+  deleted_at: string | null;
+  psychologist_profile: PsychologistProfileData;
+}
+
+export interface PsychologistListResponse {
+  success: boolean;
+  message: string;
+  data: PsychologistData[];
+}
+
+export interface CreatePsychologistRequest {
+  name: string;
+  email: string;
+  str_number: string;
+  specialization: string;
+  institution_name: string;
+  phone_number: string;
+}
+
+export interface UpdatePsychologistRequest {
+  name: string;
+  email: string;
+  str_number: string;
+  specialization: string;
+  institution_name: string;
+  phone_number: string;
+  password?: string;
+  is_active: boolean;
+}
