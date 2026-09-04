@@ -152,6 +152,11 @@ const roleBasedNavigation: Record<string, NavigationItem[]> = {
       icon: ShieldUserIcon,
     },
     {
+      title: "Kelola Psikolog",
+      url: "/dashboard/psychologist-management",
+      icon: UserCog,
+    },
+    {
       title: "Monitor Sekolah",
       url: "/dashboard/school-monitor",
       icon: ScanEye,
