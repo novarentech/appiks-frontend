@@ -42,6 +42,7 @@ function EditPsychologistContent() {
   const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
   
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     // Simulate fetching data
@@ -61,6 +62,7 @@ function EditPsychologistContent() {
   }, [psychologistId]);
 
   const toggleSpecialization = (spec: string) => {
+    if (!isEditing) return;
     setSelectedSpecializations((prev) =>
       prev.includes(spec) ? prev.filter((s) => s !== spec) : [...prev, spec]
     );
@@ -72,34 +74,7 @@ function EditPsychologistContent() {
 
   return (
     <div className="space-y-6 p-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/dashboard">
-                <Building2 className="w-4 h-4" />
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/dashboard/psychologist-management">
-                Kelola Psikolog
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Detail Psikolog</BreadcrumbPage>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Edit Psikolog</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
+    
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
           Edit Psikolog Mitra
@@ -133,6 +108,7 @@ function EditPsychologistContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Contoh: budi.santoso@klinik.id"
+                  disabled={!isEditing}
                 />
               </div>
 
@@ -147,11 +123,13 @@ function EditPsychologistContent() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Masukkan kata sandi baru"
+                    disabled={!isEditing}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                    disabled={!isEditing}
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -166,11 +144,14 @@ function EditPsychologistContent() {
                 <input
                   type="checkbox"
                   id="sendEmail"
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 disabled:opacity-50"
+                  disabled={!isEditing}
                 />
                 <label
                   htmlFor="sendEmail"
-                  className="text-sm font-medium leading-none text-gray-600 cursor-pointer"
+                  className={`text-sm font-medium leading-none text-gray-600 ${
+                    !isEditing ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}
                 >
                   Kirim kredensial login ke email psikolog
                 </label>
@@ -200,6 +181,7 @@ function EditPsychologistContent() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Contoh: Dr. Budi Santoso, M.Psi., Psikolog"
+                  disabled={!isEditing}
                 />
               </div>
 
@@ -216,6 +198,7 @@ function EditPsychologistContent() {
                   value={strNumber}
                   onChange={(e) => setStrNumber(e.target.value)}
                   placeholder="Contoh: STR-PSI-00201"
+                  disabled={!isEditing}
                 />
               </div>
 
@@ -231,11 +214,16 @@ function EditPsychologistContent() {
                         key={spec}
                         type="button"
                         onClick={() => toggleSpecialization(spec)}
+                        disabled={!isEditing}
                         className={`px-3 py-1 text-sm rounded-full transition-colors border ${
-                          isSelected
+                          !isEditing && isSelected
+                            ? "bg-white border-gray-300 text-gray-600 opacity-80"
+                            : !isEditing && !isSelected
+                            ? "bg-gray-50 border-gray-200 text-gray-400 opacity-60"
+                            : isSelected
                             ? "bg-white border-indigo-500 text-indigo-600"
                             : "bg-indigo-50 border-indigo-50 text-indigo-400 hover:bg-indigo-100"
-                        }`}
+                        } ${!isEditing ? "cursor-not-allowed" : ""}`}
                       >
                         {spec}
                       </button>
@@ -257,6 +245,7 @@ function EditPsychologistContent() {
                   value={institution}
                   onChange={(e) => setInstitution(e.target.value)}
                   placeholder="Contoh: Puskesmas Gejayan"
+                  disabled={!isEditing}
                 />
               </div>
 
@@ -270,6 +259,7 @@ function EditPsychologistContent() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Contoh: 0812345678910"
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -277,17 +267,32 @@ function EditPsychologistContent() {
         </div>
 
         <div className="mt-8 flex justify-end gap-3 pt-6 border-t">
-          <Button
-            variant="outline"
-            className="text-gray-700"
-            onClick={() => router.push("/dashboard/psychologist-management")}
-          >
-            Batal
-          </Button>
-          <Button className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[150px]">
-            <Pencil className="w-4 h-4 mr-2" />
-            Simpan Perubahan
-          </Button>
+          {!isEditing ? (
+            <Button
+              className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[150px]"
+              onClick={() => setIsEditing(true)}
+            >
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Data
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                className="text-gray-700"
+                onClick={() => {
+                  setIsEditing(false);
+                  // Optional: Fetch data again to reset, or just keep it simple
+                }}
+              >
+                Batal
+              </Button>
+              <Button className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[150px]">
+                <Pencil className="w-4 h-4 mr-2" />
+                Simpan Perubahan
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
