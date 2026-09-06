@@ -12,6 +12,7 @@ import {
 } from "@/types/notifications";
 import { ChangesSummary } from "./ChangesSummary";
 import { Button } from "@/components/ui/button";
+import { ManageConsentDialog } from "./ManageConsentDialog";
 
 interface NotificationContentProps {
   notification: Notification;
@@ -142,6 +143,7 @@ export function NotificationContent({
 
   if (notification.type === "rujukan") {
     const referralNotification = notification as ReferralNotification;
+    const [isConsentOpen, setIsConsentOpen] = useState(false);
 
     return (
       <div className={`space-y-4 ${isSm ? "space-y-3" : "space-y-4"}`}>
@@ -160,15 +162,22 @@ export function NotificationContent({
         </div>
 
         {referralNotification.status === "menunggu" && (
-          <Button
-            className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/rujukan/${referralNotification.id}/consent`);
-            }}
-          >
-            Review Persetujuan
-          </Button>
+          <>
+            <Button
+              className="w-full bg-primary hover:bg-primary/80 text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsConsentOpen(true);
+              }}
+            >
+              Kelola Persetujuan
+            </Button>
+            <ManageConsentDialog
+              isOpen={isConsentOpen}
+              onOpenChange={setIsConsentOpen}
+              counselingId={referralNotification.id}
+            />
+          </>
         )}
       </div>
     );
