@@ -519,6 +519,14 @@ export async function getUsersByType(type: string): Promise<UserListResponse> {
 }
 
 /**
+ * Get user details by ID or username
+ */
+export async function getUserDetail(identifier: string | number) {
+  const response = await authGet(`/dashboard/users/${identifier}`);
+  return response;
+}
+
+/**
  * Create a new counseling schedule report
  */
 export async function createReport(

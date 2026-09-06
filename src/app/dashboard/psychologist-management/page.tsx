@@ -146,7 +146,7 @@ function PsychologistListContent() {
                     size="sm"
                     onClick={() =>
                       router.push(
-                        `/dashboard/psychologist-management/${item.id}`
+                        `/dashboard/psychologist-management/${item.username}`
                       )
                     }
                     className="h-8 w-8 p-0 bg-cyan-100 text-cyan-700 hover:bg-cyan-200"

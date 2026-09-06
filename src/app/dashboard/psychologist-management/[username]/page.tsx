@@ -5,19 +5,11 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, Pencil } from "lucide-react";
 import { specializationOptions } from "@/data/constants";
-import { getPsychologists, updatePsychologist } from "@/lib/api";
+import { getUserDetail, updatePsychologist } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 
 export default function EditPsychologistPage() {
@@ -31,7 +23,7 @@ export default function EditPsychologistPage() {
 function EditPsychologistContent() {
   const router = useRouter();
   const params = useParams();
-  const psychologistId = params.id as string;
+  const psychologistId = params.username as string;
 
   const [showPassword, setShowPassword] = useState(false);
   
@@ -42,6 +34,7 @@ function EditPsychologistContent() {
   const [institution, setInstitution] = useState("");
   const [phone, setPhone] = useState("");
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("");
+  const [actualId, setActualId] = useState<string>("");
   
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -51,26 +44,23 @@ function EditPsychologistContent() {
     const fetchPsychologist = async () => {
       try {
         setLoading(true);
-        const res = await getPsychologists();
-        if (res.success && res.data) {
-          const psychologist = res.data.find(
-            (p) => p.id.toString() === psychologistId
-          );
+        const res = await getUserDetail(psychologistId);
+        if ((res.status === "success" || res.success) && res.data) {
+          const psychologist = res.data;
           
-          if (psychologist) {
-            setEmail(psychologist.username); // email using username field based on schema
-            setName(psychologist.name);
-            setStrNumber(psychologist.psychologist_profile?.str_number || "");
-            setInstitution(psychologist.psychologist_profile?.institution_name || "");
-            setPhone(psychologist.phone);
-            
-            const specs = psychologist.psychologist_profile?.specialization;
-            // Since it is now single string, just take the first part if it's comma separated from old data
-            setSelectedSpecialization(specs ? specs.split(",")[0].trim() : "");
-          } else {
-            toast.error("Psikolog tidak ditemukan");
-            router.push("/dashboard/psychologist-management");
-          }
+          setEmail(psychologist.username); // email using username field based on schema
+          setName(psychologist.name);
+          setStrNumber(psychologist.psychologist_profile?.str_number || "");
+          setInstitution(psychologist.psychologist_profile?.institution_name || "");
+          setPhone(psychologist.phone);
+          setActualId(psychologist.id.toString());
+          
+          const specs = psychologist.psychologist_profile?.specialization;
+          // Since it is now single string, just take the first part if it's comma separated from old data
+          setSelectedSpecialization(specs ? specs.split(",")[0].trim() : "");
+        } else {
+          toast.error("Psikolog tidak ditemukan");
+          router.push("/dashboard/psychologist-management");
         }
       } catch (error) {
         console.error(error);
@@ -98,7 +88,7 @@ function EditPsychologistContent() {
 
     try {
       setIsSaving(true);
-      const res = await updatePsychologist(psychologistId, {
+      const res = await updatePsychologist(actualId || psychologistId, {
         name,
         email,
         str_number: strNumber,
