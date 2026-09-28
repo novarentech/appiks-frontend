@@ -10,11 +10,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createSharing } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import ShareResultModal from "./ShareResultModal";
 
 export default function ShareThingCard() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resultZone, setResultZone] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,14 +34,14 @@ export default function ShareThingCard() {
         description: body.trim(),
       });
       
-      if (result.success) {
+      if (result.success && result.data) {
         toast.success("Curhatan berhasil dikirim");
         setTitle("");
         setBody("");
-        // Redirect to dashboard after successful submission
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 1500);
+        
+        // Cek zona dari NLP response
+        const zone = result.data.nlp?.response?.zone_status || "Green Zone";
+        setResultZone(zone);
       } else {
         toast.error(result.message || "Gagal mengirim curhatan");
       }
@@ -107,6 +109,13 @@ export default function ShareThingCard() {
           </div>
         </form>
       </CardContent>
+      {resultZone && (
+        <ShareResultModal 
+          isOpen={!!resultZone} 
+          zoneStatus={resultZone} 
+          onClose={() => setResultZone(null)} 
+        />
+      )}
     </Card>
   );
 }

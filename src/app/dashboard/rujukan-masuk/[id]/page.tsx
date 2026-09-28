@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { Referral, BackendReferralSummaryData } from "@/types/api";
-import { decideReferral, getReferralSummary, submitReferralFeedback } from "@/lib/api";
-import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown, Lock } from "lucide-react";
+import { decideReferral, getReferralSummary, submitReferralFeedback, getCounselingConsent } from "@/lib/api";
+import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown, Lock, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +42,7 @@ function RujukanMasukDetailContent() {
   
   const [referral, setReferral] = useState<Referral | null>(null);
   const [summary, setSummary] = useState<BackendReferralSummaryData | null>(null);
+  const [consentScopes, setConsentScopes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [clinicalNotesInput, setClinicalNotesInput] = useState("");
@@ -61,10 +62,18 @@ function RujukanMasukDetailContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch AI Summary
-        const summaryRes = await getReferralSummary(id);
+        // Fetch AI Summary and Consent Data concurrently
+        const [summaryRes, consentRes] = await Promise.all([
+          getReferralSummary(id),
+          getCounselingConsent(Number(id)).catch(() => null)
+        ]);
+
         if (summaryRes.success && summaryRes.data) {
           setSummary(summaryRes.data);
+        }
+        
+        if (consentRes?.success && consentRes?.data) {
+          setConsentScopes(consentRes.data.scopes || []);
         }
 
         // Populate referral data purely from summary API as requested
@@ -427,42 +436,89 @@ function RujukanMasukDetailContent() {
             </p>
 
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
-                <div className="mt-0.5 text-gray-500">
-                  <Lock className="w-5 h-5" />
+              {consentScopes.includes("mood_history") ? (
+                <div className="flex items-center justify-between p-4 border border-gray-200 bg-white rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-green-600">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
+                      <p className="text-sm text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
+                    </div>
+                  </div>
+                  <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
                 </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
-                  <p className="text-sm text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
+              ) : (
+                <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                  <div className="mt-0.5 text-gray-500">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
+                    <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
-                <div className="mt-0.5 text-gray-500">
-                  <Lock className="w-5 h-5" />
+              {consentScopes.includes("sharing_history") ? (
+                <div className="flex items-center justify-between p-4 border border-gray-200 bg-white rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-green-600">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
+                      <p className="text-sm text-gray-500 mt-0.5">Teks curhat yang terdeteksi memerlukan perhatian khusus (disamarkan)</p>
+                    </div>
+                  </div>
+                  <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
                 </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
-                  <p className="text-sm text-gray-500 mt-0.5">Teks curhat yang terdeteksi memerlukan perhatian khusus (disamarkan)</p>
+              ) : (
+                <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                  <div className="mt-0.5 text-gray-500">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
+                    <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
-                <div className="mt-0.5 text-gray-500">
-                  <Lock className="w-5 h-5" />
+              {consentScopes.includes("assesment_logs") ? (
+                <div className="flex items-center justify-between p-4 border border-gray-200 bg-white rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-green-600">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
+                      <p className="text-sm text-gray-500 mt-0.5">Catatan riwayat konsultasi siswa dengan Guru BK</p>
+                    </div>
+                  </div>
+                  <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
                 </div>
-                <div>
-                  <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
-                  <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+              ) : (
+                <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                  <div className="mt-0.5 text-gray-500">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
+                    <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-sm text-gray-500">
-                Tidak ada data yang dibagikan
-              </p>
-            </div>
+            {consentScopes.length === 0 && (
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <p className="text-sm text-gray-500">
+                  Tidak ada data yang dibagikan
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Tambah Catatan Klinis */}
