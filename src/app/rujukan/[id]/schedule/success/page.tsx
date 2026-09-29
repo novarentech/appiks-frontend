@@ -9,6 +9,7 @@ import { getCounselingList } from "@/lib/api";
 export default function ScheduleSuccessPage() {
   const router = useRouter();
   const params = useParams();
+  const id = Number(params.id);
   const [deadlineString, setDeadlineString] = useState<string>("24 jam");
   const [loading, setLoading] = useState(true);
 
