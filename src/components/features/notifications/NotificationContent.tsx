@@ -156,6 +156,17 @@ export function NotificationContent({
           <p className={`${textSize} text-gray-600 mb-3`}>
             {referralNotification.referralReason}
           </p>
+          {referralNotification.time && (
+            <>
+              <h6 className={`font-medium ${headerSize} text-gray-700 mt-4 mb-1`}>
+                Jadwal Konsultasi
+              </h6>
+              <div className={`${textSize} text-gray-600 space-y-1 mb-3`}>
+                <p>Waktu: {referralNotification.referralDate} {referralNotification.time}</p>
+                <p>Lokasi: {referralNotification.location}</p>
+              </div>
+            </>
+          )}
           <p className={`${isSm ? "text-[10px]" : "text-xs"} text-gray-400`}>
             Dibuat pada : {referralNotification.referralDate}
           </p>

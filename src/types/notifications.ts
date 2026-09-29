@@ -61,6 +61,7 @@ export interface ReferralNotification extends BaseNotification {
   counselor: string;
   referralReason: string;
   referralDate: string;
+  time?: string;
 }
 
 export type Notification = CounselingNotification | CurhatNotification | ReferralNotification;

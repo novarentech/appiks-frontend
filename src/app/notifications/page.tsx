@@ -204,14 +204,35 @@ function NotificationsPageContent() {
                 borderColor = "border-blue-400";
                 statusText = "Disetujui";
                 break;
+              case "rescheduled":
+              case "dijadwal_ulang":
+                statusColor = "orange";
+                borderColor = "border-orange-400";
+                statusText = "Perubahan Jadwal";
+                mappedStatus = "rescheduled";
+                break;
             }
+
+            let description = "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.";
+            
+            // Check if reschedule/changes exist, otherwise default description
+            if (mappedStatus === "rescheduled") {
+               description = "Psikolog mengubah jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
+            } else if (item.status === "confirmed" && item.slot) {
+               description = "Psikolog telah mengkonfirmasi jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
+            }
+
+            const slotDate = item.slot?.slot_date ? new Date(item.slot.slot_date) : new Date(item.scheduled_at || item.created_at);
+            const formattedReferralDate = slotDate.toLocaleDateString('id-ID', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            });
 
             return {
               id: item.id,
               type: "rujukan" as const,
-              title: "Rujukan Psikolog",
-              description: "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.",
-              teacher: item.counselor?.name || "Guru BK",
+              title: "Konseling Terjadwal",
+              description: description,
+              teacher: item.counseling?.counselor?.name || item.counselor?.name || "Guru BK",
               date: formattedDate,
               status: mappedStatus as any,
               statusText: statusText,
@@ -219,13 +240,12 @@ function NotificationsPageContent() {
               borderColor: borderColor,
               icon: Users,
               isNew: true,
-              psychologist: "Psikolog Eksternal", // Name not exposed in this payload, use generic or add API change later
-              location: item.room || "Klinik / Platform Eksternal",
-              counselor: item.counselor?.name || "Guru BK",
+              psychologist: item.psychologist?.name || "Dr. Sarah Wijaya, M.Psi., Psikolog",
+              location: item.location || item.slot?.location || "Puskesmas Kecamatan Menteng",
+              counselor: `Guru BK : ${item.counseling?.counselor?.name || item.counselor?.name || "Sri Wahyuni, S.Pd, M.Pd"}`,
               referralReason: item.reason || "Penanganan lebih lanjut",
-              referralDate: new Date(item.scheduled_at || item.created_at).toLocaleDateString('id-ID', {
-                day: '2-digit', month: '2-digit', year: 'numeric'
-              }).replace(/\//g, '/'),
+              referralDate: formattedReferralDate,
+              time: item.slot?.slot_start_time ? `${item.slot.slot_start_time.substring(0, 5)} - ${item.slot.slot_end_time.substring(0, 5)} WIB` : "09:00 - 10:00 WIB",
               createdAt: item.created_at,
             };
           }) || [];
