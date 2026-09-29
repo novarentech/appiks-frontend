@@ -57,8 +57,12 @@ function RujukanMasukContent() {
           const deadline = new Date(item.deadline_at);
           const now = new Date();
           const diffHours = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+          
           let priority = "Prioritas";
-          if (diffHours < 24) priority = "Kritis";
+          const sharingPriority = (item.counseling as any)?.sharing?.priority?.toLowerCase() || "";
+          if (["sedang", "berat", "tinggi", "kritis"].includes(sharingPriority)) {
+            priority = "Kritis";
+          }
 
           let status = "Menunggu Konfirmasi";
           if (item.status === "confirmed") status = "Terkonfirmasi";
@@ -91,13 +95,29 @@ function RujukanMasukContent() {
           };
         });
 
+        mappedReferrals.sort((a, b) => {
+          if (a.priority === "Kritis" && b.priority !== "Kritis") return -1;
+          if (b.priority === "Kritis" && a.priority !== "Kritis") return 1;
+          if (a.priority === "Prioritas" && b.priority !== "Prioritas") return -1;
+          if (b.priority === "Prioritas" && a.priority !== "Prioritas") return 1;
+          return 0;
+        });
+
         if (page === 1) {
           setReferrals(mappedReferrals);
         } else {
           setReferrals((prev) => {
             const newIds = mappedReferrals.map((r) => r.id);
             const filteredPrev = prev.filter((r) => !newIds.includes(r.id));
-            return [...filteredPrev, ...mappedReferrals];
+            const combined = [...filteredPrev, ...mappedReferrals];
+            combined.sort((a, b) => {
+              if (a.priority === "Kritis" && b.priority !== "Kritis") return -1;
+              if (b.priority === "Kritis" && a.priority !== "Kritis") return 1;
+              if (a.priority === "Prioritas" && b.priority !== "Prioritas") return -1;
+              if (b.priority === "Prioritas" && a.priority !== "Prioritas") return 1;
+              return 0;
+            });
+            return combined;
           });
         }
         

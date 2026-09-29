@@ -87,7 +87,8 @@ function RujukanMasukDetailContent() {
           else if (rawStatus === "rejected") statusVal = "Ditolak";
           else if (rawStatus !== "pending" && rawStatus !== "") statusVal = rawStatus; // Fallback to raw string if not matching known english keys
 
-          const priorityVal = (item.student?.priority || item.sharing?.priority) === "tinggi" ? "Kritis" : "Prioritas";
+          const rawPriority = (item.student?.priority || item.sharing?.priority || "") as string;
+          const priorityVal = ["sedang", "berat", "kritis", "tinggi"].includes(rawPriority.toLowerCase()) ? "Kritis" : "Prioritas";
           
           const mappedReferral: Referral = {
             id: id,

@@ -7,6 +7,9 @@ import {
   UserCheck,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
+  AlertOctagon,
+  Info,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -247,8 +250,11 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
           <div className="flex items-center gap-2">
             <Badge
               variant="secondary"
-              className={`font-normal border-0 ${getPriorityColor(referral.priority)}`}
+              className={`font-normal border-0 flex items-center gap-1 ${getPriorityColor(referral.priority)}`}
             >
+              {referral.priority === "Kritis" && <AlertOctagon className="w-3.5 h-3.5" />}
+              {referral.priority === "Prioritas" && <AlertTriangle className="w-3.5 h-3.5" />}
+              {referral.priority !== "Kritis" && referral.priority !== "Prioritas" && <Info className="w-3.5 h-3.5" />}
               {referral.priority}
             </Badge>
             <Badge
