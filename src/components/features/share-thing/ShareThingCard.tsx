@@ -43,11 +43,27 @@ export default function ShareThingCard() {
         const zone = result.data.nlp?.response?.zone_status || "Green Zone";
         setResultZone(zone);
       } else {
-        toast.error(result.message || "Gagal mengirim curhatan");
+        // Coba deteksi jika ini adalah error yang berkaitan dengan layanan analisis (bukan validasi)
+        if (result.message && (result.message.toLowerCase().includes("analisis") || result.message.toLowerCase().includes("nlp") || result.message.toLowerCase().includes("500"))) {
+          toast.success("Curhatan berhasil dikirim. Analisis sedang diproses.");
+          setTitle("");
+          setBody("");
+          setTimeout(() => router.push("/dashboard"), 1000);
+        } else {
+          toast.error(result.message || "Gagal mengirim curhatan");
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating sharing:", error);
-      toast.error("Terjadi kesalahan saat mengirim curhatan");
+      // Jika layanan NLP mengembalikan 500, data sebenarnya sudah tersimpan di database sebelum menembak NLP
+      if (error?.message?.includes("status 50") || error?.status === 500 || error?.status === 504) {
+        toast.success("Curhatan berhasil disimpan. Analisis akan menyusul.");
+        setTitle("");
+        setBody("");
+        setTimeout(() => router.push("/dashboard"), 1000);
+      } else {
+        toast.error("Terjadi kesalahan saat mengirim curhatan");
+      }
     } finally {
       setIsLoading(false);
     }

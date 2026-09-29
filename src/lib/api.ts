@@ -178,7 +178,12 @@ export async function authPost(endpoint: string, data: unknown) {
   });
 
   if (!response.ok) {
-    throw new Error(`POST ${endpoint} failed with status ${response.status}`);
+    try {
+      const errorJson = await response.json();
+      return errorJson;
+    } catch (e) {
+      throw new Error(`POST ${endpoint} failed with status ${response.status}`);
+    }
   }
 
   return response.json();
