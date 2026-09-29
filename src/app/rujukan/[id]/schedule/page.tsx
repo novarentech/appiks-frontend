@@ -23,6 +23,7 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
@@ -187,13 +188,15 @@ export default function SchedulePage() {
         </div>
 
         {/* Alert */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex gap-3 mb-8">
-          <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-          <p className="text-xs sm:text-sm text-yellow-800">
-            {earliestDate ? `Slot tersedia paling cepat tanggal ${new Date(earliestDate).toLocaleDateString("id-ID", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. ` : ""}
-            Sistem memerlukan waktu persiapan minimal 2 hari untuk memproses data Anda.
-          </p>
-        </div>
+        {earliestDate && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex gap-3 mb-8">
+            <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-yellow-800">
+              Slot tersedia paling cepat tanggal {new Date(earliestDate).toLocaleDateString("id-ID", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. 
+              Sistem memerlukan waktu persiapan minimal 2 hari untuk memproses data Anda.
+            </p>
+          </div>
+        )}
 
         {/* Date Selection */}
         <div className="mb-8">
@@ -227,44 +230,42 @@ export default function SchedulePage() {
         </div>
 
         {/* Time Selection */}
-        <div className="mb-8">
-          <h2 className="text-base font-bold text-gray-900 mb-4">Pilih Waktu</h2>
-          
-          {!selectedDate ? (
-            <div className="text-center p-6 border border-gray-200 rounded-xl bg-gray-50">
-              <p className="text-gray-500">Silakan pilih tanggal terlebih dahulu</p>
-            </div>
-          ) : slotsLoading ? (
-            <div className="flex justify-center items-center p-6">
-              <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
-            </div>
-          ) : availableSlots.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              {availableSlots.map((slot) => (
-                <div
-                  key={slot.slot_id || slot.id}
-                  onClick={() => slot.is_available && handleSlotSelect(slot)}
-                  className={`border rounded-xl p-4 text-center cursor-pointer transition-colors ${
-                    selectedSlot?.slot_id === slot.slot_id
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700 font-medium"
-                      : !slot.is_available
-                        ? "border-gray-200 bg-gray-50 text-gray-400 opacity-50 cursor-not-allowed"
-                        : "border-gray-200 hover:border-gray-300 bg-white text-gray-700"
-                  }`}
-                >
-                  <span className="text-sm">{slot.time_range || slot.time_formatted || slot.start_time || slot.time || `Slot ${slot.slot_id}`}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center p-6 border border-gray-200 rounded-xl bg-gray-50">
-              <p className="text-gray-500">Tidak ada slot tersedia pada tanggal ini.</p>
-            </div>
-          )}
-        </div>
+        {selectedDate && (
+          <div className="mb-8">
+            <h2 className="text-base font-bold text-gray-900 mb-4">Pilih Waktu</h2>
+            
+            {slotsLoading ? (
+              <div className="flex justify-center items-center p-6">
+                <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+              </div>
+            ) : availableSlots.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                {availableSlots.map((slot) => (
+                  <div
+                    key={slot.slot_id || slot.id}
+                    onClick={() => slot.is_available && handleSlotSelect(slot)}
+                    className={`border rounded-xl p-4 text-center cursor-pointer transition-colors ${
+                      selectedSlot?.slot_id === slot.slot_id
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-700 font-medium"
+                        : !slot.is_available
+                          ? "border-gray-200 bg-gray-50 text-gray-400 opacity-50 cursor-not-allowed"
+                          : "border-gray-200 hover:border-gray-300 bg-white text-gray-700"
+                    }`}
+                  >
+                    <span className="text-sm">{slot.time_range || slot.time_formatted || slot.start_time || slot.time || `Slot ${slot.slot_id}`}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center p-6 border border-gray-200 rounded-xl bg-gray-50">
+                <p className="text-gray-500">Tidak ada slot tersedia pada tanggal ini.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Button & Confirmation Modal */}
-        <Dialog>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button
               className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-6 rounded-xl disabled:bg-indigo-300 disabled:cursor-not-allowed"
@@ -306,24 +307,22 @@ export default function SchedulePage() {
               </div>
 
               <DialogFooter className="grid grid-cols-2 gap-3 sm:gap-2 ">
-                <DialogClose asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 py-6 rounded-xl font-medium"
-                  >
-                    Batal
-                  </Button>
-                </DialogClose>
-                <DialogClose asChild>
-                  <Button 
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-6 rounded-xl font-semibold"
-                    onClick={handleConfirm}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                    Ya, Konfirmasi
-                  </Button>
-                </DialogClose>
+                <Button
+                  variant="outline"
+                  className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50 py-6 rounded-xl font-medium"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Batal
+                </Button>
+                <Button 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-6 rounded-xl font-semibold"
+                  onClick={handleConfirm}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
+                  {isSubmitting ? "Memproses..." : "Ya, Konfirmasi"}
+                </Button>
               </DialogFooter>
             </div>
           </DialogContent>

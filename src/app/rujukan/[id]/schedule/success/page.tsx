@@ -1,13 +1,48 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, Check, Clock, Info } from "lucide-react";
+import { ChevronLeft, Check, Clock, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { getCounselingList } from "@/lib/api";
 
 export default function ScheduleSuccessPage() {
   const router = useRouter();
   const params = useParams();
-  const id = Number(params.id);
+  const [deadlineString, setDeadlineString] = useState<string>("24 jam");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReferral = async () => {
+      try {
+        const res = await getCounselingList("external");
+        if (res.success && res.data) {
+          const item = res.data.find((c: any) => c.id === id);
+          if (item && item.deadline_at) {
+            const date = new Date(item.deadline_at);
+            const formatted = date.toLocaleDateString('id-ID', {
+              day: 'numeric', month: 'long', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            }).replace('pukul', '').trim();
+            setDeadlineString(formatted + " WIB");
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReferral();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen container mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-10 sm:py-16 lg:py-20">
@@ -47,7 +82,7 @@ export default function ScheduleSuccessPage() {
                 </h4>
               </div>
               <p className="text-xs sm:text-sm text-[#92400E] leading-relaxed ml-7">
-                Psikolog memiliki waktu 24 jam untuk mengonfirmasi jadwal ini.
+                Psikolog memiliki waktu hingga batas tenggat waktu <strong>{deadlineString}</strong> untuk mengonfirmasi jadwal ini.
                 Anda akan menerima notifikasi melalui email dan aplikasi setelah
                 psikolog memberikan konfirmasi.
               </p>
@@ -76,8 +111,7 @@ export default function ScheduleSuccessPage() {
                 </li>
                 <li className="flex items-start gap-2 text-xs sm:text-sm text-blue-600">
                   <span className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0" />
-                  Jika tidak dikonfirmasi dalam 24 jam, slot akan tersedia
-                  kembali
+                  Jika tidak dikonfirmasi hingga batas waktu {deadlineString}, slot akan tersedia kembali
                 </li>
               </ul>
             </div>
