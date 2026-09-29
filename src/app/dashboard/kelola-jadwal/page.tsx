@@ -24,12 +24,13 @@ function KelolaJadwalContent() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleAddSubmit = async (data: { date: Date; startTime: string; endTime: string }) => {
+  const handleAddSubmit = async (data: { date: Date; startTime: string; endTime: string; repeat: boolean }) => {
     try {
       const response = await createPsychologistSlot({
         slot_date: format(data.date, "yyyy-MM-dd"),
         slot_start_time: data.startTime,
         slot_end_time: data.endTime,
+        repeat: data.repeat,
       });
       if (response.success) {
         toast.success("Slot jadwal berhasil ditambahkan");

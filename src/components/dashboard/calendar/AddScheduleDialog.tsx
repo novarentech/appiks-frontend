@@ -21,7 +21,7 @@ import {
 interface AddScheduleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAdd: (data: { date: Date, startTime: string, endTime: string }) => Promise<void>
+  onAdd: (data: { date: Date, startTime: string, endTime: string, repeat: boolean }) => Promise<void>
   showRepeatOption?: boolean
   initialDate?: Date
   disabledDate?: boolean
@@ -29,11 +29,13 @@ interface AddScheduleDialogProps {
 
 import { Repeat } from "lucide-react"
 import { useEffect } from "react"
+import { toast } from "sonner"
 
 export function AddScheduleDialog({ open, onOpenChange, onAdd, showRepeatOption, initialDate, disabledDate }: AddScheduleDialogProps) {
   const [date, setDate] = useState<Date | undefined>(initialDate)
   const [startTime, setStartTime] = useState<string>("")
   const [endTime, setEndTime] = useState<string>("")
+  const [isRepeat, setIsRepeat] = useState<boolean>(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -45,12 +47,12 @@ export function AddScheduleDialog({ open, onOpenChange, onAdd, showRepeatOption,
   }, [open, initialDate])
 
   const handleSubmit = async () => {
-    if (!date) return alert("Pilih tanggal terlebih dahulu")
-    if (!startTime || !endTime) return alert("Pilih jam mulai dan selesai")
+    if (!date) return toast.error("Pilih tanggal terlebih dahulu")
+    if (!startTime || !endTime) return toast.error("Pilih jam mulai dan selesai")
     
     setIsSubmitting(true)
     try {
-      await onAdd({ date, startTime, endTime })
+      await onAdd({ date, startTime, endTime, repeat: isRepeat })
       onOpenChange(false)
     } finally {
       setIsSubmitting(false)
@@ -120,7 +122,8 @@ export function AddScheduleDialog({ open, onOpenChange, onAdd, showRepeatOption,
               type="checkbox" 
               id="repeat-weekly" 
               className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 accent-indigo-500 mt-0.5 flex-shrink-0 cursor-pointer"
-              defaultChecked
+              checked={isRepeat}
+              onChange={(e) => setIsRepeat(e.target.checked)}
             />
             <div className="space-y-1.5">
               <label htmlFor="repeat-weekly" className="text-sm font-semibold text-gray-800 flex items-center gap-1.5 cursor-pointer">

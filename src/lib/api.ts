@@ -1715,8 +1715,10 @@ export async function createPsychologistSlot(data: {
   slot_date: string;
   slot_start_time: string;
   slot_end_time: string;
+  repeat?: boolean;
 }): Promise<any> {
-  const response = await authPost("/psychologist/slots", data);
+  const isRepeat = data.repeat ? "True" : "False";
+  const response = await authPost(`/psychologist/slots?repeat=${isRepeat}`, data);
   return response;
 }
 

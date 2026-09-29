@@ -3,6 +3,7 @@
 import { ScheduleSlot } from "@/types/api"
 import { Badge } from "@/components/ui/badge"
 import { Trash2 } from "lucide-react"
+import { isBefore, startOfDay, parseISO } from "date-fns"
 
 interface SlotCardProps {
   slot: ScheduleSlot
@@ -23,7 +24,15 @@ export function SlotCard({ slot, onDeleteClick }: SlotCardProps) {
       bgColor = "bg-green-50"
       textColor = "text-green-800"
       badgeClass = "bg-green-100 text-green-700 hover:bg-green-200"
-      canDelete = true
+      
+      const today = startOfDay(new Date())
+      let slotDate = today
+      try {
+        slotDate = startOfDay(parseISO(slot.date))
+      } catch (e) {
+        // Fallback to today if parse fails
+      }
+      canDelete = !isBefore(slotDate, today)
       break
     case "Menunggu Konfirmasi":
       borderColor = "border-yellow-200"
