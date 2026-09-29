@@ -100,14 +100,14 @@ export function NotificationItem({
           </div>
 
           {/* Subtitle / Description before badges */}
-          {!isSm && !notification.description.includes("mengubah jadwal") && !notification.description.includes("telah mengkonfirmasi") && (
+          {!isSm && !notification.description.includes("mengubah jadwal") && !notification.description.includes("telah mengkonfirmasi") && !notification.description.includes("telah berakhir") && (
             <p className="text-gray-700 mb-3 font-medium text-sm sm:text-base">
               {notification.description}
             </p>
           )}
           
           {/* Default subtitle for rujukan if description is used for status text */}
-          {!isSm && notification.type === "rujukan" && (notification.description.includes("mengubah jadwal") || notification.description.includes("telah mengkonfirmasi")) && (
+          {!isSm && notification.type === "rujukan" && (notification.description.includes("mengubah jadwal") || notification.description.includes("telah mengkonfirmasi") || notification.description.includes("telah berakhir")) && (
             <p className="text-gray-500 mb-3 text-sm">
               Rujukan konsultasi dengan psikolog mitra
             </p>
@@ -118,9 +118,9 @@ export function NotificationItem({
             <NotificationBadge notification={notification} size={size} />
           </div>
           
-          {/* Important description (like reschedule/confirm) after badges */}
-          {!isSm && (notification.description.includes("mengubah jadwal") || notification.description.includes("telah mengkonfirmasi")) && (
-            <p className={`${notification.description.includes("mengubah jadwal") ? "text-red-500" : "text-green-600"} mb-3 text-sm`}>
+          {/* Important description (like reschedule/confirm/expired) after badges */}
+          {!isSm && (notification.description.includes("mengubah jadwal") || notification.description.includes("telah mengkonfirmasi") || notification.description.includes("telah berakhir")) && (
+            <p className={`${notification.description.includes("mengubah jadwal") || notification.description.includes("telah berakhir") ? "text-red-500" : "text-green-600"} mb-3 text-sm`}>
               {notification.description}
             </p>
           )}

@@ -211,12 +211,20 @@ function NotificationsPageContent() {
                 statusText = "Perubahan Jadwal";
                 mappedStatus = "rescheduled";
                 break;
+              case "expired":
+                statusColor = "red";
+                borderColor = "border-red-400";
+                statusText = "Kedaluwarsa";
+                mappedStatus = "expired";
+                break;
             }
 
             let description = "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.";
             
             // Check if reschedule/changes exist, otherwise default description
-            if (mappedStatus === "rescheduled") {
+            if (mappedStatus === "expired") {
+               description = "Batas waktu rujukan telah berakhir. Silakan ajukan ulang untuk memilih jadwal konsultasi yang baru. Klik Lihat Detail Untuk Pengajuan Jadwal";
+            } else if (mappedStatus === "rescheduled") {
                description = "Psikolog mengubah jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
             } else if (item.status === "confirmed" && item.slot) {
                description = "Psikolog telah mengkonfirmasi jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";

@@ -190,6 +190,18 @@ export function NotificationContent({
             />
           </>
         )}
+
+        {referralNotification.status === "expired" && (
+          <Button
+            className="w-full bg-[#E13A4B] hover:bg-[#C92F3E] text-white mt-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/rujukan/${referralNotification.id}/schedule`);
+            }}
+          >
+            Pilih Jadwal Baru
+          </Button>
+        )}
       </div>
     );
   }

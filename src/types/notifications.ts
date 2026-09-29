@@ -19,7 +19,8 @@ export type NotificationStatus =
   | "dijadwalkan"
   | "butuh_persetujuan"
   | "menunggu_konfirmasi"
-  | "terkonfirmasi";
+  | "terkonfirmasi"
+  | "expired";
 
 export interface BaseNotification {
   id: number;
