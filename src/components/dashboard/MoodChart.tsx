@@ -64,6 +64,7 @@ interface MoodChartProps {
   showDownloadButton?: boolean;
   onDownload?: () => void;
   isDownloading?: boolean;
+  hidePeriodSelector?: boolean;
 }
 
 export default function MoodChart({
@@ -77,6 +78,7 @@ export default function MoodChart({
   showDownloadButton = false,
   onDownload,
   isDownloading = false,
+  hidePeriodSelector = false,
 }: MoodChartProps) {
   // Transform mood data for chart
   const getCurrentData = () => {
@@ -130,15 +132,17 @@ export default function MoodChart({
           <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <Select value={selectedPeriod} onValueChange={onPeriodChange}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Pilih periode" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">7 hari terakhir</SelectItem>
-              <SelectItem value="30">30 hari terakhir</SelectItem>
-            </SelectContent>
-          </Select>
+          {!hidePeriodSelector && (
+            <Select value={selectedPeriod} onValueChange={onPeriodChange}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Pilih periode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">7 hari terakhir</SelectItem>
+                <SelectItem value="30">30 hari terakhir</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           {showDownloadButton && onDownload && (
             <Button onClick={onDownload} disabled={isDownloading}>
               <Download className="w-4 h-4 mr-2" /> 

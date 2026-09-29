@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { Referral, BackendReferralSummaryData } from "@/types/api";
 import { decideReferral, getReferralSummary, submitReferralFeedback, getCounselingConsent } from "@/lib/api";
@@ -447,7 +448,9 @@ function RujukanMasukDetailContent() {
                       <p className="text-sm text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
                     </div>
                   </div>
-                  <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                  <Link href={`/dashboard/rujukan-masuk/${id}/mood`}>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                  </Link>
                 </div>
               ) : (
                 <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
@@ -472,7 +475,9 @@ function RujukanMasukDetailContent() {
                       <p className="text-sm text-gray-500 mt-0.5">Teks curhat yang terdeteksi memerlukan perhatian khusus (disamarkan)</p>
                     </div>
                   </div>
-                  <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                  <Link href={`/dashboard/rujukan-masuk/${id}/sharing`}>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                  </Link>
                 </div>
               ) : (
                 <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
@@ -497,7 +502,9 @@ function RujukanMasukDetailContent() {
                       <p className="text-sm text-gray-500 mt-0.5">Catatan riwayat konsultasi siswa dengan Guru BK</p>
                     </div>
                   </div>
-                  <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                  <Link href={`/dashboard/rujukan-masuk/${id}/assessment`}>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                  </Link>
                 </div>
               ) : (
                 <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">

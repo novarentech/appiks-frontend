@@ -1670,6 +1670,30 @@ export async function rescheduleReferral(
 }
 
 /**
+ * Get psychologist mood recap by counseling ID
+ */
+export async function getPsychologistMoodRecap(counselingId: string): Promise<any> {
+  const response = await authGet(`/psychologist/recap/${counselingId}/monthly/mood`);
+  return response;
+}
+
+/**
+ * Get psychologist sharing recap by counseling ID
+ */
+export async function getPsychologistSharingRecap(counselingId: string): Promise<any> {
+  const response = await authGet(`/psychologist/recap/${counselingId}/monthly/sharing`);
+  return response;
+}
+
+/**
+ * Get psychologist counseling recap by counseling ID
+ */
+export async function getPsychologistCounselingRecap(counselingId: string): Promise<any> {
+  const response = await authGet(`/psychologist/recap/${counselingId}/monthly/counseling`);
+  return response;
+}
+
+/**
  * Get psychologist schedule slots (with optional start and end date query)
  */
 export async function getPsychologistSlots(
