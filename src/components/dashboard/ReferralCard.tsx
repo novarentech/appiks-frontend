@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { decideReferral, rescheduleReferral, getPsychologistSlots } from "@/lib/api";
+import { decideReferral, getReferralAvailableDates, getReferralAvailableSlots, bookReferralSchedule } from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -43,39 +43,60 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const [rescheduleReason, setRescheduleReason] = useState("");
-  const [selectedSlotId, setSelectedSlotId] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [availableDates, setAvailableDates] = useState<any[]>([]);
   const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [isLoadingDates, setIsLoadingDates] = useState(false);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<any>(null);
 
   useEffect(() => {
     if (isRescheduleOpen) {
-      const fetchSlots = async () => {
-        setIsLoadingSlots(true);
+      const fetchDates = async () => {
+        setIsLoadingDates(true);
         try {
-          const res = await getPsychologistSlots();
+          const res = await getReferralAvailableDates(Number(referral.counseling_id));
           if (res.success && res.data) {
-            setAvailableSlots(res.data.filter((s: any) => 
-              s.status?.toLowerCase() === 'tersedia' || s.status?.toLowerCase() === 'available'
-            ));
+            setAvailableDates(res.data.available_dates || []);
+            setSelectedDate("");
+            setSelectedSlot(null);
+            setAvailableSlots([]);
           }
         } catch (error) {
           console.error(error);
-          toast.error("Gagal mengambil daftar slot");
+          toast.error("Gagal mengambil daftar tanggal");
         } finally {
-          setIsLoadingSlots(false);
+          setIsLoadingDates(false);
         }
       };
-      fetchSlots();
+      fetchDates();
     }
-  }, [isRescheduleOpen]);
+  }, [isRescheduleOpen, referral.counseling_id]);
+
+  const handleDateSelect = async (dateRaw: string) => {
+    setSelectedDate(dateRaw);
+    setSelectedSlot(null);
+    setAvailableSlots([]);
+    
+    try {
+      setIsLoadingSlots(true);
+      const res = await getReferralAvailableSlots(Number(referral.counseling_id), dateRaw);
+      if (res.success && res.data) {
+        const slotsArray = res.data.time_slots || (Array.isArray(res.data) ? res.data : []);
+        setAvailableSlots(slotsArray);
+      }
+    } catch (error) {
+      toast.error("Gagal mengambil jadwal");
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
 
   const handleReschedule = async () => {
-    if (!selectedSlotId) {
+    if (!selectedSlot) {
       toast.error("Silakan pilih jadwal pengganti");
       return;
     }
@@ -85,9 +106,10 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
     }
     try {
       setIsSubmitting(true);
-      const response = await rescheduleReferral(referral.id, {
-        slot_id: Number(selectedSlotId),
-        reason: rescheduleReason
+      const response = await decideReferral(referral.id, {
+        action: "confirm",
+        reschedule_reason: rescheduleReason,
+        slot_id: Number(selectedSlot.slot_id || selectedSlot.id)
       });
       if (response.success) {
         toast.success("Pengajuan perubahan jadwal berhasil dikirim");
@@ -128,33 +150,6 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      toast.error("Alasan penolakan harus diisi");
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      const response = await decideReferral(referral.id, { action: "reject", reject_reason: rejectReason });
-      if (response.success) {
-        toast.success("Penolakan jadwal berhasil dikirim");
-        setIsRejectOpen(false);
-        if (onActionSuccess) {
-          onActionSuccess();
-        } else {
-          window.location.reload();
-        }
-      } else {
-        toast.error(response.message || "Gagal menolak jadwal");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Terjadi kesalahan saat menolak jadwal");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Determine colors based on priority
   const getPriorityColor = (priority: string) => {
@@ -353,42 +348,14 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                     </DialogContent>
                   </Dialog>
 
-                  <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
-                        disabled={referral.is_expired}
-                      >
-                        Tolak Jadwal
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Tolak Jadwal Konsultasi</DialogTitle>
-                        <DialogDescription className="text-gray-600 mt-2">
-                          Berikan alasan mengapa jadwal ini tidak dapat diterima. Alasan akan diteruskan ke siswa dan Guru BK.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="my-2">
-                        <Label className="text-sm font-medium text-red-600 mb-1 block">Alasan Penolakan*</Label>
-                        <Textarea 
-                          placeholder="Jelaskan alasan penolakan..."
-                          className="min-h-[100px]"
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                        />
-                      </div>
-                      <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
-                        <Button variant="outline" className="flex-1 border-red-200 text-red-500 hover:bg-red-50" onClick={() => setIsRejectOpen(false)} disabled={isSubmitting}>
-                          Batal
-                        </Button>
-                        <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white" onClick={handleReject} disabled={isSubmitting}>
-                          {isSubmitting ? "Memproses..." : "Kirim Penolakan"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
+                    disabled={referral.is_expired}
+                    onClick={() => setIsRescheduleOpen(true)}
+                  >
+                    Ubah Jadwal
+                  </Button>
                 </>
               )}
 
@@ -399,71 +366,13 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                       Buka Laporan AI
                     </Button>
                   </Link>
-                  <Dialog open={isRescheduleOpen} onOpenChange={setIsRescheduleOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
-                      >
-                        Ubah Jadwal
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Ajukan Perubahan Jadwal</DialogTitle>
-                        <DialogDescription className="text-gray-600 mt-2">
-                          Pilih jadwal pengganti dari slot waktu yang telah Anda sediakan. Siswa dan Guru BK akan menerima notifikasi mengenai perubahan jadwal.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 my-2">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-800 mb-1 block">
-                            Pilih Jadwal Pengganti <span className="text-red-500">*</span>
-                          </Label>
-                          <Select value={selectedSlotId} onValueChange={setSelectedSlotId}>
-                            <SelectTrigger>
-                              <SelectValue placeholder={isLoadingSlots ? "Memuat slot..." : "Pilih jadwal pengganti"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableSlots.length > 0 ? (
-                                availableSlots.map(slot => (
-                                  <SelectItem key={slot.id} value={slot.id.toString()}>
-                                    {formatDate(slot.slot_date)} {slot.slot_start_time?.slice(0,5)} - {slot.slot_end_time?.slice(0,5)}
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="none" disabled>
-                                  Tidak ada slot tersedia
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-orange-500 mt-2">
-                            Hanya slot dengan status Tersedia yang ditampilkan. Slot yang sudah dikonfirmasi atau dalam proses tidak bisa dipilih.
-                          </p>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium text-gray-800 mb-1 block">
-                            Alasan Pengajuan <span className="text-red-500">*</span>
-                          </Label>
-                          <Textarea 
-                            placeholder="Jelaskan alasan perubahan jadwal"
-                            className="min-h-[100px]"
-                            value={rescheduleReason}
-                            onChange={(e) => setRescheduleReason(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
-                        <Button variant="outline" className="flex-1 border-red-200 text-red-500 hover:bg-red-50" onClick={() => setIsRescheduleOpen(false)} disabled={isSubmitting}>
-                          Batal
-                        </Button>
-                        <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white" onClick={handleReschedule} disabled={isSubmitting}>
-                          {isSubmitting ? "Memproses..." : "Ubah Jadwal"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
+                    onClick={() => setIsRescheduleOpen(true)}
+                  >
+                    Ubah Jadwal
+                  </Button>
                 </>
               )}
 
@@ -488,6 +397,117 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
           </button>
         </div>
       )}
+
+
+      {/* Shared Reschedule Dialog */}
+      <Dialog open={isRescheduleOpen} onOpenChange={setIsRescheduleOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ajukan Perubahan Jadwal</DialogTitle>
+            <DialogDescription className="text-gray-600 mt-2">
+              Pilih jadwal pengganti dari slot waktu yang telah Anda sediakan. Siswa dan Guru BK akan menerima notifikasi mengenai perubahan jadwal.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 my-2">
+            {/* Date Selection */}
+            <div>
+              <Label className="text-sm font-medium text-gray-800 mb-2 block">
+                Pilih Tanggal <span className="text-red-500">*</span>
+              </Label>
+              {isLoadingDates ? (
+                <div className="text-sm text-gray-500">Memuat tanggal...</div>
+              ) : availableDates.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                  {availableDates.map((item: any) => (
+                    <div
+                      key={item.date_raw}
+                      onClick={() => item.is_selectable && handleDateSelect(item.date_raw)}
+                      className={`border rounded-xl p-3 cursor-pointer transition-colors ${
+                        selectedDate === item.date_raw
+                          ? "border-indigo-500 bg-indigo-50/50"
+                          : !item.is_selectable 
+                            ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                      }`}
+                    >
+                      <h4 className={`font-semibold text-xs ${selectedDate === item.date_raw ? "text-gray-900" : "text-gray-800"}`}>
+                        {item.date_formatted}
+                      </h4>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{item.slot_label}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500 border rounded-lg p-3 text-center bg-gray-50">
+                  Tidak ada tanggal tersedia
+                </div>
+              )}
+            </div>
+            
+            {/* Time Selection */}
+            <div>
+              <Label className="text-sm font-medium text-gray-800 mb-2 block">
+                Pilih Waktu <span className="text-red-500">*</span>
+              </Label>
+              {!selectedDate ? (
+                <div className="text-xs text-gray-500 border rounded-lg p-3 text-center bg-gray-50">
+                  Silakan pilih tanggal terlebih dahulu
+                </div>
+              ) : isLoadingSlots ? (
+                <div className="text-sm text-gray-500">Memuat waktu...</div>
+              ) : availableSlots.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2 max-h-[120px] overflow-y-auto pr-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {availableSlots.map((slot) => (
+                    <div
+                      key={slot.slot_id || slot.id}
+                      onClick={() => slot.is_available && setSelectedSlot(slot)}
+                      className={`border rounded-xl p-3 text-center cursor-pointer transition-colors ${
+                        selectedSlot && ((slot.slot_id && selectedSlot.slot_id === slot.slot_id) || (slot.id && selectedSlot.id === slot.id))
+                          ? "border-indigo-500 bg-indigo-50/50"
+                          : !slot.is_available
+                            ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                      }`}
+                    >
+                      <span className={`font-semibold text-xs ${selectedSlot && ((slot.slot_id && selectedSlot.slot_id === slot.slot_id) || (slot.id && selectedSlot.id === slot.id)) ? "text-gray-900" : !slot.is_available ? "text-gray-400" : "text-gray-800"}`}>
+                        {slot.time_range || slot.time_formatted || slot.start_time || slot.time || `Slot ${slot.slot_id || slot.id}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500 border rounded-lg p-3 text-center bg-gray-50">
+                  Tidak ada slot tersedia
+                </div>
+              )}
+            </div>
+
+            <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-2">
+              <Label className="text-sm font-medium text-gray-800 mb-1 block">
+                Alasan Pengajuan <span className="text-red-500">*</span>
+              </Label>
+              <Textarea 
+                placeholder="Jelaskan alasan perubahan jadwal"
+                className="min-h-[80px]"
+                value={rescheduleReason}
+                onChange={(e) => setRescheduleReason(e.target.value)}
+              />
+            </div>
+
+            <p className="text-[11px] text-orange-500">
+              Jadwal yang diajukan akan segera dikirim ke sistem untuk diproses.
+            </p>
+          </div>
+          <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
+            <Button variant="outline" className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setIsRescheduleOpen(false)} disabled={isSubmitting}>
+              Batal
+            </Button>
+            <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleReschedule} disabled={isSubmitting || !selectedSlot}>
+              {isSubmitting ? "Memproses..." : "Ajukan Jadwal"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
