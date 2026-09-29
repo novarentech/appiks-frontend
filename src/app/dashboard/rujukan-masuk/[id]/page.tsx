@@ -438,9 +438,9 @@ function RujukanMasukDetailContent() {
 
             <div className="space-y-3">
               {consentScopes.includes("mood_history") ? (
-                <div className="flex items-center justify-between p-4 border border-gray-200 bg-white rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 bg-white rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-green-600">
+                    <div className="mt-0.5 text-green-600 shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
@@ -448,26 +448,28 @@ function RujukanMasukDetailContent() {
                       <p className="text-sm text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
                     </div>
                   </div>
-                  <Link href={`/dashboard/rujukan-masuk/${id}/mood`}>
+                  <Link href={`/dashboard/rujukan-masuk/${id}/mood`} className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
                     <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
-                  <div className="mt-0.5 text-gray-500">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
-                    <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-gray-500 shrink-0">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
+                      <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {consentScopes.includes("sharing_history") ? (
-                <div className="flex items-center justify-between p-4 border border-gray-200 bg-white rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 bg-white rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-green-600">
+                    <div className="mt-0.5 text-green-600 shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
@@ -475,26 +477,28 @@ function RujukanMasukDetailContent() {
                       <p className="text-sm text-gray-500 mt-0.5">Teks curhat yang terdeteksi memerlukan perhatian khusus (disamarkan)</p>
                     </div>
                   </div>
-                  <Link href={`/dashboard/rujukan-masuk/${id}/sharing`}>
+                  <Link href={`/dashboard/rujukan-masuk/${id}/sharing`} className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
                     <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
-                  <div className="mt-0.5 text-gray-500">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
-                    <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-gray-500 shrink-0">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
+                      <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {consentScopes.includes("assesment_logs") ? (
-                <div className="flex items-center justify-between p-4 border border-gray-200 bg-white rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 bg-white rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-green-600">
+                    <div className="mt-0.5 text-green-600 shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
@@ -502,18 +506,20 @@ function RujukanMasukDetailContent() {
                       <p className="text-sm text-gray-500 mt-0.5">Catatan riwayat konsultasi siswa dengan Guru BK</p>
                     </div>
                   </div>
-                  <Link href={`/dashboard/rujukan-masuk/${id}/assessment`}>
+                  <Link href={`/dashboard/rujukan-masuk/${id}/assessment`} className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
                     <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
                   </Link>
                 </div>
               ) : (
-                <div className="flex items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
-                  <div className="mt-0.5 text-gray-500">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
-                    <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-gray-500 shrink-0">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
+                      <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                    </div>
                   </div>
                 </div>
               )}
