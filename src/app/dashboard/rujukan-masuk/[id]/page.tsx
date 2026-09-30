@@ -81,11 +81,14 @@ function RujukanMasukDetailContent() {
         if (summaryRes.success && summaryRes.data) {
           const item = summaryRes.data;
 
-          let statusVal = "Menunggu Konfirmasi";
-          const rawStatus = item.student?.status || item.sharing?.status || "";
-          if (rawStatus === "confirmed") statusVal = "Terkonfirmasi";
-          else if (rawStatus === "rejected") statusVal = "Ditolak";
-          else if (rawStatus !== "pending" && rawStatus !== "") statusVal = rawStatus; // Fallback to raw string if not matching known english keys
+          let statusVal = "Menunggu";
+          const rawStatus = ((item as any).status || item.student?.status || item.sharing?.status || "").toLowerCase();
+          if (rawStatus === "confirmed") statusVal = "Dijadwalkan";
+          else if (rawStatus === "rejected" || rawStatus === "dibatalkan") statusVal = "Ditolak";
+          else if (rawStatus === "selesai") statusVal = "Selesai";
+          else if (rawStatus === "expired") statusVal = "Expired";
+          else if (rawStatus === "rescheduled" || rawStatus === "dijadwal_ulang") statusVal = "Menunggu";
+          else if (rawStatus !== "pending" && rawStatus !== "") statusVal = rawStatus;
 
           const rawPriority = (item.student?.priority || item.sharing?.priority || "") as string;
           const priorityVal = ["sedang", "berat", "kritis", "tinggi"].includes(rawPriority.toLowerCase()) ? "Kritis" : "Prioritas";
@@ -96,12 +99,17 @@ function RujukanMasukDetailContent() {
             priority: priorityVal,
             status: statusVal,
             remaining_time: "-", // Calculated dynamically during render now
-            date: item.student?.reported_at ? new Date(item.student.reported_at).toLocaleDateString("id-ID", {
+            date: (item as any).slot?.slot_date ? new Date((item as any).slot.slot_date).toLocaleDateString("id-ID", {
               day: "numeric", month: "long", year: "numeric"
-            }) : "-",
-            time: item.student?.reported_at ? new Date(item.student.reported_at).toLocaleTimeString("id-ID", {
+            }) : (item.student?.reported_at ? new Date(item.student.reported_at).toLocaleDateString("id-ID", {
+              day: "numeric", month: "long", year: "numeric"
+            }) : "-"),
+            time: (item as any).slot?.slot_start_time ? ((item as any).slot.slot_end_time 
+                ? `${(item as any).slot.slot_start_time.slice(0,5)} - ${(item as any).slot.slot_end_time.slice(0,5)}` 
+                : `${(item as any).slot.slot_start_time.slice(0,5)}`) 
+            : (item.student?.reported_at ? new Date(item.student.reported_at).toLocaleTimeString("id-ID", {
               hour: "2-digit", minute: "2-digit"
-            }) : "-",
+            }) : "-"),
             referrer_name: item.student?.counselor_name || "-",
             counselor_notes: item.raw_payload?.assesment_logs?.[0]?.clinical_notes || "-", 
             submitted_at: item.student?.reported_at ? new Date(item.student.reported_at).toLocaleDateString("id-ID", {
@@ -134,7 +142,7 @@ function RujukanMasukDetailContent() {
   if (loading) return <div className="p-8 text-center">Memuat data...</div>;
   if (!referral) return <div className="p-8 text-center text-red-500">Data tidak ditemukan.</div>;
 
-  const showConfirmButtons = referral.status === "Menunggu Konfirmasi";
+  const showConfirmButtons = referral.status === "Menunggu" || referral.status === "Expired";
 
   const handleConfirm = async () => {
     try {
@@ -227,16 +235,15 @@ function RujukanMasukDetailContent() {
 
   // Calculate dynamic countdown
   let dynamicRemainingTimeStr = "-";
-  let dynamicIsExpired = false;
+  const dynamicIsExpired = referral.status === "Expired";
   
   const deadlineStr = summary?.student?.deadline_at || summary?.deadline_at || summary?.sharing?.deadline_at;
   
-  if (deadlineStr) {
+  if (deadlineStr && !dynamicIsExpired) {
     const deadline = new Date(deadlineStr);
     const diffMs = deadline.getTime() - currentTime.getTime();
     
-    dynamicIsExpired = diffMs <= 0;
-    if (!dynamicIsExpired) {
+    if (diffMs > 0) {
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
       const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);

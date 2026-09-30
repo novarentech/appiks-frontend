@@ -186,9 +186,11 @@ function NotificationsPageContent() {
               case "menunggu persetujuan siswa":
               case "menunggu":
               case "pending":
+              case "rescheduled":
+              case "dijadwal_ulang":
                 statusColor = "orange";
                 borderColor = "border-orange-400";
-                statusText = "Menunggu Persetujuan";
+                statusText = "Menunggu";
                 mappedStatus = "menunggu";
                 break;
               case "jadwal ditolak siswa":
@@ -202,19 +204,12 @@ function NotificationsPageContent() {
               case "confirmed":
                 statusColor = "blue";
                 borderColor = "border-blue-400";
-                statusText = "Disetujui";
-                break;
-              case "rescheduled":
-              case "dijadwal_ulang":
-                statusColor = "orange";
-                borderColor = "border-orange-400";
-                statusText = "Perubahan Jadwal";
-                mappedStatus = "rescheduled";
+                statusText = "Dijadwalkan";
                 break;
               case "expired":
                 statusColor = "red";
                 borderColor = "border-red-400";
-                statusText = "Kedaluwarsa";
+                statusText = "Expired";
                 mappedStatus = "expired";
                 break;
             }
@@ -226,29 +221,32 @@ function NotificationsPageContent() {
             // Check if reschedule/changes exist, otherwise default description
             if (mappedStatus === "expired") {
                description = "Batas waktu rujukan telah berakhir. Silakan ajukan ulang untuk memilih jadwal konsultasi yang baru. Klik Lihat Detail Untuk Pengajuan Jadwal";
-            } else if (mappedStatus === "rescheduled") {
+            } else if (item.status === "rescheduled" || item.status === "dijadwal_ulang") {
                description = "Psikolog mengubah jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
             } else if ((item.status === "confirmed" || mappedStatus === "disetujui") && (item.slot || scheduledAt)) {
                description = "Psikolog telah mengkonfirmasi jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
             }
 
-            const slotDate = scheduledAt && !isNaN(new Date(scheduledAt).getTime())
-              ? new Date(scheduledAt)
-              : (item.slot?.slot_date ? new Date(item.slot.slot_date) : new Date(item.created_at));
+            const slotDate = item.slot?.slot_date
+              ? new Date(item.slot.slot_date)
+              : (scheduledAt && !isNaN(new Date(scheduledAt).getTime())
+                  ? new Date(scheduledAt)
+                  : new Date(item.created_at));
+                  
             const formattedReferralDate = slotDate.toLocaleDateString('id-ID', {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             });
 
             let referralTime = "-";
-            if (scheduledAt) {
+            if (item.slot?.slot_start_time) {
+              referralTime = item.slot?.slot_end_time
+                ? `${item.slot.slot_start_time.substring(0, 5)} - ${item.slot.slot_end_time.substring(0, 5)} WIB`
+                : `${item.slot.slot_start_time.substring(0, 5)} WIB`;
+            } else if (scheduledAt) {
               const scheduledDate = new Date(scheduledAt);
               if (!isNaN(scheduledDate.getTime())) {
                 referralTime = `${scheduledDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')} WIB`;
               }
-            } else if (item.slot?.slot_start_time) {
-              referralTime = item.slot?.slot_end_time
-                ? `${item.slot.slot_start_time.substring(0, 5)} - ${item.slot.slot_end_time.substring(0, 5)} WIB`
-                : `${item.slot.slot_start_time.substring(0, 5)} WIB`;
             }
 
             return {

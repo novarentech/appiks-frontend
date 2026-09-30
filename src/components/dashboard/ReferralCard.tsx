@@ -169,20 +169,22 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
   // Determine colors based on status
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Menunggu Konfirmasi":
+      case "Menunggu":
         return "bg-orange-100 text-orange-700 hover:bg-orange-200";
-      case "Terkonfirmasi":
+      case "Dijadwalkan":
         return "bg-blue-100 text-blue-700 hover:bg-blue-200";
       case "Selesai":
         return "bg-green-100 text-green-700 hover:bg-green-200";
       case "Ditolak":
         return "bg-gray-100 text-gray-700 hover:bg-gray-200";
+      case "Expired":
+        return "bg-red-100 text-red-700 hover:bg-red-200";
       default:
         return "bg-gray-100 text-gray-700 hover:bg-gray-200";
     }
   };
 
-  const showTimer = referral.status === "Menunggu Konfirmasi";
+  const showTimer = referral.status === "Menunggu";
 
   // Helper to format date if it's an ISO string
   const formatDate = (dateStr: string) => {
@@ -263,17 +265,9 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
             >
               {referral.status}
             </Badge>
-            {referral.is_expired && !showTimer && (
-              <Badge
-                variant="secondary"
-                className="font-normal bg-gray-100 text-gray-600 border-0 hover:bg-gray-200"
-              >
-                <Clock className="w-3 h-3 mr-1" /> Kadaluarsa
-              </Badge>
-            )}
           </div>
 
-          {showTimer && !referral.is_expired && (
+          {showTimer && (
             <div className="text-right mt-1">
               <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-0.5">
                 Sisa Waktu Respon
@@ -281,17 +275,6 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
               <p className="text-red-500 font-semibold">
                 {referral.remaining_time}
               </p>
-            </div>
-          )}
-
-          {showTimer && referral.is_expired && (
-            <div className="text-right mt-1">
-              <Badge
-                variant="secondary"
-                className="font-normal bg-gray-100 text-gray-600 border-0"
-              >
-                <Clock className="w-3 h-3 mr-1" /> Kadaluarsa
-              </Badge>
             </div>
           )}
         </div>
@@ -315,13 +298,13 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              {referral.status === "Menunggu Konfirmasi" && (
+              {(referral.status === "Menunggu" || referral.status === "Expired") && (
                 <>
                   <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
                     <DialogTrigger asChild>
                       <Button
                         className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[120px]"
-                        disabled={referral.is_expired}
+                        disabled={referral.is_expired || referral.status === "Expired"}
                       >
                         Konfirmasi
                       </Button>
@@ -357,7 +340,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                   <Button
                     variant="outline"
                     className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
-                    disabled={referral.is_expired}
+                    disabled={referral.is_expired || referral.status === "Expired"}
                     onClick={() => setIsRescheduleOpen(true)}
                   >
                     Ubah Jadwal
@@ -365,7 +348,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                 </>
               )}
 
-              {referral.status === "Terkonfirmasi" && (
+              {referral.status === "Dijadwalkan" && (
                 <>
                   <Link href={`/dashboard/rujukan-masuk/${referral.counseling_id}`}>
                     <Button className="bg-green-600 hover:bg-green-700 text-white min-w-[120px]">

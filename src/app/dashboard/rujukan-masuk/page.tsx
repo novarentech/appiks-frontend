@@ -64,14 +64,16 @@ function RujukanMasukContent() {
             priority = "Kritis";
           }
 
-          let status = "Menunggu Konfirmasi";
-          if (item.status === "confirmed") status = "Terkonfirmasi";
-          else if (item.status === "rejected") status = "Ditolak";
+          let status = "Menunggu";
+          if (item.status === "confirmed") status = "Dijadwalkan";
+          else if (item.status === "rejected" || item.status === "dibatalkan") status = "Ditolak";
           else if (item.status === "selesai") status = "Selesai";
+          else if (item.status === "expired") status = "Expired";
+          else if (item.status === "rescheduled" || item.status === "dijadwal_ulang") status = "Menunggu";
 
           let remainingTimeStr = "";
-          const isExpired = deadline.getTime() < now.getTime();
-          if (!isExpired) {
+          const isExpired = status === "Expired";
+          if (!isExpired && diffHours > 0) {
             const diffDays = Math.floor(diffHours / 24);
             const remainingHours = Math.floor(diffHours % 24);
             remainingTimeStr = `${diffDays} hari ${remainingHours} jam`;
