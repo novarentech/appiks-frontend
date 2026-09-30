@@ -221,19 +221,35 @@ function NotificationsPageContent() {
 
             let description = "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.";
             
+            const scheduledAt = item.scheduled_at || item.counseling?.scheduled_at;
+
             // Check if reschedule/changes exist, otherwise default description
             if (mappedStatus === "expired") {
                description = "Batas waktu rujukan telah berakhir. Silakan ajukan ulang untuk memilih jadwal konsultasi yang baru. Klik Lihat Detail Untuk Pengajuan Jadwal";
             } else if (mappedStatus === "rescheduled") {
                description = "Psikolog mengubah jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
-            } else if (item.status === "confirmed" && item.slot) {
+            } else if ((item.status === "confirmed" || mappedStatus === "disetujui") && (item.slot || scheduledAt)) {
                description = "Psikolog telah mengkonfirmasi jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
             }
 
-            const slotDate = item.slot?.slot_date ? new Date(item.slot.slot_date) : new Date(item.scheduled_at || item.created_at);
+            const slotDate = scheduledAt && !isNaN(new Date(scheduledAt).getTime())
+              ? new Date(scheduledAt)
+              : (item.slot?.slot_date ? new Date(item.slot.slot_date) : new Date(item.created_at));
             const formattedReferralDate = slotDate.toLocaleDateString('id-ID', {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             });
+
+            let referralTime = "-";
+            if (scheduledAt) {
+              const scheduledDate = new Date(scheduledAt);
+              if (!isNaN(scheduledDate.getTime())) {
+                referralTime = `${scheduledDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':')} WIB`;
+              }
+            } else if (item.slot?.slot_start_time) {
+              referralTime = item.slot?.slot_end_time
+                ? `${item.slot.slot_start_time.substring(0, 5)} - ${item.slot.slot_end_time.substring(0, 5)} WIB`
+                : `${item.slot.slot_start_time.substring(0, 5)} WIB`;
+            }
 
             return {
               id: item.id,
@@ -248,12 +264,12 @@ function NotificationsPageContent() {
               borderColor: borderColor,
               icon: Users,
               isNew: true,
-              psychologist: item.psychologist?.name || "Dr. Sarah Wijaya, M.Psi., Psikolog",
-              location: item.location || item.slot?.location || "Puskesmas Kecamatan Menteng",
-              counselor: `Guru BK : ${item.counseling?.counselor?.name || item.counselor?.name || "Sri Wahyuni, S.Pd, M.Pd"}`,
-              referralReason: item.reason || "Penanganan lebih lanjut",
+              psychologist: item.psychologist?.name || "-",
+              location: item.room || item.slot?.room || "-",
+              counselor: `Guru BK : ${item.counseling?.counselor?.name || item.counselor?.name || "-"}`,
+              referralReason: item.reason || "-",
               referralDate: formattedReferralDate,
-              time: item.slot?.slot_start_time ? `${item.slot.slot_start_time.substring(0, 5)} - ${item.slot.slot_end_time.substring(0, 5)} WIB` : "09:00 - 10:00 WIB",
+              time: referralTime,
               createdAt: item.created_at,
             };
           }) || [];

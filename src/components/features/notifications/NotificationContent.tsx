@@ -156,7 +156,7 @@ export function NotificationContent({
           <p className={`${textSize} text-gray-600 mb-3`}>
             {referralNotification.referralReason}
           </p>
-          {referralNotification.time && (
+          {referralNotification.time && referralNotification.time !== "-" && (
             <>
               <h6 className={`font-medium ${headerSize} text-gray-700 mt-4 mb-1`}>
                 Jadwal Konsultasi

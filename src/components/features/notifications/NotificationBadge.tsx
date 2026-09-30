@@ -78,13 +78,12 @@ export function NotificationBadge({
           <User className="w-3 h-3" />
           {referral.counselor}
         </div>
-        {referral.time && (
+        {referral.time && referral.time !== "-" && (
           <div
             className={`bg-green-100 text-green-700 ${badgeClass} flex items-center gap-1`}
           >
             <Clock className="w-3 h-3" />
-            {referral.referralDate}
-            {referral.time}
+            {referral.referralDate} {referral.time}
           </div>
         )}
       </div>
