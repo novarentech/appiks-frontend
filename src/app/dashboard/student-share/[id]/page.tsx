@@ -1052,40 +1052,46 @@ export default function DetailCurhatanPage() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-md p-6">
                 <DialogHeader>
-                  <DialogTitle className="text-xl">Balas Curhat</DialogTitle>
-                  <DialogDescription className="text-gray-600 mt-2 text-base">
-                    Tuliskan pesan balasan Anda untuk curhatan siswa ini.
-                  </DialogDescription>
+                  <DialogTitle className="text-2xl font-bold text-gray-800">Balas Curhat</DialogTitle>
                 </DialogHeader>
+                
+                <div className="bg-gray-50 rounded-lg p-4 my-2">
+                  <div className="font-bold text-gray-800 mb-2">{data.title}</div>
+                  <p className="text-gray-700 text-sm mb-4 leading-relaxed">{data.description}</p>
+                  <div className="text-gray-500 text-sm">
+                    Dari: {data.user?.name} {data.created_at ? format(new Date(data.created_at), "MM/dd/yyyy hh:mm a") : ""}
+                  </div>
+                </div>
+
                 <div className="py-2">
-                  <Label htmlFor="replyText" className="text-sm font-semibold text-gray-700">
-                    Pesan Balasan <span className="text-red-500">*</span>
+                  <Label htmlFor="replyText" className="text-base text-gray-700 mb-2 block">
+                    Tanggapan Anda
                   </Label>
                   <Textarea
                     id="replyText"
-                    placeholder="Tulis pesan Anda di sini ..."
-                    className="mt-2 resize-none w-full"
-                    rows={5}
+                    placeholder="Tulis Tanggapan yang Bijaksana dan Membantu"
+                    className="mt-2 resize-none w-full p-3 rounded-lg border-gray-200"
+                    rows={4}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     disabled={isReplySubmitting}
                   />
                 </div>
-                <DialogFooter className="mt-2 flex flex-row gap-3 sm:space-x-0">
+                <DialogFooter className="mt-4 flex flex-row gap-3 sm:space-x-0 w-full">
                   <DialogClose asChild>
-                    <Button variant="outline" className="w-1/2 text-gray-700 border-gray-300 hover:bg-gray-50" disabled={isReplySubmitting}>
+                    <Button variant="outline" className="w-1/2 text-[#5b61e2] border-[#5b61e2] hover:bg-blue-50 py-6 text-base font-semibold" disabled={isReplySubmitting}>
                       Batal
                     </Button>
                   </DialogClose>
                   <Button 
-                    className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold"
                     onClick={handleReplySubmit}
                     disabled={isReplySubmitting || !replyText.trim()}
                   >
                     {isReplySubmitting ? (
                       <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengirim...</>
                     ) : (
-                      "Kirim Balasan"
+                      "Kirim"
                     )}
                   </Button>
                 </DialogFooter>
