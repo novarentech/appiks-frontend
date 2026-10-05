@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle, ArrowRight, X, Phone, ArrowLeft } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 interface ShareResultModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose }: ShareR
   const router = useRouter();
   const [countdown, setCountdown] = useState(7);
   const [showContactHelp, setShowContactHelp] = useState(false);
+  const { profileData } = useUserProfile();
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -83,13 +85,22 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose }: ShareR
                   <FaWhatsapp className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Guru BK Pendamping</div>
-                  <div className="font-semibold text-gray-900">Sri Wahyuni, S.Pd</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                    {profileData?.mentor ? "Guru BK Pendamping" : "Kontak Sekolah Umum"}
+                  </div>
+                  <div className="font-semibold text-gray-900">
+                    {profileData?.mentor ? profileData.mentor.name : (profileData?.school?.name || "Tim BK Sekolah")}
+                  </div>
                 </div>
               </div>
-              <Button className="w-full bg-[#00A84D] hover:bg-green-600 text-white font-medium">
-                <FaWhatsapp className="w-4 h-4 mr-2" /> Kirim Pesan di WhatsApp
-              </Button>
+              {profileData?.mentor?.phone && (
+                <Button 
+                  className="w-full bg-[#00A84D] hover:bg-green-600 text-white font-medium"
+                  onClick={() => window.open(`https://wa.me/${profileData.mentor.phone.replace(/[^0-9]/g, '')}`, '_blank')}
+                >
+                  <FaWhatsapp className="w-4 h-4 mr-2" /> Kirim Pesan di WhatsApp
+                </Button>
+              )}
             </div>
             
             {/* Hotline Card */}
@@ -99,7 +110,9 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose }: ShareR
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hotline Kemenkes</div>
-                <div className="font-semibold text-gray-900 text-lg">119</div>
+                <div className="font-semibold text-gray-900 text-lg">
+                  <a href="tel:119" className="hover:underline text-blue-600">119</a>
+                </div>
                 <div className="text-xs text-gray-500">Layanan Kementrian Kesehatan 24/7</div>
               </div>
             </div>
