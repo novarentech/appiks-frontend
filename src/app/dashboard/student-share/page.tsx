@@ -4,6 +4,7 @@ import ConfidentPanel from "@/components/dashboard/panels/ConfidentPanel";
 import ConfidentTable from "@/components/data-display/tables/ConfidentTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import RedZoneAlertQueue from "@/components/dashboard/RedZoneAlertQueue";
 
 export default function DashboardDataSiswaPage() {
   return (
@@ -20,6 +21,8 @@ function DashboardDataSiswaPageContent() {
         title="Curhatan Siswa"
         subtitle="Kelola dan tanggapi curhatan siswa"
       />
+
+      <RedZoneAlertQueue />
 
       {/* Panel Statistik */}
       <ConfidentPanel />
