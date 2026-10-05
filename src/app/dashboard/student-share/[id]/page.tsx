@@ -278,11 +278,7 @@ export default function DetailCurhatanPage() {
       });
 
       if (res.success) {
-        await acknowledgeSharing(id, {
-          action: "konseling_mandiri",
-          action_notes: scheduleNote || "",
-          action_confirmed: true
-        });
+        // acknowledgeSharing is handled by the backend during createCounseling
         toast.success("Jadwal konseling berhasil diajukan.");
         setIsScheduleOpen(false);
         window.location.reload();
@@ -1049,7 +1045,7 @@ export default function DetailCurhatanPage() {
                   </div>
                 </>
             </div>
-          ) : apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" ? (
+          ) : apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" && apiStatus !== "sedang ditangani" ? (
             <Dialog open={isReplyOpen} onOpenChange={setIsReplyOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
