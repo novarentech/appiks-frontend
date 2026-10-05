@@ -59,6 +59,12 @@ export default function DetailCurhatanPage() {
 
   const [isRecordCounselingOpen, setIsRecordCounselingOpen] = useState(false);
   const [isEmergencyContactOpen, setIsEmergencyContactOpen] = useState(false);
+  const [activeEmergencyFlow, setActiveEmergencyFlow] = useState<"lainnya" | "medis" | null>(null);
+  const [isFollowUpNoteOpen, setIsFollowUpNoteOpen] = useState(false);
+  const [followUpNote, setFollowUpNote] = useState("");
+  const [isMedicalReferralOpen, setIsMedicalReferralOpen] = useState(false);
+  const [medicalNote, setMedicalNote] = useState("");
+  const [isParentConfirmed, setIsParentConfirmed] = useState(false);
   const [counselingMethod, setCounselingMethod] = useState("");
   const [counselingNote, setCounselingNote] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
@@ -919,7 +925,10 @@ export default function DetailCurhatanPage() {
 
                 {/* 2. Lainnya */}
                 <button 
-                  onClick={() => setIsEmergencyContactOpen(true)}
+                  onClick={() => {
+                    setActiveEmergencyFlow("lainnya");
+                    setIsEmergencyContactOpen(true);
+                  }}
                   className="flex flex-row items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-left transition-colors cursor-pointer w-full bg-white"
                 >
                   <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex-shrink-0">
@@ -933,7 +942,10 @@ export default function DetailCurhatanPage() {
 
                 {/* 3. Perlu Penanganan Medis */}
                 <button 
-                  onClick={() => setIsEmergencyContactOpen(true)}
+                  onClick={() => {
+                    setActiveEmergencyFlow("medis");
+                    setIsEmergencyContactOpen(true);
+                  }}
                   className="flex flex-row items-center gap-3 p-4 rounded-xl border border-yellow-200 bg-yellow-50/50 hover:bg-yellow-50 text-left transition-colors cursor-pointer w-full"
                 >
                   <div className="bg-yellow-100 p-2 rounded-lg text-yellow-600 flex-shrink-0">
@@ -1163,11 +1175,125 @@ export default function DetailCurhatanPage() {
              <Button 
                variant="outline" 
                className="w-full text-[#5b61e2] border-[#5b61e2] hover:bg-indigo-50 font-semibold h-11" 
-               onClick={() => setIsEmergencyContactOpen(false)}
+               onClick={() => {
+                 setIsEmergencyContactOpen(false);
+                 setTimeout(() => {
+                   if (activeEmergencyFlow === "lainnya") {
+                     setIsFollowUpNoteOpen(true);
+                   } else if (activeEmergencyFlow === "medis") {
+                     setIsMedicalReferralOpen(true);
+                   }
+                 }, 200);
+               }}
              >
                Tutup
              </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Catatan Tindak Lanjut Modal */}
+      <Dialog open={isFollowUpNoteOpen} onOpenChange={setIsFollowUpNoteOpen}>
+        <DialogContent className="sm:max-w-[450px] p-6 rounded-2xl">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-xl font-bold">Catatan Tindak Lanjut</DialogTitle>
+            <DialogDescription className="text-gray-600 mt-2 text-sm">
+              Tambahkan catatan mengenai tindak lanjut yang akan dilakukan.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-2">
+            <Label className="text-sm font-semibold text-gray-700">Catatan <span className="text-red-500">*</span></Label>
+            <Textarea 
+              placeholder="Jelaskan tindak lanjut yang akan dilakukan..." 
+              className="mt-2 resize-none w-full h-32" 
+              value={followUpNote}
+              onChange={(e) => setFollowUpNote(e.target.value)}
+            />
+          </div>
+          
+          <DialogFooter className="mt-6 flex flex-row gap-3 sm:space-x-0 w-full">
+             <DialogClose asChild>
+               <Button variant="outline" className="w-1/2 text-[#5b61e2] border-[#5b61e2] hover:bg-indigo-50 font-semibold h-11">
+                 Batal
+               </Button>
+             </DialogClose>
+             <Button 
+               className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
+               onClick={() => {
+                 setIsFollowUpNoteOpen(false);
+                 toast.success("Catatan tindak lanjut berhasil disimpan");
+               }}
+               disabled={!followUpNote.trim()}
+             >
+               Simpan
+             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Perlu Penanganan Medis Modal */}
+      <Dialog open={isMedicalReferralOpen} onOpenChange={setIsMedicalReferralOpen}>
+        <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-xl font-bold">Perlu Penanganan Medis</DialogTitle>
+            <DialogDescription className="text-gray-600 mt-2 text-sm">
+              Rujuk siswa ke IGD/ fasilitas kesehatan
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="border border-yellow-200 bg-yellow-50 rounded-xl p-4 mt-2 mb-4 flex gap-3">
+            <Building className="w-5 h-5 text-orange-600 flex-shrink-0" />
+            <p className="text-sm text-orange-800">
+              Gunakan opsi ini jika siswa membutuhkan penanganan di fasilitas kesehatan (IGD / Puskesmas).
+            </p>
+          </div>
+
+          <div>
+            <Label className="text-sm font-semibold text-gray-700">Catatan & Kondisi Siswa <span className="text-red-500">*</span></Label>
+            <Textarea 
+              placeholder="Jelaskan kondisi siswa dan alasan perlu penanganan medis..." 
+              className="mt-2 resize-none w-full h-32" 
+              value={medicalNote}
+              onChange={(e) => setMedicalNote(e.target.value)}
+            />
+          </div>
+          
+          <div className="mt-4 flex flex-row items-start gap-3">
+            <input 
+              type="checkbox" 
+              id="parent-confirm"
+              className="w-5 h-5 mt-0.5 rounded border-gray-300 text-[#5b61e2] focus:ring-[#5b61e2] cursor-pointer"
+              checked={isParentConfirmed}
+              onChange={(e) => setIsParentConfirmed(e.target.checked)}
+            />
+            <div className="flex flex-col">
+              <Label htmlFor="parent-confirm" className="text-sm font-semibold text-gray-900 cursor-pointer">
+                Konfirmasi orang tua / wali <span className="text-red-500">*</span>
+              </Label>
+              <p className="text-sm text-gray-500 mt-1">
+                Saya sudah menghubungi dan menginformasikan orang tua/wali siswa mengenai kondisi ini.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter className="mt-6 flex flex-row gap-3 sm:space-x-0 w-full">
+             <DialogClose asChild>
+               <Button variant="outline" className="w-1/2 text-[#5b61e2] border-[#5b61e2] hover:bg-indigo-50 font-semibold h-11">
+                 Batal
+               </Button>
+             </DialogClose>
+             <Button 
+               className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
+               onClick={() => {
+                 setIsMedicalReferralOpen(false);
+                 toast.success("Rujukan medis berhasil disimpan");
+               }}
+               disabled={!medicalNote.trim() || !isParentConfirmed}
+             >
+               Simpan dan Rujuk
+             </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
