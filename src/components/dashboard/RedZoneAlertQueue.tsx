@@ -115,15 +115,15 @@ export default function RedZoneAlertQueue() {
               </div>
               <div>
                 <p className="text-red-600 font-medium text-sm">Kasus Baru Terdeteksi</p>
-                <h2 className="text-2xl font-bold text-red-600">Red Zone Alert</h2>
+                <h2 className="text-xl font-bold text-red-600">Red Zone Alert</h2>
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-5 mb-5">
+          <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-5 mb-2">
             <div className="flex items-center gap-3 mb-1">
-              <h3 className="text-xl font-bold text-gray-900">{currentItem.user?.name || "Tanpa Nama"}</h3>
-              <Badge variant="outline" className="border-red-200 text-red-500 bg-red-50/50 hover:bg-red-50/50 font-normal px-2.5 py-0.5">
+              <h3 className="text-lg font-bold text-gray-900">{currentItem.user?.name || "Tanpa Nama"}</h3>
+              <Badge variant="outline" className="border-red-200 text-xs text-red-500 bg-red-50/50 hover:bg-red-50/50 font-normal px-2.5 py-0.5">
                 Kritis
               </Badge>
             </div>
@@ -148,7 +148,7 @@ export default function RedZoneAlertQueue() {
             </div>
           </div>
 
-          <div className="bg-red-50 rounded-xl p-4 flex items-center justify-between mb-6">
+          <div className="bg-red-50 rounded-xl p-4 flex items-center justify-between mb-4">
              <span className="text-red-600 font-semibold tracking-wide text-sm">BATAS TINDAK LANJUT</span>
              <span className="text-red-600 font-bold text-xl">
                <CountdownTimer targetDate={currentItem.cutdown_for_report} />
