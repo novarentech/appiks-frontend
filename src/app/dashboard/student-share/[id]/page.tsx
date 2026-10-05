@@ -26,7 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Loader2, AlertTriangle, ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Loader2, AlertTriangle, ArrowLeft, Calendar as CalendarIcon, Clock, User as UserIcon, FileText, Building, Phone, X, Copy } from "lucide-react";
 import CurhatViewDialog from "@/components/dialogs/CurhatViewDialog";
 import { toast } from "sonner";
 
@@ -58,6 +58,7 @@ export default function DetailCurhatanPage() {
   const [isScheduleSubmitting, setIsScheduleSubmitting] = useState(false);
 
   const [isRecordCounselingOpen, setIsRecordCounselingOpen] = useState(false);
+  const [isEmergencyContactOpen, setIsEmergencyContactOpen] = useState(false);
   const [counselingMethod, setCounselingMethod] = useState("");
   const [counselingNote, setCounselingNote] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
@@ -805,12 +806,24 @@ export default function DetailCurhatanPage() {
               </DialogContent>
             </Dialog>
           ) : status !== "Aman" && (apiStatus === "sedang ditangani" || isHandling || apiStatus === "jadwal ditolak siswa") ? (
-            <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold">
-                  {apiStatus === "jadwal ditolak siswa" ? "Ajukan Jadwal Konseling Kembali" : "Ajukan Pertemuan Konseling"}
-                </Button>
-              </DialogTrigger>
+          <div className="border rounded-lg mb-8 p-4">
+              <h3 className="font-bold text-gray-900 mb-1">Keputusan Tindak Lanjut</h3>
+              <p className="text-sm text-gray-500 mb-4">Pilih satu keputusan penanganan untuk kasus ini.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. Konseling Mandiri */}
+                <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+                  <DialogTrigger asChild>
+                    <button className="flex flex-row items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-left transition-colors cursor-pointer w-full bg-white">
+                      <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex-shrink-0">
+                        <UserIcon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 text-sm">Konseling Mandiri</div>
+                        <div className="text-xs text-gray-500 mt-0.5">Guru BK menangani langsung</div>
+                      </div>
+                    </button>
+                  </DialogTrigger>
               <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
                 <DialogHeader className="mb-2">
                   <DialogTitle className="text-2xl font-bold">Ajukan Pertemuan Konseling</DialogTitle>
@@ -903,6 +916,36 @@ export default function DetailCurhatanPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+                {/* 2. Lainnya */}
+                <button 
+                  onClick={() => setIsEmergencyContactOpen(true)}
+                  className="flex flex-row items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-left transition-colors cursor-pointer w-full bg-white"
+                >
+                  <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex-shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">Lainnya</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Tindak lanjut di luar opsi di atas</div>
+                  </div>
+                </button>
+
+                {/* 3. Perlu Penanganan Medis */}
+                <button 
+                  onClick={() => setIsEmergencyContactOpen(true)}
+                  className="flex flex-row items-center gap-3 p-4 rounded-xl border border-yellow-200 bg-yellow-50/50 hover:bg-yellow-50 text-left transition-colors cursor-pointer w-full"
+                >
+                  <div className="bg-yellow-100 p-2 rounded-lg text-yellow-600 flex-shrink-0">
+                    <Building className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-orange-800 text-sm">Perlu Penanganan Medis</div>
+                    <div className="text-xs text-orange-600 mt-0.5">Rujuk ke IGD / fasilitas kesehatan</div>
+                  </div>
+                </button>
+              </div>
+            </div>
           ) : apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" ? (
             <Dialog open={isReplyOpen} onOpenChange={setIsReplyOpen}>
               <DialogTrigger asChild>
@@ -1074,6 +1117,64 @@ export default function DetailCurhatanPage() {
         </div>
         )}
       </div>
+
+      {/* Emergency Contact Modal */}
+      <Dialog open={isEmergencyContactOpen} onOpenChange={setIsEmergencyContactOpen}>
+        <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+          <DialogHeader className="mb-2 flex flex-row items-start justify-between">
+            <div className="text-left">
+              <DialogTitle className="text-xl font-bold">Kontak Bantuan Darurat</DialogTitle>
+              <DialogDescription className="text-gray-600 mt-2 text-sm">
+                Nomor ini dapat digunakan jika siswa membutuhkan bantuan segera.
+              </DialogDescription>
+            </div>
+            <DialogClose className="rounded-full bg-gray-50 p-2 hover:bg-gray-100 -mt-2 -mr-2">
+               <X className="w-4 h-4 text-gray-500" />
+            </DialogClose>
+          </DialogHeader>
+
+          <div className="border border-gray-200 rounded-xl p-4 flex flex-col gap-4 mt-2">
+            <div className="flex items-center gap-3 w-full">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600">
+                <Phone className="w-5 h-5 fill-red-100" />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hotline Darurat Nasional</div>
+                <div className="font-bold text-gray-900 text-lg">119</div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1 border-gray-300 text-red-600 hover:text-red-700 hover:bg-red-50 font-semibold" 
+                onClick={() => { 
+                  navigator.clipboard.writeText("119"); 
+                  toast.success("Nomor 119 berhasil disalin"); 
+                }}
+              >
+                <Copy className="w-4 h-4 mr-2" /> Salin Nomor
+              </Button>
+              <Button 
+                className="flex-1 bg-[#E53E3E] hover:bg-red-700 text-white font-semibold" 
+                onClick={() => window.location.href = "tel:119"}
+              >
+                <Phone className="w-4 h-4 mr-2 fill-current" /> Hubungi 119
+              </Button>
+            </div>
+          </div>
+          
+          <div className="mt-4 text-center">
+             <p className="text-xs text-gray-400 mb-4">Tutup jendela ini untuk kembali ke pengisian tindak lanjut.</p>
+             <Button 
+               variant="outline" 
+               className="w-full text-[#5b61e2] border-gray-200 font-semibold h-11" 
+               onClick={() => setIsEmergencyContactOpen(false)}
+             >
+               Tutup
+             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
