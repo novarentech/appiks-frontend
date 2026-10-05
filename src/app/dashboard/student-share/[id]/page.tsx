@@ -622,7 +622,7 @@ export default function DetailCurhatanPage() {
         )}
 
         {/* Keputusan Tindak Lanjut (Read-Only) */}
-        {(data.action_confirmed === 1 || data.action_confirmed === true) && (
+        {(data.action_confirmed === 1 || data.action_confirmed === true || (data.action && ["menunggu persetujuan siswa", "konseling dijadwalkan", "jadwal ditolak siswa"].includes(apiStatus))) && (
           <div className="border rounded-lg mb-8 p-6">
             <h3 className="font-bold text-gray-900 mb-4">Keputusan Tindak Lanjut :</h3>
             
@@ -635,14 +635,44 @@ export default function DetailCurhatanPage() {
               </span>
             </div>
             
-            <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-2">
-                {data.action === "penanganan_medis" ? "Catatan & Kondisi Siswa" : "Catatan"}
-              </p>
-              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
-                {data.action_notes || "-"}
+            {data.action === "konseling_mandiri" && data.counseling ? (
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h4 className="font-bold text-gray-900 mb-6 text-[15px]">Detail Pengajuan Konseling</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-500 mb-2">Tanggal</div>
+                    <div className="font-bold text-gray-900">{format(new Date(data.counseling.scheduled_at!), "MM/dd/yyyy")}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-500 mb-2">Waktu</div>
+                    <div className="font-bold text-gray-900">{format(new Date(data.counseling.scheduled_at!), "hh:mm a")}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-500 mb-2">Ruangan</div>
+                    <div className="font-bold text-gray-900">{data.counseling.room || "-"}</div>
+                  </div>
+                </div>
+
+                {data.counseling.notes && (
+                  <div>
+                    <div className="text-sm font-semibold text-gray-500 mb-2">Catatan Tambahan</div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
+                      {data.counseling.notes}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-gray-500 mb-2">
+                  {data.action === "penanganan_medis" ? "Catatan & Kondisi Siswa" : "Catatan"}
+                </p>
+                <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
+                  {data.action_notes || "-"}
+                </div>
+              </div>
+            )}
 
             {data.action === "penanganan_medis" && (
               <div className="flex items-center gap-2 mt-4 text-sm text-gray-700">
