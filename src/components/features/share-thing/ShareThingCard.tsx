@@ -16,6 +16,7 @@ export default function ShareThingCard() {
   const [body, setBody] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [resultZone, setResultZone] = useState<string | null>(null);
+  const [resultContacts, setResultContacts] = useState<any[]>([]);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,6 +41,9 @@ export default function ShareThingCard() {
         // Cek zona dari NLP response
         const zone = result.data.nlp?.response?.zone_status || "Green Zone";
         setResultZone(zone);
+        if (result.data.contacts) {
+          setResultContacts(result.data.contacts);
+        }
       } else {
         // Coba deteksi jika ini adalah error yang berkaitan dengan layanan analisis (bukan validasi)
         if (result.message && (result.message.toLowerCase().includes("analisis") || result.message.toLowerCase().includes("nlp") || result.message.toLowerCase().includes("500"))) {
@@ -116,6 +120,7 @@ export default function ShareThingCard() {
         <ShareResultModal 
           isOpen={!!resultZone} 
           zoneStatus={resultZone} 
+          contacts={resultContacts}
           onClose={() => setResultZone(null)} 
         />
       )}

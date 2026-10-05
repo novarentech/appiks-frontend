@@ -146,6 +146,7 @@ export interface UserProfileResponse {
     school: {
       id: number;
       name: string;
+      phone?: string;
     };
   };
 }

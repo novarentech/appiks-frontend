@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,10 @@ interface ShareResultModalProps {
   isOpen: boolean;
   zoneStatus: string;
   onClose: () => void;
+  contacts?: any[];
 }
 
-export default function ShareResultModal({ isOpen, zoneStatus, onClose }: ShareResultModalProps) {
+export default function ShareResultModal({ isOpen, zoneStatus, onClose, contacts }: ShareResultModalProps) {
   const router = useRouter();
   const [countdown, setCountdown] = useState(7);
   const [showContactHelp, setShowContactHelp] = useState(false);
@@ -78,44 +79,125 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose }: ShareR
           <p className="text-gray-500 mb-8">Pilih bantuan yang paling sesuai untukmu.</p>
           
           <div className="space-y-4">
-            {/* Guru BK Card */}
-            <div className="border border-gray-100 rounded-xl p-4 flex flex-col items-start gap-4">
-              <div className="flex items-center gap-3 w-full">
-                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 text-green-600">
-                  <FaWhatsapp className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                    {profileData?.mentor ? "Guru BK Pendamping" : "Kontak Sekolah Umum"}
+            {contacts && contacts.length > 0 ? (
+              contacts.map((contact, index) => {
+                const isEmergency = contact.name.toLowerCase().includes("darurat") || contact.name.toLowerCase().includes("hotline") || contact.name.toLowerCase().includes("nasional");
+                const phoneStr = contact.phone || contact.number;
+                const isShortNumber = phoneStr && phoneStr.length <= 4;
+                
+                if (isEmergency) {
+                  return (
+                    <div key={index} className="border border-gray-100 rounded-xl p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{contact.name}</div>
+                        {phoneStr ? (
+                          <div className="font-semibold text-gray-900 text-lg">
+                            <a href={`tel:${phoneStr}`} className="hover:underline text-blue-600">{phoneStr}</a>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500">Nomor tidak tersedia</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <React.Fragment key={index}>
+                    {phoneStr && (
+                      <div className="border border-gray-100 rounded-xl p-4 flex flex-col items-start gap-4">
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 text-green-600">
+                            <FaWhatsapp className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                              {contact.name.toLowerCase().includes("sekolah") ? "Kontak Sekolah" : "Guru BK Pendamping"}
+                            </div>
+                            <div className="font-semibold text-gray-900">
+                              {contact.name}
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          className="w-full bg-[#00A84D] hover:bg-green-600 text-white font-medium"
+                          onClick={() => window.open(`https://wa.me/${phoneStr.replace(/[^0-9]/g, '')}`, '_blank')}
+                        >
+                          <FaWhatsapp className="w-4 h-4 mr-2" /> Kirim Pesan di WhatsApp
+                        </Button>
+                      </div>
+                    )}
+                    {!phoneStr && !contact.name.toLowerCase().includes("sekolah") && profileData?.school && (
+                      <div className="border border-gray-100 rounded-xl p-4 flex flex-col items-start gap-4">
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 text-green-600">
+                            <FaWhatsapp className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                              Kontak Sekolah Umum
+                            </div>
+                            <div className="font-semibold text-gray-900">
+                              {profileData.school.name}
+                            </div>
+                            {profileData.school.phone && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {profileData.school.phone}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })
+            ) : (
+              <>
+                {/* Fallback to profileData */}
+                {/* Guru BK Card */}
+                <div className="border border-gray-100 rounded-xl p-4 flex flex-col items-start gap-4">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 text-green-600">
+                      <FaWhatsapp className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                        {profileData?.mentor ? "Guru BK Pendamping" : "Kontak Sekolah Umum"}
+                      </div>
+                      <div className="font-semibold text-gray-900">
+                        {profileData?.mentor ? profileData.mentor.name : (profileData?.school?.name || "Tim BK Sekolah")}
+                      </div>
+                    </div>
                   </div>
-                  <div className="font-semibold text-gray-900">
-                    {profileData?.mentor ? profileData.mentor.name : (profileData?.school?.name || "Tim BK Sekolah")}
+                  {profileData?.mentor?.phone && (
+                    <Button 
+                      className="w-full bg-[#00A84D] hover:bg-green-600 text-white font-medium"
+                      onClick={() => window.open(`https://wa.me/${profileData.mentor.phone.replace(/[^0-9]/g, '')}`, '_blank')}
+                    >
+                      <FaWhatsapp className="w-4 h-4 mr-2" /> Kirim Pesan di WhatsApp
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Hotline Card */}
+                <div className="border border-gray-100 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hotline Kemenkes</div>
+                    <div className="font-semibold text-gray-900 text-lg">
+                      <a href="tel:119" className="hover:underline text-blue-600">119</a>
+                    </div>
+                    <div className="text-xs text-gray-500">Layanan Kementrian Kesehatan 24/7</div>
                   </div>
                 </div>
-              </div>
-              {profileData?.mentor?.phone && (
-                <Button 
-                  className="w-full bg-[#00A84D] hover:bg-green-600 text-white font-medium"
-                  onClick={() => window.open(`https://wa.me/${profileData.mentor.phone.replace(/[^0-9]/g, '')}`, '_blank')}
-                >
-                  <FaWhatsapp className="w-4 h-4 mr-2" /> Kirim Pesan di WhatsApp
-                </Button>
-              )}
-            </div>
-            
-            {/* Hotline Card */}
-            <div className="border border-gray-100 rounded-xl p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
-                <Phone className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hotline Kemenkes</div>
-                <div className="font-semibold text-gray-900 text-lg">
-                  <a href="tel:119" className="hover:underline text-blue-600">119</a>
-                </div>
-                <div className="text-xs text-gray-500">Layanan Kementrian Kesehatan 24/7</div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
           
           <div className="mt-8 space-y-3 text-center">

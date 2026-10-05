@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { getSharingDetail, markSharingFalsePositive, replySharing, createCounseling, acknowledgeSharing, createCounselingLog, createReferralCounseling, getUsersByType } from "@/lib/api";
+import { getSharingDetail, markSharingFalsePositive, replySharing, createCounseling, acknowledgeSharing, initialAckSharing, createCounselingLog, createReferralCounseling, getUsersByType } from "@/lib/api";
 import { Sharing, User } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,9 +62,11 @@ export default function DetailCurhatanPage() {
   const [activeEmergencyFlow, setActiveEmergencyFlow] = useState<"lainnya" | "medis" | null>(null);
   const [isFollowUpNoteOpen, setIsFollowUpNoteOpen] = useState(false);
   const [followUpNote, setFollowUpNote] = useState("");
+  const [isFollowUpSubmitting, setIsFollowUpSubmitting] = useState(false);
   const [isMedicalReferralOpen, setIsMedicalReferralOpen] = useState(false);
   const [medicalNote, setMedicalNote] = useState("");
   const [isParentConfirmed, setIsParentConfirmed] = useState(false);
+  const [isMedicalSubmitting, setIsMedicalSubmitting] = useState(false);
   const [counselingMethod, setCounselingMethod] = useState("");
   const [counselingNote, setCounselingNote] = useState("");
   const [resolutionStatus, setResolutionStatus] = useState("");
@@ -219,7 +221,7 @@ export default function DetailCurhatanPage() {
   const handleStartHandlingSubmit = async () => {
     try {
       setIsStartHandlingSubmitting(true);
-      const res = await acknowledgeSharing(id);
+      const res = await initialAckSharing(id);
       if (res.success) {
         toast.success("Berhasil memulai penanganan.");
         setIsHandling(true);
@@ -276,6 +278,11 @@ export default function DetailCurhatanPage() {
       });
 
       if (res.success) {
+        await acknowledgeSharing(id, {
+          action: "konseling_mandiri",
+          action_notes: scheduleNote || "",
+          action_confirmed: true
+        });
         toast.success("Jadwal konseling berhasil diajukan.");
         setIsScheduleOpen(false);
         window.location.reload();
@@ -287,6 +294,54 @@ export default function DetailCurhatanPage() {
       toast.error("Terjadi kesalahan saat memproses permintaan.");
     } finally {
       setIsScheduleSubmitting(false);
+    }
+  };
+
+  const handleFollowUpSubmit = async () => {
+    if (!followUpNote.trim()) return;
+    try {
+      setIsFollowUpSubmitting(true);
+      const res = await acknowledgeSharing(id, {
+        action: "lainnya",
+        action_notes: followUpNote,
+        action_confirmed: true
+      });
+      if (res.success) {
+        toast.success("Catatan tindak lanjut berhasil disimpan");
+        setIsFollowUpNoteOpen(false);
+        window.location.reload();
+      } else {
+        toast.error(res.message || "Gagal menyimpan catatan.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Terjadi kesalahan saat menyimpan catatan.");
+    } finally {
+      setIsFollowUpSubmitting(false);
+    }
+  };
+
+  const handleMedicalSubmit = async () => {
+    if (!medicalNote.trim() || !isParentConfirmed) return;
+    try {
+      setIsMedicalSubmitting(true);
+      const res = await acknowledgeSharing(id, {
+        action: "penanganan_medis",
+        action_notes: medicalNote,
+        action_confirmed: true
+      });
+      if (res.success) {
+        toast.success("Rujukan medis berhasil disimpan");
+        setIsMedicalReferralOpen(false);
+        window.location.reload();
+      } else {
+        toast.error(res.message || "Gagal menyimpan rujukan medis.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Terjadi kesalahan saat menyimpan rujukan.");
+    } finally {
+      setIsMedicalSubmitting(false);
     }
   };
 
@@ -570,6 +625,40 @@ export default function DetailCurhatanPage() {
           </div>
         )}
 
+        {/* Keputusan Tindak Lanjut (Read-Only) */}
+        {(data.action_confirmed === 1 || data.action_confirmed === true) && (
+          <div className="border rounded-lg mb-8 p-6">
+            <h3 className="font-bold text-gray-900 mb-4">Keputusan Tindak Lanjut :</h3>
+            
+            <div className="flex items-center gap-3 mb-6">
+              <div className={cn("p-2 rounded-lg flex-shrink-0", data.action === "penanganan_medis" ? "bg-yellow-100 text-yellow-600" : "bg-gray-100 text-gray-600")}>
+                {data.action === "penanganan_medis" ? <Building className="w-5 h-5" /> : data.action === "lainnya" ? <FileText className="w-5 h-5" /> : <UserIcon className="w-5 h-5" />}
+              </div>
+              <span className="font-bold text-gray-900">
+                {data.action === "penanganan_medis" ? "Perlu Penanganan Medis" : data.action === "lainnya" ? "Lainnya" : "Konseling Mandiri"}
+              </span>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">
+                {data.action === "penanganan_medis" ? "Catatan & Kondisi Siswa" : "Catatan"}
+              </p>
+              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
+                {data.action_notes || "-"}
+              </div>
+            </div>
+
+            {data.action === "penanganan_medis" && (
+              <div className="flex items-center gap-2 mt-4 text-sm text-gray-700">
+                <div className="bg-[#5b61e2] rounded flex items-center justify-center w-5 h-5">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                </div>
+                Konfirmasi orang tua/wali sudah dilakukan
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Detail Pengajuan Konseling / Informasi Rujukan / Catatan Hasil Konseling */}
         {data.counseling && (
           apiStatus === "menunggu persetujuan rujukan" ? (
@@ -811,152 +900,154 @@ export default function DetailCurhatanPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : status !== "Aman" && (apiStatus === "sedang ditangani" || isHandling || apiStatus === "jadwal ditolak siswa") ? (
-          <div className="border rounded-lg mb-8 p-4">
-              <h3 className="font-bold text-gray-900 mb-1">Keputusan Tindak Lanjut</h3>
-              <p className="text-sm text-gray-500 mb-4">Pilih satu keputusan penanganan untuk kasus ini.</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 1. Konseling Mandiri */}
-                <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
-                  <DialogTrigger asChild>
-                    <button className="flex flex-row items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-left transition-colors cursor-pointer w-full bg-white">
+          ) : status !== "Aman" && !data.action_confirmed && (apiStatus === "sedang ditangani" || isHandling || apiStatus === "jadwal ditolak siswa") ? (
+          <div className="border rounded-lg mb-8 p-6">
+                <>
+                  <h3 className="font-bold text-gray-900 mb-1">Keputusan Tindak Lanjut</h3>
+                  <p className="text-sm text-gray-500 mb-4">Pilih satu keputusan penanganan untuk kasus ini.</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* 1. Konseling Mandiri */}
+                    <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+                      <DialogTrigger asChild>
+                        <button className="flex flex-row items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-left transition-colors cursor-pointer w-full bg-white">
+                          <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex-shrink-0">
+                            <UserIcon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-gray-900 text-sm">Konseling Mandiri</div>
+                            <div className="text-xs text-gray-500 mt-0.5">Guru BK menangani langsung</div>
+                          </div>
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+                        <DialogHeader className="mb-2">
+                          <DialogTitle className="text-2xl font-bold">Ajukan Pertemuan Konseling</DialogTitle>
+                          <DialogDescription className="text-gray-600 mt-2 text-base">
+                            Buat jadwal pertemuan dengan siswa untuk tindak lanjut kasus ini.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid grid-cols-2 gap-4 mt-2">
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700">Tanggal <span className="text-red-500">*</span></Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full mt-2 justify-start text-left font-normal h-10",
+                                    !scheduleDate && "text-muted-foreground"
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {scheduleDate ? format(scheduleDate, "PPP") : <span>Pilih tanggal</span>}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={scheduleDate}
+                                  onSelect={setScheduleDate}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700">Waktu <span className="text-red-500">*</span></Label>
+                            <div className="relative mt-2">
+                              <Input 
+                                type="time" 
+                                value={scheduleTime}
+                                onChange={(e) => setScheduleTime(e.target.value)}
+                                className="w-full h-10 pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <Label className="text-sm font-semibold text-gray-700">Ruangan <span className="text-red-500">*</span></Label>
+                          <Select value={scheduleRoom} onValueChange={setScheduleRoom}>
+                            <SelectTrigger className="mt-2 w-full">
+                              <SelectValue placeholder="Pilih ruangan..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Ruang BK 1">Ruang BK 1</SelectItem>
+                              <SelectItem value="Ruang BK 2">Ruang BK 2</SelectItem>
+                              <SelectItem value="Klinik Sekolah">Klinik Sekolah</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="mt-4 mb-4">
+                          <Label className="text-sm font-semibold text-gray-700">Catatan Tambahan (Opsional)</Label>
+                          <Textarea 
+                            placeholder="Catatan tambahan..." 
+                            className="mt-2 resize-none w-full" 
+                            rows={3}
+                            value={scheduleNote}
+                            onChange={(e) => setScheduleNote(e.target.value)}
+                          />
+                        </div>
+
+                        <DialogFooter className="flex flex-row gap-3 sm:space-x-0 w-full">
+                          <DialogClose asChild>
+                            <Button variant="outline" className="w-1/2 text-[#5b61e2] border-[#5b61e2] hover:bg-blue-50 py-6 text-base font-semibold">
+                              Batal
+                            </Button>
+                          </DialogClose>
+                          <Button 
+                            className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold"
+                            onClick={handleScheduleSubmit}
+                            disabled={!scheduleDate || !scheduleTime || !scheduleRoom || isScheduleSubmitting}
+                          >
+                            {isScheduleSubmitting ? (
+                              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Proses...</>
+                            ) : (
+                              "Konfirmasi"
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+
+                    {/* 2. Lainnya */}
+                    <button 
+                      onClick={() => {
+                        setActiveEmergencyFlow("lainnya");
+                        setIsEmergencyContactOpen(true);
+                      }}
+                      className="flex flex-row items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-left transition-colors cursor-pointer w-full bg-white"
+                    >
                       <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex-shrink-0">
-                        <UserIcon className="w-5 h-5" />
+                        <FileText className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900 text-sm">Konseling Mandiri</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Guru BK menangani langsung</div>
+                        <div className="font-semibold text-gray-900 text-sm">Lainnya</div>
+                        <div className="text-xs text-gray-500 mt-0.5">Tindak lanjut di luar opsi di atas</div>
                       </div>
                     </button>
-                  </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
-                <DialogHeader className="mb-2">
-                  <DialogTitle className="text-2xl font-bold">Ajukan Pertemuan Konseling</DialogTitle>
-                  <DialogDescription className="text-gray-600 mt-2 text-base">
-                    Buat jadwal pertemuan dengan siswa untuk tindak lanjut kasus ini.
-                  </DialogDescription>
-                </DialogHeader>
 
-                <div className="grid grid-cols-2 gap-4 mt-2">
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700">Tanggal <span className="text-red-500">*</span></Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full mt-2 justify-start text-left font-normal h-10",
-                            !scheduleDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {scheduleDate ? format(scheduleDate, "PPP") : <span>Pilih tanggal</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={scheduleDate}
-                          onSelect={setScheduleDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    {/* 3. Perlu Penanganan Medis */}
+                    <button 
+                      onClick={() => {
+                        setActiveEmergencyFlow("medis");
+                        setIsEmergencyContactOpen(true);
+                      }}
+                      className="flex flex-row items-center gap-3 p-4 rounded-xl border border-yellow-200 bg-yellow-50/50 hover:bg-yellow-50 text-left transition-colors cursor-pointer w-full"
+                    >
+                      <div className="bg-yellow-100 p-2 rounded-lg text-yellow-600 flex-shrink-0">
+                        <Building className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-orange-800 text-sm">Perlu Penanganan Medis</div>
+                        <div className="text-xs text-orange-600 mt-0.5">Rujuk ke IGD / fasilitas kesehatan</div>
+                      </div>
+                    </button>
                   </div>
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700">Waktu <span className="text-red-500">*</span></Label>
-                    <div className="relative mt-2">
-                      <Input 
-                        type="time" 
-                        value={scheduleTime}
-                        onChange={(e) => setScheduleTime(e.target.value)}
-                        className="w-full h-10 pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <Label className="text-sm font-semibold text-gray-700">Ruangan <span className="text-red-500">*</span></Label>
-                  <Select value={scheduleRoom} onValueChange={setScheduleRoom}>
-                    <SelectTrigger className="mt-2 w-full">
-                      <SelectValue placeholder="Pilih ruangan..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Ruang BK 1">Ruang BK 1</SelectItem>
-                      <SelectItem value="Ruang BK 2">Ruang BK 2</SelectItem>
-                      <SelectItem value="Klinik Sekolah">Klinik Sekolah</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="mt-4 mb-4">
-                  <Label className="text-sm font-semibold text-gray-700">Catatan Tambahan (Opsional)</Label>
-                  <Textarea 
-                    placeholder="Catatan tambahan..." 
-                    className="mt-2 resize-none w-full" 
-                    rows={3}
-                    value={scheduleNote}
-                    onChange={(e) => setScheduleNote(e.target.value)}
-                  />
-                </div>
-
-                <DialogFooter className="flex flex-row gap-3 sm:space-x-0 w-full">
-                  <DialogClose asChild>
-                    <Button variant="outline" className="w-1/2 text-[#5b61e2] border-[#5b61e2] hover:bg-blue-50 py-6 text-base font-semibold">
-                      Batal
-                    </Button>
-                  </DialogClose>
-                  <Button 
-                    className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold"
-                    onClick={handleScheduleSubmit}
-                    disabled={!scheduleDate || !scheduleTime || !scheduleRoom || isScheduleSubmitting}
-                  >
-                    {isScheduleSubmitting ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Proses...</>
-                    ) : (
-                      "Konfirmasi"
-                    )}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-                {/* 2. Lainnya */}
-                <button 
-                  onClick={() => {
-                    setActiveEmergencyFlow("lainnya");
-                    setIsEmergencyContactOpen(true);
-                  }}
-                  className="flex flex-row items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-left transition-colors cursor-pointer w-full bg-white"
-                >
-                  <div className="bg-gray-100 p-2 rounded-lg text-gray-600 flex-shrink-0">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900 text-sm">Lainnya</div>
-                    <div className="text-xs text-gray-500 mt-0.5">Tindak lanjut di luar opsi di atas</div>
-                  </div>
-                </button>
-
-                {/* 3. Perlu Penanganan Medis */}
-                <button 
-                  onClick={() => {
-                    setActiveEmergencyFlow("medis");
-                    setIsEmergencyContactOpen(true);
-                  }}
-                  className="flex flex-row items-center gap-3 p-4 rounded-xl border border-yellow-200 bg-yellow-50/50 hover:bg-yellow-50 text-left transition-colors cursor-pointer w-full"
-                >
-                  <div className="bg-yellow-100 p-2 rounded-lg text-yellow-600 flex-shrink-0">
-                    <Building className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-orange-800 text-sm">Perlu Penanganan Medis</div>
-                    <div className="text-xs text-orange-600 mt-0.5">Rujuk ke IGD / fasilitas kesehatan</div>
-                  </div>
-                </button>
-              </div>
+                </>
             </div>
           ) : apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" ? (
             <Dialog open={isReplyOpen} onOpenChange={setIsReplyOpen}>
@@ -1009,7 +1100,7 @@ export default function DetailCurhatanPage() {
           ) : null}
 
 
-          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && apiStatus !== "sedang ditangani" && (
+          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && apiStatus !== "sedang ditangani" && apiStatus !== "diselesaikan" && apiStatus !== "bukan urgent" && (
             <Dialog open={isFalsePositiveOpen} onOpenChange={setIsFalsePositiveOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -1220,13 +1311,10 @@ export default function DetailCurhatanPage() {
              </DialogClose>
              <Button 
                className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
-               onClick={() => {
-                 setIsFollowUpNoteOpen(false);
-                 toast.success("Catatan tindak lanjut berhasil disimpan");
-               }}
-               disabled={!followUpNote.trim()}
+               onClick={handleFollowUpSubmit}
+               disabled={!followUpNote.trim() || isFollowUpSubmitting}
              >
-               Simpan
+               {isFollowUpSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Simpan"}
              </Button>
           </DialogFooter>
         </DialogContent>
@@ -1285,12 +1373,10 @@ export default function DetailCurhatanPage() {
              </DialogClose>
              <Button 
                className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
-               onClick={() => {
-                 setIsMedicalReferralOpen(false);
-                 toast.success("Rujukan medis berhasil disimpan");
-               }}
-               disabled={!medicalNote.trim() || !isParentConfirmed}
+               onClick={handleMedicalSubmit}
+               disabled={!medicalNote.trim() || !isParentConfirmed || isMedicalSubmitting}
              >
+               {isMedicalSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                Simpan dan Rujuk
              </Button>
           </DialogFooter>

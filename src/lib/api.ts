@@ -393,13 +393,28 @@ export async function markSharingFalsePositive(
 }
 
 /**
- * Acknowledge sharing/curhat (Mulai Penanganan)
+ * Acknowledge sharing/curhat (Keputusan Tindak Lanjut)
  */
 export async function acknowledgeSharing(
   id: number,
+  data?: {
+    action?: string;
+    action_notes?: string;
+    action_confirmed?: boolean;
+  }
 ): Promise<{ success: boolean; message: string }> {
-  // Pass an empty object as data since authPatch requires it
-  const response = await authPatch(`/sharing/acknowledge/${id}`, {});
+  const payload = data || {};
+  const response = await authPatch(`/sharing/acknowledge/${id}`, payload);
+  return response;
+}
+
+/**
+ * Initial Acknowledge sharing/curhat (Mulai Penanganan Kasus)
+ */
+export async function initialAckSharing(
+  id: number,
+): Promise<{ success: boolean; message: string }> {
+  const response = await authPatch(`/sharing/ack/${id}`, { action_confirmed: true });
   return response;
 }
 

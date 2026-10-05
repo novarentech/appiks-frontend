@@ -224,6 +224,14 @@ export interface Sharing {
   nlp?: any;
   counseling?: any;
   user: SharingUser;
+  action?: string | null;
+  action_notes?: string | null;
+  action_confirmed?: boolean | number | null;
+  contacts?: {
+    name: string;
+    phone?: string | null;
+    number?: string | null;
+  }[];
 }
 
 // Interface untuk response API sharing list
