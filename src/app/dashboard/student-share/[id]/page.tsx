@@ -533,7 +533,7 @@ export default function DetailCurhatanPage() {
           <div className="bg-gray-50/50 p-4 border-b font-semibold">Transkrip Curhatan</div>
           <div className="p-6">
             <div className="bg-gray-50 rounded-lg p-5">
-              <div className="font-semibold mb-3">{data.title}</div>
+              {data.title && <div className="font-semibold mb-3">{data.title}</div>}
               <p className="text-gray-600 text-sm leading-relaxed">
                 {data.description}
               </p>

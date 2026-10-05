@@ -37,7 +37,7 @@ export default function CurhatViewDialog({
         <div className="flex-1 overflow-y-auto py-4">
           <div className="space-y-6 px-1">
             <div className="bg-gray-50 p-6 rounded-lg">
-              <h4 className="font-semibold text-xl mb-3">{curhat.title}</h4>
+              {curhat.title && <h4 className="font-semibold text-xl mb-3">{curhat.title}</h4>}
               <p className="text-gray-700 mb-4 leading-relaxed text-base">
                 {curhat.description}
               </p>

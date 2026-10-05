@@ -13,7 +13,6 @@ import { useRouter } from "next/navigation";
 import ShareResultModal from "./ShareResultModal";
 
 export default function ShareThingCard() {
-  const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [resultZone, setResultZone] = useState<string | null>(null);
@@ -22,21 +21,20 @@ export default function ShareThingCard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !body.trim()) {
-      toast.error("Judul dan isi tidak boleh kosong");
+    if (!body.trim()) {
+      toast.error("Isi cerita tidak boleh kosong");
       return;
     }
     
     try {
       setIsLoading(true);
       const result = await createSharing({
-        title: title.trim(),
+        title: "", // Empty title as requested
         description: body.trim(),
       });
       
       if (result.success && result.data) {
         toast.success("Curhatan berhasil dikirim");
-        setTitle("");
         setBody("");
         
         // Cek zona dari NLP response
@@ -46,7 +44,6 @@ export default function ShareThingCard() {
         // Coba deteksi jika ini adalah error yang berkaitan dengan layanan analisis (bukan validasi)
         if (result.message && (result.message.toLowerCase().includes("analisis") || result.message.toLowerCase().includes("nlp") || result.message.toLowerCase().includes("500"))) {
           toast.success("Curhatan berhasil dikirim. Analisis sedang diproses.");
-          setTitle("");
           setBody("");
           setTimeout(() => router.push("/dashboard"), 1000);
         } else {
@@ -58,7 +55,6 @@ export default function ShareThingCard() {
       // Jika layanan NLP mengembalikan 500, data sebenarnya sudah tersimpan di database sebelum menembak NLP
       if (error?.message?.includes("status 50") || error?.status === 500 || error?.status === 504) {
         toast.success("Curhatan berhasil disimpan. Analisis akan menyusul.");
-        setTitle("");
         setBody("");
         setTimeout(() => router.push("/dashboard"), 1000);
       } else {
@@ -89,21 +85,12 @@ export default function ShareThingCard() {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-8">
-            <h3 className="font-semibold text-lg text-gray-800 mb-1">
+            <h3 className="font-semibold text-lg text-center text-gray-800 mb-1">
               Ceritakan hal apa yang membuat mood–mu kurang baik hari ini.
             </h3>
-            <p className="text-gray-500 text-sm mb-3">Tulis disini</p>
-            <div className="mb-4">
-              <label className="block text-gray-600 text-sm mb-1">Judul</label>
-              <Input
-                placeholder="Stress Menghadapi Ujian"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
+
             <div>
-              <label className="block text-gray-600 text-sm mb-1">Isi</label>
+              <label className="block text-gray-600 text-sm mb-1">Tulis ceritamu disini</label>
               <Textarea
                 placeholder="Type your message here."
                 rows={5}
@@ -117,7 +104,7 @@ export default function ShareThingCard() {
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={isLoading || !title.trim() || !body.trim()}              
+              disabled={isLoading || !body.trim()}
             >
               {isLoading ? "Mengirim..." : "Kirim"}
               <Send className="w-5 h-5 ml-1" />

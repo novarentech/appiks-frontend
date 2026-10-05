@@ -122,7 +122,7 @@ export default function ConfidentTable({
       const matchesSearch =
         (item.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.user.identifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.title.toLowerCase().includes(searchTerm.toLowerCase());
+        (item.title || "").toLowerCase().includes(searchTerm.toLowerCase());
 
       const mappedStatus = mapPriorityToStatus(item.priority);
       const matchesStatus =
@@ -206,7 +206,7 @@ export default function ConfidentTable({
       ),
       cell: ({ row }) => (
         <div className="min-w-[200px] max-w-[200px]">
-          <div className="font-medium truncate">{row.original.title}</div>
+          <div className="font-medium truncate">{row.original.title || (row.original.description ? row.original.description.substring(0, 40) + "..." : "Tanpa Judul")}</div>
         </div>
       ),
     },
