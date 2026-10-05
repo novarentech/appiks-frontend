@@ -1120,33 +1120,28 @@ export default function DetailCurhatanPage() {
 
       {/* Emergency Contact Modal */}
       <Dialog open={isEmergencyContactOpen} onOpenChange={setIsEmergencyContactOpen}>
-        <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
-          <DialogHeader className="mb-2 flex flex-row items-start justify-between">
-            <div className="text-left">
-              <DialogTitle className="text-xl font-bold">Kontak Bantuan Darurat</DialogTitle>
-              <DialogDescription className="text-gray-600 mt-2 text-sm">
-                Nomor ini dapat digunakan jika siswa membutuhkan bantuan segera.
-              </DialogDescription>
-            </div>
-            <DialogClose className="rounded-full bg-gray-50 p-2 hover:bg-gray-100 -mt-2 -mr-2">
-               <X className="w-4 h-4 text-gray-500" />
-            </DialogClose>
+        <DialogContent className="sm:max-w-[450px] p-6 rounded-2xl">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-xl font-bold">Kontak Bantuan Darurat</DialogTitle>
+            <DialogDescription className="text-gray-600 mt-2 text-sm">
+              Nomor ini dapat digunakan jika siswa membutuhkan bantuan segera.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="border border-gray-200 rounded-xl p-4 flex flex-col gap-4 mt-2">
-            <div className="flex items-center gap-3 w-full">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600">
-                <Phone className="w-5 h-5 fill-red-100" />
+          <div className="border border-gray-200 rounded-xl p-4 mt-2">
+            <div className="flex items-center gap-3 w-full mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                <Phone className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hotline Darurat Nasional</div>
-                <div className="font-bold text-gray-900 text-lg">119</div>
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Hotline Darurat Nasional</div>
+                <div className="font-bold text-gray-900 text-xl">119</div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button 
                 variant="outline" 
-                className="flex-1 border-gray-300 text-red-600 hover:text-red-700 hover:bg-red-50 font-semibold" 
+                className="flex-1 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50 font-semibold shadow-sm" 
                 onClick={() => { 
                   navigator.clipboard.writeText("119"); 
                   toast.success("Nomor 119 berhasil disalin"); 
@@ -1155,19 +1150,19 @@ export default function DetailCurhatanPage() {
                 <Copy className="w-4 h-4 mr-2" /> Salin Nomor
               </Button>
               <Button 
-                className="flex-1 bg-[#E53E3E] hover:bg-red-700 text-white font-semibold" 
+                className="flex-1 bg-[#E53E3E] hover:bg-red-700 text-white font-semibold shadow-sm" 
                 onClick={() => window.location.href = "tel:119"}
               >
-                <Phone className="w-4 h-4 mr-2 fill-current" /> Hubungi 119
+                <Phone className="w-4 h-4 mr-2" /> Hubungi 119
               </Button>
             </div>
           </div>
           
-          <div className="mt-4 text-center">
-             <p className="text-xs text-gray-400 mb-4">Tutup jendela ini untuk kembali ke pengisian tindak lanjut.</p>
+          <div className="mt-3">
+             <p className="text-xs text-gray-400 mb-3">Tutup jendela ini untuk kembali ke pengisian tindak lanjut.</p>
              <Button 
                variant="outline" 
-               className="w-full text-[#5b61e2] border-gray-200 font-semibold h-11" 
+               className="w-full text-[#5b61e2] border-[#5b61e2] hover:bg-indigo-50 font-semibold h-11" 
                onClick={() => setIsEmergencyContactOpen(false)}
              >
                Tutup
