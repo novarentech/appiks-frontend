@@ -757,39 +757,7 @@ export default function DetailCurhatanPage() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="border rounded-lg mb-8">
-              <div className="bg-gray-50/50 p-4 border-b font-semibold">Detail Pengajuan Konseling</div>
-              <div className="p-6">
-                <div className="grid grid-cols-3 gap-6 mb-6">
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Tanggal</div>
-                    <div className="font-semibold text-sm">
-                      {data.counseling.scheduled_at 
-                        ? format(new Date(data.counseling.scheduled_at), "MM/dd/yyyy") 
-                        : "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Waktu</div>
-                    <div className="font-semibold text-sm">
-                      {data.counseling.scheduled_at 
-                        ? format(new Date(data.counseling.scheduled_at), "hh:mm a") 
-                        : "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Ruangan</div>
-                    <div className="font-semibold text-sm">{data.counseling.room || "-"}</div>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-500 text-xs mb-1">Catatan Tambahan</div>
-                  <div className="font-semibold text-sm leading-relaxed">{data.counseling.notes || "-"}</div>
-                </div>
-              </div>
-            </div>
-          )
+          ) : null
         )}
 
         {/* Actions */}
