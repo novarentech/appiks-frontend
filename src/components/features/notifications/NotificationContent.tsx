@@ -161,7 +161,7 @@ export function NotificationContent({
                 </p>
               </>
             )}
-            {referralNotification.time && referralNotification.time !== "-" && (
+            {referralNotification.status !== "menunggu" && referralNotification.time && referralNotification.time !== "-" && (
               <>
                 <h6 className={`font-medium ${headerSize} text-gray-700 mt-4 mb-1`}>
                   Jadwal Konsultasi
@@ -172,9 +172,11 @@ export function NotificationContent({
                 </div>
               </>
             )}
-            <p className={`${isSm ? "text-[10px]" : "text-xs"} text-gray-400`}>
-              Dibuat pada : {referralNotification.referralDate}
-            </p>
+            {referralNotification.status !== "menunggu" && (
+              <p className={`${isSm ? "text-[10px]" : "text-xs"} text-gray-400`}>
+                Dibuat pada : {referralNotification.referralDate}
+              </p>
+            )}
           </div>
         )}
 
