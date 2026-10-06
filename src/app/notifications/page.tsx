@@ -182,6 +182,7 @@ function NotificationsPageContent() {
                 statusColor = "emerald";
                 borderColor = "border-emerald-400";
                 statusText = "Selesai";
+                mappedStatus = "selesai";
                 break;
               case "menunggu persetujuan siswa":
               case "menunggu":
@@ -193,18 +194,22 @@ function NotificationsPageContent() {
                 statusText = "Menunggu";
                 mappedStatus = "menunggu";
                 break;
+              case "ditolak":
               case "jadwal ditolak siswa":
               case "dibatalkan":
               case "rejected":
                 statusColor = "red";
                 borderColor = "border-red-400";
                 statusText = "Ditolak";
+                mappedStatus = "ditolak";
                 break;
+              case "dijadwalkan":
               case "disetujui":
               case "confirmed":
                 statusColor = "blue";
                 borderColor = "border-blue-400";
                 statusText = "Dijadwalkan";
+                mappedStatus = "dijadwalkan";
                 break;
               case "expired":
                 statusColor = "red";
@@ -216,17 +221,19 @@ function NotificationsPageContent() {
 
             let description = "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.";
             
-            const scheduledAt = item.scheduled_at || item.counseling?.scheduled_at;
-
-            // Check if reschedule/changes exist, otherwise default description
-            if (mappedStatus === "expired") {
-               description = "Batas waktu rujukan telah berakhir. Silakan ajukan ulang untuk memilih jadwal konsultasi yang baru. Klik Lihat Detail Untuk Pengajuan Jadwal";
-            } else if (item.status === "rescheduled" || item.status === "dijadwal_ulang") {
-               description = "Psikolog mengubah jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
-            } else if ((item.status === "confirmed" || mappedStatus === "disetujui") && (item.slot || scheduledAt)) {
-               description = "Psikolog telah mengkonfirmasi jadwal konsultasi Anda. Lihat detail untuk melihat jadwal konsultasi terbaru.";
+            if (statusText === "Menunggu") {
+              description = "Anda mendapat rujukan baru, silakan kelola persetujuan.";
+            } else if (statusText === "Dijadwalkan") {
+              description = "Jadwal rujukan telah dikonfirmasi oleh psikolog.";
+            } else if (statusText === "Ditolak") {
+              description = "Jadwal rujukan telah ditolak.";
+            } else if (statusText === "Selesai") {
+              description = "Sesi rujukan telah selesai.";
+            } else if (statusText === "Expired") {
+              description = "Batas waktu rujukan telah berakhir. Silakan ajukan ulang untuk memilih jadwal konsultasi yang baru.";
             }
 
+            const scheduledAt = item.scheduled_at || item.counseling?.scheduled_at;
             const slotDate = item.slot?.slot_date
               ? new Date(item.slot.slot_date)
               : (scheduledAt && !isNaN(new Date(scheduledAt).getTime())
@@ -249,10 +256,16 @@ function NotificationsPageContent() {
               }
             }
 
+            let title = "Rujukan Psikolog";
+            if (mappedStatus === "selesai") title = "Konseling Selesai";
+            else if (mappedStatus === "ditolak") title = "Konseling Ditolak";
+            else if (mappedStatus === "dijadwalkan") title = "Konseling Terjadwal";
+            else if (mappedStatus === "expired") title = "Rujukan Kedaluwarsa";
+
             return {
               id: item.id,
               type: "rujukan" as const,
-              title: "Konseling Terjadwal",
+              title: title,
               description: description,
               teacher: item.counseling?.counselor?.name || item.counselor?.name || "Guru BK",
               date: formattedDate,
@@ -269,6 +282,7 @@ function NotificationsPageContent() {
               referralDate: formattedReferralDate,
               time: referralTime,
               createdAt: item.created_at,
+              clinicalNotes: item.clinical_summary?.clinical_notes || item.assesment_logs?.[0]?.clinical_notes,
             };
           }) || [];
 

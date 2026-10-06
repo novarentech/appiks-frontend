@@ -125,6 +125,12 @@ export function NotificationItem({
             </p>
           )}
 
+          {!isSm && notification.type === "rujukan" && notification.status === "selesai" && (
+            <p className="text-gray-500 mb-3 text-sm">
+              Lihat detail untuk membaca catatan dan arahan dari psikolog setelah sesi konsultasi.
+            </p>
+          )}
+
           {/* Expanded details */}
           <motion.div
             initial={{ height: 0, opacity: 0 }}

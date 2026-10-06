@@ -147,30 +147,36 @@ export function NotificationContent({
 
     return (
       <div className={`space-y-4 ${isSm ? "space-y-3" : "space-y-4"}`}>
-        <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-          <h6
-            className={`font-medium ${headerSize} text-gray-700 ${marginBottom}`}
-          >
-            Alasan Rujukan:
-          </h6>
-          <p className={`${textSize} text-gray-600 mb-3`}>
-            {referralNotification.referralReason}
-          </p>
-          {referralNotification.time && referralNotification.time !== "-" && (
-            <>
-              <h6 className={`font-medium ${headerSize} text-gray-700 mt-4 mb-1`}>
-                Jadwal Konsultasi
-              </h6>
-              <div className={`${textSize} text-gray-600 space-y-1 mb-3`}>
-                <p>Waktu: {referralNotification.referralDate} {referralNotification.time}</p>
-                <p>Lokasi: {referralNotification.location}</p>
-              </div>
-            </>
-          )}
-          <p className={`${isSm ? "text-[10px]" : "text-xs"} text-gray-400`}>
-            Dibuat pada : {referralNotification.referralDate}
-          </p>
-        </div>
+        {referralNotification.status !== "selesai" && (
+          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+            {referralNotification.status !== "dijadwalkan" && (
+              <>
+                <h6
+                  className={`font-medium ${headerSize} text-gray-700 ${marginBottom}`}
+                >
+                  Alasan Rujukan:
+                </h6>
+                <p className={`${textSize} text-gray-600 mb-3`}>
+                  {referralNotification.referralReason}
+                </p>
+              </>
+            )}
+            {referralNotification.time && referralNotification.time !== "-" && (
+              <>
+                <h6 className={`font-medium ${headerSize} text-gray-700 mt-4 mb-1`}>
+                  Jadwal Konsultasi
+                </h6>
+                <div className={`${textSize} text-gray-600 space-y-1 mb-3`}>
+                  <p>Waktu: {referralNotification.referralDate} {referralNotification.time}</p>
+                  <p>Lokasi: {referralNotification.location}</p>
+                </div>
+              </>
+            )}
+            <p className={`${isSm ? "text-[10px]" : "text-xs"} text-gray-400`}>
+              Dibuat pada : {referralNotification.referralDate}
+            </p>
+          </div>
+        )}
 
         {referralNotification.status === "menunggu" && (
           <>
@@ -201,6 +207,15 @@ export function NotificationContent({
           >
             Pilih Jadwal Baru
           </Button>
+        )}
+
+        {referralNotification.status === "selesai" && referralNotification.clinicalNotes && (
+          <div className="bg-gray-50 p-4 rounded-lg mt-4 border border-gray-100">
+            <h6 className="font-semibold text-gray-800 mb-2">Catatan Klinis</h6>
+            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+              {referralNotification.clinicalNotes}
+            </p>
+          </div>
         )}
       </div>
     );
