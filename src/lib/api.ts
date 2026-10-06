@@ -1661,7 +1661,7 @@ export async function getPendingReferrals(): Promise<BackendReferralResponse> {
  */
 export async function decideReferral(
   id: string,
-  data: { action: "confirm" | "reject"; reject_reason?: string; reschedule_reason?: string; slot_id?: number },
+  data: { action: "confirm" | "reject" | "reschedule"; reject_reason?: string; reschedule_reason?: string; slot_id?: number },
 ): Promise<any> {
   const response = await authPatch(
     `/psychologist/referrals/${id}/decide`,

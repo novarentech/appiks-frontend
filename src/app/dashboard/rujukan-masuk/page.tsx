@@ -64,15 +64,10 @@ function RujukanMasukContent() {
             priority = "Kritis";
           }
 
-          let status = "Menunggu";
-          if (item.status === "confirmed") status = "Dijadwalkan";
-          else if (item.status === "rejected" || item.status === "dibatalkan") status = "Ditolak";
-          else if (item.status === "selesai") status = "Selesai";
-          else if (item.status === "expired") status = "Expired";
-          else if (item.status === "rescheduled" || item.status === "dijadwal_ulang") status = "Menunggu";
+          const status = item.status || "pending";
 
           let remainingTimeStr = "";
-          const isExpired = status === "Expired";
+          const isExpired = status?.toLowerCase() === "expired";
           if (!isExpired && diffHours > 0) {
             const diffDays = Math.floor(diffHours / 24);
             const remainingHours = Math.floor(diffHours % 24);
@@ -194,11 +189,11 @@ function RujukanMasukContent() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Status</SelectItem>
-            <SelectItem value="menunggu konfirmasi">Menunggu Konfirmasi</SelectItem>
-            <SelectItem value="terkonfirmasi">Terkonfirmasi</SelectItem>
-            <SelectItem value="selesai">Selesai</SelectItem>
-            <SelectItem value="ditolak">Ditolak</SelectItem>
-            <SelectItem value="kadaluarsa">Kadaluarsa</SelectItem>
+            <SelectItem value="pending">Menunggu Konfirmasi</SelectItem>
+            <SelectItem value="confirmed">Terkonfirmasi</SelectItem>
+            <SelectItem value="finished">Selesai</SelectItem>
+            <SelectItem value="rejected">Dibatalkan</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
           </SelectContent>
         </Select>
 

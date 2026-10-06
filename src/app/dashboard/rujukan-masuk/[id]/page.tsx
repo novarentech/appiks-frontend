@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { Referral, BackendReferralSummaryData } from "@/types/api";
-import { decideReferral, getReferralSummary, submitReferralFeedback, getCounselingConsent } from "@/lib/api";
+import { decideReferral, getReferralSummary, submitReferralFeedback, getCounselingConsent, getReferralAvailableDates, getReferralAvailableSlots } from "@/lib/api";
 import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown, Lock, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -40,6 +41,38 @@ function RujukanMasukDetailContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+      case "menunggu":
+        return "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200";
+      case "confirmed":
+      case "dijadwalkan":
+        return "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200";
+      case "finished":
+      case "selesai":
+        return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
+      case "rejected":
+      case "ditolak":
+        return "bg-rose-100 text-rose-700 hover:bg-rose-200 border-rose-200";
+      case "expired":
+        return "bg-gray-100 text-gray-500 hover:bg-gray-200 border-gray-200";
+      default:
+        return "bg-gray-100 text-gray-700 hover:bg-gray-200";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending": return "Menunggu Konfirmasi";
+      case "confirmed": return "Terkonfirmasi";
+      case "finished": return "Selesai";
+      case "rejected": return "Dibatalkan";
+      case "expired": return "Expired";
+      default: return status;
+    }
+  };
   
   const [referral, setReferral] = useState<Referral | null>(null);
   const [summary, setSummary] = useState<BackendReferralSummaryData | null>(null);
@@ -50,9 +83,18 @@ function RujukanMasukDetailContent() {
   const [improvementFeedbackInput, setImprovementFeedbackInput] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
+  
+  // Reschedule states
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [availableDates, setAvailableDates] = useState<any[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [isLoadingDates, setIsLoadingDates] = useState(false);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<any>(null);
+
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -81,14 +123,9 @@ function RujukanMasukDetailContent() {
         if (summaryRes.success && summaryRes.data) {
           const item = summaryRes.data;
 
-          let statusVal = "Menunggu";
+          let statusVal = "pending";
           const rawStatus = ((item as any).status || item.student?.status || item.sharing?.status || "").toLowerCase();
-          if (rawStatus === "confirmed") statusVal = "Dijadwalkan";
-          else if (rawStatus === "rejected" || rawStatus === "dibatalkan") statusVal = "Ditolak";
-          else if (rawStatus === "selesai") statusVal = "Selesai";
-          else if (rawStatus === "expired") statusVal = "Expired";
-          else if (rawStatus === "rescheduled" || rawStatus === "dijadwal_ulang") statusVal = "Menunggu";
-          else if (rawStatus !== "pending" && rawStatus !== "") statusVal = rawStatus;
+          if (rawStatus !== "") statusVal = rawStatus;
 
           const rawPriority = (item.student?.priority || item.sharing?.priority || "") as string;
           const priorityVal = ["sedang", "berat", "kritis", "tinggi"].includes(rawPriority.toLowerCase()) ? "Kritis" : "Prioritas";
@@ -139,10 +176,33 @@ function RujukanMasukDetailContent() {
     fetchData();
   }, [id]);
 
+  useEffect(() => {
+    if (isRescheduleOpen && referral) {
+      const fetchDates = async () => {
+        setIsLoadingDates(true);
+        try {
+          const res = await getReferralAvailableDates(Number(referral.counseling_id));
+          if (res.success && res.data) {
+            setAvailableDates(res.data.available_dates || []);
+            setSelectedDate("");
+            setSelectedSlot(null);
+            setAvailableSlots([]);
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error("Gagal mengambil daftar tanggal");
+        } finally {
+          setIsLoadingDates(false);
+        }
+      };
+      fetchDates();
+    }
+  }, [isRescheduleOpen, referral?.counseling_id]);
+
   if (loading) return <div className="p-8 text-center">Memuat data...</div>;
   if (!referral) return <div className="p-8 text-center text-red-500">Data tidak ditemukan.</div>;
 
-  const showConfirmButtons = referral.status === "Menunggu" || referral.status === "Expired";
+  const showConfirmButtons = referral.status?.toLowerCase() === "pending";
 
   const handleConfirm = async () => {
     try {
@@ -164,26 +224,53 @@ function RujukanMasukDetailContent() {
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      toast.error("Alasan penolakan harus diisi");
-      return;
-    }
+
+
+  const handleDateSelect = async (dateRaw: string) => {
+    setSelectedDate(dateRaw);
+    setSelectedSlot(null);
+    setAvailableSlots([]);
     
     try {
+      setIsLoadingSlots(true);
+      const res = await getReferralAvailableSlots(Number(referral.counseling_id), dateRaw);
+      if (res.success && res.data) {
+        const slotsArray = res.data.time_slots || (Array.isArray(res.data) ? res.data : []);
+        setAvailableSlots(slotsArray);
+      }
+    } catch (error) {
+      toast.error("Gagal mengambil jadwal");
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  const handleReschedule = async () => {
+    if (!selectedSlot) {
+      toast.error("Silakan pilih jadwal pengganti");
+      return;
+    }
+    if (!rescheduleReason.trim()) {
+      toast.error("Alasan pengajuan harus diisi");
+      return;
+    }
+    try {
       setIsSubmitting(true);
-      const response = await decideReferral(referral.id, { action: "reject", reject_reason: rejectReason });
+      const response = await decideReferral(referral.id, { 
+        action: "reschedule",
+        reschedule_reason: rescheduleReason,
+        slot_id: Number(selectedSlot.slot_id || selectedSlot.id)
+      });
       if (response.success) {
-        toast.success("Penolakan jadwal berhasil dikirim");
-        setIsRejectOpen(false);
-        // Lakukan refresh dengan mengganti router.push dengan window.location.href
+        toast.success("Pengajuan perubahan jadwal berhasil dikirim");
+        setIsRescheduleOpen(false);
         window.location.href = "/dashboard/rujukan-masuk";
       } else {
-        toast.error(response.message || "Gagal menolak jadwal");
+        toast.error(response.message || "Gagal mengajukan perubahan jadwal");
       }
     } catch (error) {
       console.error(error);
-      toast.error("Terjadi kesalahan saat menolak jadwal");
+      toast.error("Terjadi kesalahan saat mengajukan perubahan jadwal");
     } finally {
       setIsSubmitting(false);
     }
@@ -206,7 +293,9 @@ function RujukanMasukDetailContent() {
       const response = await submitReferralFeedback(id, payload);
       
       if (response.success) {
-        toast.success("Catatan klinis & feedback berhasil disimpan");
+        toast.success("Catatan klinis & feedback berhasil disimpan", {
+          description: "Penilaian tidak memengaruhi rekam siswa",
+        });
         // Refetch summary to update UI
         const summaryRes = await getReferralSummary(id);
         if (summaryRes.success && summaryRes.data) {
@@ -235,7 +324,7 @@ function RujukanMasukDetailContent() {
 
   // Calculate dynamic countdown
   let dynamicRemainingTimeStr = "-";
-  const dynamicIsExpired = referral.status === "Expired";
+  const dynamicIsExpired = referral.status?.toLowerCase() === "expired";
   
   const deadlineStr = summary?.student?.deadline_at || summary?.deadline_at || summary?.sharing?.deadline_at;
   
@@ -315,8 +404,8 @@ function RujukanMasukDetailContent() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1">Status</p>
-                <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-0 font-normal">
-                  {referral.status}
+                <Badge className={`${getStatusColor(referral.status)} border-0 font-normal`}>
+                  {getStatusText(referral.status)}
                 </Badge>
               </div>
             </div>
@@ -438,108 +527,116 @@ function RujukanMasukDetailContent() {
           </div>
 
           {/* Persetujuan Privasi Siswa */}
-          <div className="border border-gray-200 rounded-xl p-5 mb-6 bg-white">
-            <h4 className="font-semibold text-gray-900 text-base mb-1">Persetujuan Privasi Siswa</h4>
-            <p className="text-sm text-gray-500 mb-5">
+          <div className="border border-gray-200 rounded-xl p-6 mb-6 bg-white">
+            <h4 className="font-semibold text-gray-900 text-lg mb-1">Persetujuan Privasi Siswa</h4>
+            <p className="text-sm text-gray-500 mb-6">
               Data berikut dibagikan atas persetujuan siswa untuk mendukung evaluasi klinis.
             </p>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {consentScopes.includes("mood_history") ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 bg-white rounded-xl gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 bg-[#F9FAFB] rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-green-600 shrink-0">
+                    <div className="mt-0.5 text-green-500 shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
-                      <p className="text-sm text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
+                      <h5 className="font-semibold text-gray-900 text-[15px]">Riwayat mood 30 hari terakhir</h5>
+                      <p className="text-[13px] text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
                     </div>
                   </div>
                   <Link href={`/dashboard/rujukan-masuk/${id}/mood`} className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
-                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto text-[14px]">Lihat Detail</Button>
                   </Link>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 bg-[#F9FAFB] rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-gray-500 shrink-0">
+                    <div className="mt-0.5 text-gray-400 shrink-0">
                       <Lock className="w-5 h-5" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-gray-900 text-sm">Riwayat mood 30 hari terakhir</h5>
-                      <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                      <h5 className="font-semibold text-gray-900 text-[15px]">Riwayat mood 30 hari terakhir</h5>
+                      <p className="text-[13px] text-gray-500 mt-0.5">Data aktivitas dan pola mood Anda dalam 30 hari terakhir</p>
                     </div>
+                  </div>
+                  <div className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
+                    <Badge variant="secondary" className="bg-gray-200/60 text-gray-600 hover:bg-gray-200/60 font-medium border-0 rounded-full px-4">Persetujuan Dicabut</Badge>
                   </div>
                 </div>
               )}
 
               {consentScopes.includes("sharing_history") ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 bg-white rounded-xl gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 bg-[#F9FAFB] rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-green-600 shrink-0">
+                    <div className="mt-0.5 text-green-500 shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
-                      <p className="text-sm text-gray-500 mt-0.5">Teks curhat yang terdeteksi memerlukan perhatian khusus (disamarkan)</p>
+                      <h5 className="font-semibold text-gray-900 text-[15px]">Kutipan curhat 30 hari terakhir</h5>
+                      <p className="text-[13px] text-gray-500 mt-0.5">Teks curhat siswa dalam 30 hari terakhir</p>
                     </div>
                   </div>
                   <Link href={`/dashboard/rujukan-masuk/${id}/sharing`} className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
-                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto text-[14px]">Lihat Detail</Button>
                   </Link>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 bg-[#F9FAFB] rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-gray-500 shrink-0">
+                    <div className="mt-0.5 text-gray-400 shrink-0">
                       <Lock className="w-5 h-5" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-gray-900 text-sm">Kutipan curhat 30 hari terakhir</h5>
-                      <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                      <h5 className="font-semibold text-gray-900 text-[15px]">Kutipan curhat 30 hari terakhir</h5>
+                      <p className="text-[13px] text-gray-500 mt-0.5">Teks curhat siswa dalam 30 hari terakhir</p>
                     </div>
+                  </div>
+                  <div className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
+                    <Badge variant="secondary" className="bg-gray-200/60 text-gray-600 hover:bg-gray-200/60 font-medium border-0 rounded-full px-4">Persetujuan Dicabut</Badge>
                   </div>
                 </div>
               )}
 
               {consentScopes.includes("assesment_logs") ? (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 bg-white rounded-xl gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 bg-[#F9FAFB] rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-green-600 shrink-0">
+                    <div className="mt-0.5 text-green-500 shrink-0">
                       <Check className="w-5 h-5" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
-                      <p className="text-sm text-gray-500 mt-0.5">Catatan riwayat konsultasi siswa dengan Guru BK</p>
+                      <h5 className="font-semibold text-gray-900 text-[15px]">Catatan asesmen Guru BK</h5>
+                      <p className="text-[13px] text-gray-500 mt-0.5">Catatan dan asesmen dari Guru BK sekolah</p>
                     </div>
                   </div>
                   <Link href={`/dashboard/rujukan-masuk/${id}/assessment`} className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
-                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto">Lihat Detail</Button>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 p-0 font-medium h-auto text-[14px]">Lihat Detail</Button>
                   </Link>
                 </div>
               ) : (
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 border border-gray-100 bg-gray-50/50 rounded-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 bg-[#F9FAFB] rounded-xl gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-gray-500 shrink-0">
+                    <div className="mt-0.5 text-gray-400 shrink-0">
                       <Lock className="w-5 h-5" />
                     </div>
                     <div>
-                      <h5 className="font-semibold text-gray-900 text-sm">Catatan asesmen Guru BK</h5>
-                      <p className="text-sm text-gray-500 mt-0.5">Siswa memilih untuk tidak membagikan data ini (Privat).</p>
+                      <h5 className="font-semibold text-gray-900 text-[15px]">Catatan asesmen Guru BK</h5>
+                      <p className="text-[13px] text-gray-500 mt-0.5">Catatan dan asesmen dari Guru BK sekolah</p>
                     </div>
+                  </div>
+                  <div className="ml-8 sm:ml-0 self-start sm:self-auto shrink-0">
+                    <Badge variant="secondary" className="bg-gray-200/60 text-gray-600 hover:bg-gray-200/60 font-medium border-0 rounded-full px-4">Persetujuan Dicabut</Badge>
                   </div>
                 </div>
               )}
             </div>
 
-            {consentScopes.length === 0 && (
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <p className="text-sm text-gray-500">
-                  Tidak ada data yang dibagikan
-                </p>
-              </div>
-            )}
+            <div className="mt-6 pt-4 text-[13px]">
+              <span className="font-semibold text-red-500">Catatan:</span>{" "}
+              <span className="text-red-500">
+                Pencabutan persetujuan merupakan hak siswa. Untuk tindak lanjut, silakan koordinasikan dengan Guru BK.
+              </span>
+            </div>
           </div>
 
           {/* Tambah Catatan Klinis */}
@@ -563,9 +660,9 @@ function RujukanMasukDetailContent() {
                 />
                 <div className="flex justify-end mt-4">
                   <Button 
-                    className="bg-indigo-300 hover:bg-indigo-400 text-white min-w-[120px]"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
                     onClick={handleFeedbackSubmit}
-                    disabled={isSubmittingFeedback}
+                    disabled={isSubmittingFeedback || !clinicalNotesInput.trim()}
                   >
                     {isSubmittingFeedback ? "Menyimpan..." : "Simpan"}
                   </Button>
@@ -633,14 +730,14 @@ function RujukanMasukDetailContent() {
                     onChange={(e) => setImprovementFeedbackInput(e.target.value)}
                     disabled={isSubmittingFeedback}
                   />
-                  <p className="text-xs text-gray-400 mt-2">Feedback ini tidak mengubah ringkasan secara langsung.</p>
+                  <p className="text-xs text-gray-400 mt-2">Feedback ini tidak mengubah ringkasan secara langsung. Penilaian tidak memengaruhi rekam siswa.</p>
                 </div>
 
                 <div className="flex justify-end mt-4">
                   <Button 
-                    className="bg-indigo-300 hover:bg-indigo-400 text-white min-w-[120px]"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
                     onClick={handleFeedbackSubmit}
-                    disabled={isSubmittingFeedback}
+                    disabled={isSubmittingFeedback || !feedback}
                   >
                     {isSubmittingFeedback ? "Memproses..." : "Kirim Feedback"}
                   </Button>
@@ -687,34 +784,105 @@ function RujukanMasukDetailContent() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
+            <Dialog open={isRescheduleOpen} onOpenChange={setIsRescheduleOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full border-indigo-200 text-indigo-500 hover:bg-indigo-50 h-12 text-md" disabled={dynamicIsExpired}>
-                  Tolak Jadwal
+                  Ubah Jadwal
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Tolak Jadwal Konsultasi</DialogTitle>
+                  <DialogTitle>Ajukan Perubahan Jadwal</DialogTitle>
                   <DialogDescription className="text-gray-600 mt-2">
-                    Berikan alasan mengapa jadwal ini tidak dapat diterima. Alasan akan diteruskan ke siswa dan Guru BK.
+                    Pilih jadwal pengganti dari slot waktu yang telah Anda sediakan. Siswa dan Guru BK akan menerima notifikasi mengenai perubahan jadwal.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="my-2">
-                  <Label className="text-sm font-medium text-red-600 mb-1 block">Alasan Penolakan*</Label>
-                  <Textarea 
-                    placeholder="Jelaskan alasan penolakan..."
-                    className="min-h-[100px]"
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                  />
+
+                <div className="py-2 space-y-4">
+                  {/* Select Date */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Tanggal Pengganti</Label>
+                    {isLoadingDates ? (
+                      <div className="h-10 border rounded-md flex items-center justify-center bg-gray-50 text-gray-400 text-sm">
+                        Memuat daftar tanggal...
+                      </div>
+                    ) : (
+                      <Select value={selectedDate} onValueChange={handleDateSelect}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Pilih Tanggal Baru" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableDates && availableDates.length > 0 ? (
+                            availableDates.map((date) => (
+                              <SelectItem key={date.date} value={date.date}>
+                                {date.formatted_date}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="none" disabled>
+                              Tidak ada tanggal tersedia
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  {/* Select Slot */}
+                  {selectedDate && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">Waktu Pengganti</Label>
+                      {isLoadingSlots ? (
+                        <div className="h-10 border rounded-md flex items-center justify-center bg-gray-50 text-gray-400 text-sm">
+                          Memuat daftar waktu...
+                        </div>
+                      ) : (
+                        <Select
+                          value={selectedSlot ? selectedSlot.slot_id?.toString() || selectedSlot.id?.toString() : ""}
+                          onValueChange={(val: string) => {
+                            const slot = availableSlots.find((s: any) => (s.slot_id?.toString() || s.id?.toString()) === val);
+                            setSelectedSlot(slot || null);
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Pilih Waktu Baru" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableSlots && availableSlots.length > 0 ? (
+                              availableSlots.map((slot: any) => (
+                                <SelectItem key={slot.slot_id || slot.id} value={slot.slot_id?.toString() || slot.id?.toString()}>
+                                  {slot.start_time || slot.slot_start_time} - {slot.end_time || slot.slot_end_time}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="none" disabled>
+                                Tidak ada waktu tersedia
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Reason Textarea */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700 block">Alasan Perubahan Jadwal*</Label>
+                    <Textarea
+                      placeholder="Jelaskan alasan mengapa jadwal perlu diubah..."
+                      className="min-h-[80px] resize-none"
+                      value={rescheduleReason}
+                      onChange={(e) => setRescheduleReason(e.target.value)}
+                    />
+                  </div>
                 </div>
+
                 <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
-                  <Button variant="outline" className="flex-1 border-red-200 text-red-500 hover:bg-red-50" onClick={() => setIsRejectOpen(false)} disabled={isSubmitting}>
+                  <Button variant="outline" className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setIsRescheduleOpen(false)} disabled={isSubmitting}>
                     Batal
                   </Button>
-                  <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white" onClick={handleReject} disabled={isSubmitting}>
-                    {isSubmitting ? "Memproses..." : "Kirim Penolakan"}
+                  <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleReschedule} disabled={isSubmitting || !selectedSlot}>
+                    {isSubmitting ? "Memproses..." : "Ajukan Jadwal Baru"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

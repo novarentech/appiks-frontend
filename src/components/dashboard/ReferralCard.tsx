@@ -110,7 +110,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
     try {
       setIsSubmitting(true);
       const response = await decideReferral(referral.id, {
-        action: "confirm",
+        action: "reschedule",
         reschedule_reason: rescheduleReason,
         slot_id: Number(selectedSlot.slot_id || selectedSlot.id)
       });
@@ -168,23 +168,38 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
 
   // Determine colors based on status
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Menunggu":
-        return "bg-orange-100 text-orange-700 hover:bg-orange-200";
-      case "Dijadwalkan":
-        return "bg-blue-100 text-blue-700 hover:bg-blue-200";
-      case "Selesai":
-        return "bg-green-100 text-green-700 hover:bg-green-200";
-      case "Ditolak":
-        return "bg-gray-100 text-gray-700 hover:bg-gray-200";
-      case "Expired":
-        return "bg-red-100 text-red-700 hover:bg-red-200";
+    switch (status?.toLowerCase()) {
+      case "pending":
+      case "menunggu":
+        return "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200";
+      case "confirmed":
+      case "dijadwalkan":
+        return "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200";
+      case "finished":
+      case "selesai":
+        return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
+      case "rejected":
+      case "ditolak":
+        return "bg-rose-100 text-rose-700 hover:bg-rose-200 border-rose-200";
+      case "expired":
+        return "bg-gray-100 text-gray-500 hover:bg-gray-200 border-gray-200";
       default:
         return "bg-gray-100 text-gray-700 hover:bg-gray-200";
     }
   };
 
-  const showTimer = referral.status === "Menunggu";
+  const getStatusText = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending": return "Menunggu Konfirmasi";
+      case "confirmed": return "Terkonfirmasi";
+      case "finished": return "Selesai";
+      case "rejected": return "Dibatalkan";
+      case "expired": return "Expired";
+      default: return status;
+    }
+  };
+
+  const showTimer = referral.status?.toLowerCase() === "pending" || referral.status === "Menunggu";
 
   // Helper to format date if it's an ISO string
   const formatDate = (dateStr: string) => {
@@ -263,7 +278,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
               variant="secondary"
               className={`font-normal border-0 ${getStatusColor(referral.status)}`}
             >
-              {referral.status}
+              {getStatusText(referral.status)}
             </Badge>
           </div>
 
@@ -298,13 +313,13 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              {(referral.status === "Menunggu" || referral.status === "Expired") && (
+              {(referral.status?.toLowerCase() === "pending" || referral.status === "Menunggu") && (
                 <>
                   <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
                     <DialogTrigger asChild>
                       <Button
                         className="bg-indigo-500 hover:bg-indigo-600 text-white min-w-[120px]"
-                        disabled={referral.is_expired || referral.status === "Expired"}
+                        disabled={referral.is_expired}
                       >
                         Konfirmasi
                       </Button>
@@ -340,7 +355,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                   <Button
                     variant="outline"
                     className="border-indigo-200 text-indigo-500 hover:bg-indigo-50 min-w-[120px]"
-                    disabled={referral.is_expired || referral.status === "Expired"}
+                    disabled={referral.is_expired}
                     onClick={() => setIsRescheduleOpen(true)}
                   >
                     Ubah Jadwal
@@ -348,7 +363,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                 </>
               )}
 
-              {referral.status === "Dijadwalkan" && (
+              {(referral.status?.toLowerCase() === "confirmed" || referral.status === "Dijadwalkan") && (
                 <>
                   <Link href={`/dashboard/rujukan-masuk/${referral.counseling_id}`}>
                     <Button className="bg-green-600 hover:bg-green-700 text-white min-w-[120px]">
@@ -365,7 +380,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                 </>
               )}
 
-              {referral.status === "Selesai" && (
+              {(referral.status?.toLowerCase() === "finished" || referral.status === "Selesai") && (
                 <Link href={`/dashboard/rujukan-masuk/${referral.counseling_id}`}>
                   <Button
                     variant="outline"
