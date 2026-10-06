@@ -39,7 +39,7 @@ export default function ShareThingCard() {
         setBody("");
         
         // Cek zona dari NLP response
-        const zone = result.data.nlp?.response?.zone_status || "Green Zone";
+        const zone = result.data.sharing?.nlp?.response?.zone_status || "Unknown";
         setResultZone(zone);
         if (result.data.contacts) {
           setResultContacts(result.data.contacts);

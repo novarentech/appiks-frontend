@@ -270,7 +270,10 @@ export interface SharingCreateRequest {
 export interface SharingCreateResponse {
   success: boolean;
   message: string;
-  data: Sharing;
+  data: {
+    contacts?: any[];
+    sharing: Sharing;
+  };
 }
 
 // Interface untuk Counseling Schedule
