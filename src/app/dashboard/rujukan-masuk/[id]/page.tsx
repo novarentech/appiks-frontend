@@ -84,6 +84,7 @@ function RujukanMasukDetailContent() {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmNotesOpen, setIsConfirmNotesOpen] = useState(false);
   
   // Reschedule states
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
@@ -276,8 +277,40 @@ function RujukanMasukDetailContent() {
     }
   };
 
-  const handleFeedbackSubmit = async () => {
-    if (!clinicalNotesInput.trim() && !feedback && !improvementFeedbackInput.trim()) {
+  const isSessionStarted = () => {
+    if (!referral || !referral.date) return false;
+    try {
+      const now = new Date();
+      let sessionDate = new Date();
+
+      if (referral.date.includes("T")) {
+        sessionDate = new Date(referral.date);
+      } else {
+        const parts = referral.date.split("-");
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            sessionDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
+          } else {
+            sessionDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+          }
+        }
+      }
+
+      if (referral.time) {
+        const timeStartStr = referral.time.split(" ")[0]?.split("-")[0];
+        if (timeStartStr && timeStartStr.includes(":")) {
+          const [hours, minutes] = timeStartStr.split(":");
+          sessionDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        }
+      }
+      return now >= sessionDate;
+    } catch (e) {
+      return true;
+    }
+  };
+
+  const handleRatingSubmit = async () => {
+    if (!feedback && !improvementFeedbackInput.trim()) {
       toast.error("Isi minimal salah satu form sebelum menyimpan");
       return;
     }
@@ -286,17 +319,15 @@ function RujukanMasukDetailContent() {
       setIsSubmittingFeedback(true);
       
       const payload: any = {};
-      if (clinicalNotesInput.trim()) payload.clinical_notes = clinicalNotesInput;
       if (feedback) payload.rating = feedback === 'up' ? 'good' : 'bad';
       if (improvementFeedbackInput.trim()) payload.improvement_feedback = improvementFeedbackInput;
 
       const response = await submitReferralFeedback(id, payload);
       
       if (response.success) {
-        toast.success("Catatan klinis & feedback berhasil disimpan", {
+        toast.success("Feedback berhasil dikirim", {
           description: "Penilaian tidak memengaruhi rekam siswa",
         });
-        // Refetch summary to update UI
         const summaryRes = await getReferralSummary(id);
         if (summaryRes.success && summaryRes.data) {
           setSummary(summaryRes.data);
@@ -306,7 +337,34 @@ function RujukanMasukDetailContent() {
       }
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      toast.error("Terjadi kesalahan saat menyimpan data");
+      toast.error("Terjadi kesalahan saat menyimpan feedback");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  const handleClinicalNotesSubmit = async () => {
+    if (!clinicalNotesInput.trim()) return;
+
+    try {
+      setIsSubmittingFeedback(true);
+      
+      const payload: any = {
+        clinical_notes: clinicalNotesInput
+      };
+
+      const response = await submitReferralFeedback(id, payload);
+      
+      if (response.success) {
+        toast.success("Catatan berhasil dikirim kepada siswa");
+        setIsConfirmNotesOpen(false);
+        window.location.href = `/dashboard/rujukan-masuk/${id}`;
+      } else {
+        toast.error(response.message || "Gagal mengirim catatan");
+      }
+    } catch (error) {
+      console.error("Error submitting notes:", error);
+      toast.error("Terjadi kesalahan saat mengirim catatan");
     } finally {
       setIsSubmittingFeedback(false);
     }
@@ -642,7 +700,7 @@ function RujukanMasukDetailContent() {
           {/* Tambah Catatan Klinis */}
           <div className="border rounded-lg p-5">
             <h4 className="font-semibold text-gray-800">
-              {summary?.clinical_notes ? "Catatan Klinis" : "Tambah Catatan Klinis"}
+              {summary?.clinical_notes ? "Catatan untuk Siswa (Arahan Pasca Sesi)" : "Catatan untuk Siswa (Arahan Pasca Sesi)"}
             </h4>
             {summary?.clinical_notes ? (
               <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 leading-relaxed mt-4">
@@ -650,22 +708,55 @@ function RujukanMasukDetailContent() {
               </div>
             ) : (
               <>
-                <p className="text-sm text-gray-500 mb-4 mt-1">Catatan Anda ditambahkan sebagai anotasi profesional, ringkasan AI tidak akan diubah.</p>
+                <p className="text-sm text-gray-500 mb-4 mt-1">Catatan ini akan dikirim kepada siswa sebagai arahan setelah sesi.</p>
                 <Textarea 
-                  placeholder="Tuliskan observasi, koreksi konteks, atau catatan profesional Anda terkait ringkasan AI ini..."
+                  placeholder="Tuliskan pesan, arahan, atau tindak lanjut untuk siswa..."
                   className="min-h-[100px] bg-white resize-none"
                   value={clinicalNotesInput}
                   onChange={(e) => setClinicalNotesInput(e.target.value)}
                   disabled={isSubmittingFeedback}
                 />
                 <div className="flex justify-end mt-4">
-                  <Button 
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
-                    onClick={handleFeedbackSubmit}
-                    disabled={isSubmittingFeedback || !clinicalNotesInput.trim()}
-                  >
-                    {isSubmittingFeedback ? "Menyimpan..." : "Simpan"}
-                  </Button>
+                  <Dialog open={isConfirmNotesOpen} onOpenChange={setIsConfirmNotesOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
+                        disabled={!clinicalNotesInput.trim() || !isSessionStarted()}
+                      >
+                        Selesaikan Sesi & Kirim Catatan
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Kirim Catatan kepada Siswa</DialogTitle>
+                        <DialogDescription>
+                          Anda akan mengakhiri sesi ini dan mengirimkan catatan berikut kepada siswa.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                        {clinicalNotesInput}
+                      </div>
+                      <DialogFooter className="flex gap-3 pt-4 sm:justify-between">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsConfirmNotesOpen(false)}
+                          disabled={isSubmittingFeedback}
+                          className="flex-1"
+                        >
+                          Batal
+                        </Button>
+                        <Button
+                          type="button"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                          onClick={handleClinicalNotesSubmit}
+                          disabled={isSubmittingFeedback}
+                        >
+                          {isSubmittingFeedback ? "Mengirim..." : "Ya, Kirim Catatan"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </>
             )}
@@ -736,7 +827,7 @@ function RujukanMasukDetailContent() {
                 <div className="flex justify-end mt-4">
                   <Button 
                     className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
-                    onClick={handleFeedbackSubmit}
+                    onClick={handleRatingSubmit}
                     disabled={isSubmittingFeedback || !feedback}
                   >
                     {isSubmittingFeedback ? "Memproses..." : "Kirim Feedback"}
