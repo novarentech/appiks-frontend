@@ -56,9 +56,9 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose, contacts
     let timer: NodeJS.Timeout;
     if (isOpen) {
       let initialTime = 0;
-      if (zoneStatus === "Red Zone") initialTime = 30; // changed to 30 as requested but image says 25, we'll use 30 as user text said 30
-      else if (zoneStatus === "Yellow Zone") initialTime = 15;
-      else if (zoneStatus === "Green Zone" || zoneStatus === "No Trigger") initialTime = 6;
+      if (zoneStatus === "Red Zone") initialTime = 25;
+      else if (zoneStatus === "Yellow Zone") initialTime = 25;
+      else if (zoneStatus === "Green Zone" || zoneStatus === "No Trigger") initialTime = 25;
 
       if (initialTime > 0) {
         setCountdown(initialTime);
@@ -111,7 +111,13 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose, contacts
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 {contacts && contacts.length > 0 ? (
-                  contacts.map((contact, index) => {
+                  [...contacts].sort((a, b) => {
+                    const aIsEmergency = a.name.toLowerCase().includes("darurat") || a.name.toLowerCase().includes("hotline") || a.name.toLowerCase().includes("nasional");
+                    const bIsEmergency = b.name.toLowerCase().includes("darurat") || b.name.toLowerCase().includes("hotline") || b.name.toLowerCase().includes("nasional");
+                    if (aIsEmergency && !bIsEmergency) return -1;
+                    if (!aIsEmergency && bIsEmergency) return 1;
+                    return 0;
+                  }).map((contact, index) => {
                     const isEmergency = contact.name.toLowerCase().includes("darurat") || contact.name.toLowerCase().includes("hotline") || contact.name.toLowerCase().includes("nasional");
                     const phoneStr = contact.phone || contact.number;
                     
@@ -194,6 +200,23 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose, contacts
                 ) : (
                   <>
                     <div className="border border-gray-200 rounded-xl p-5 flex flex-col gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600">
+                          <Phone className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hotline Kemenkes</div>
+                          <div className="font-semibold text-gray-900 text-lg">119</div>
+                        </div>
+                      </div>
+                      <Button 
+                        className="w-full bg-[#E53E3E] hover:bg-red-700 text-white font-medium h-11"
+                        onClick={() => window.open(`tel:119`)}
+                      >
+                        <Phone className="w-4 h-4 mr-2" /> Hubungi 119
+                      </Button>
+                    </div>
+                    <div className="border border-gray-200 rounded-xl p-5 flex flex-col gap-4">
                       {(!profileData?.mentor?.phone) && profileData?.school ? (
                         <>
                           <div className="flex items-center gap-3">
@@ -246,23 +269,6 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose, contacts
                         </>
                       )}
                     </div>
-                    <div className="border border-gray-200 rounded-xl p-5 flex flex-col gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0 text-red-600">
-                          <Phone className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Hotline Kemenkes</div>
-                          <div className="font-semibold text-gray-900 text-lg">119</div>
-                        </div>
-                      </div>
-                      <Button 
-                        className="w-full bg-[#E53E3E] hover:bg-red-700 text-white font-medium h-11"
-                        onClick={() => window.open(`tel:119`)}
-                      >
-                        <Phone className="w-4 h-4 mr-2" /> Hubungi 119
-                      </Button>
-                    </div>
                   </>
                 )}
               </div>
@@ -273,7 +279,7 @@ export default function ShareResultModal({ isOpen, zoneStatus, onClose, contacts
                 
                 <Button 
                   variant="outline"
-                  className="w-full max-w-md border-gray-200 text-gray-900 font-bold h-12 text-base"
+                  className="w-full border-gray-200 text-gray-900 font-bold h-12 text-base"
                   onClick={() => window.location.href = "/dashboard"}
                 >
                   Saya Sudah Aman
