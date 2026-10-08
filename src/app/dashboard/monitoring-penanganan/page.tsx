@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Calendar, Clock, User, ChevronRight, Users, Activity, CheckCircle, AlertTriangle } from "lucide-react";
+import { Search, Calendar, Clock, User, ChevronRight, Users, Activity, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,9 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { mockMonitoringStats, mockMonitoringCases } from "@/data/mockMonitoring";
 import { MonitoringCaseCard } from "@/components/dashboard/MonitoringCaseCard";
 import DashboardPanel from "@/components/dashboard/panels/DashboardPanel";
+import { getMonitoringPenanganan } from "@/lib/api";
+import { MonitoringStats, MonitoringCaseItem } from "@/types/api";
+import { toast } from "sonner";
 
 export default function MonitoringPenangananPage() {
   return (
@@ -33,13 +35,42 @@ function MonitoringPenangananContent() {
   const [waktuFilter, setWaktuFilter] = useState("all");
   const [guruFilter, setGuruFilter] = useState("all");
 
+  const [data, setData] = useState<{stats: MonitoringStats, cases: MonitoringCaseItem[]} | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getMonitoringPenanganan();
+        if (response.success) {
+          setData(response.data);
+        } else {
+          toast.error(response.message || "Gagal memuat data monitoring");
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Terjadi kesalahan saat memuat data monitoring");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const today = new Date().toLocaleDateString("id-ID", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
 
-  const statsForPanel = mockMonitoringStats.map((stat) => {
+  const statsData = [
+    { title: "TOTAL KASUS AKTIF", value: data?.stats?.total_kasus_aktif || 0, iconType: "aktif" },
+    { title: "INTERVENSI SELESAI", value: data?.stats?.intervensi_selesai || 0, iconType: "selesai" },
+    { title: "RUJUKAN PSIKOLOG", value: data?.stats?.rujukan_psikolog || 0, iconType: "rujukan" },
+    { title: "PELANGGARAN SLA", value: data?.stats?.pelanggaran_sla || "0 Kasus", iconType: "sla" },
+  ];
+
+  const statsForPanel = statsData.map((stat) => {
     let icon;
     switch (stat.iconType) {
       case "aktif":
@@ -67,11 +98,13 @@ function MonitoringPenangananContent() {
     };
   });
 
-  const filteredCases = mockMonitoringCases.filter((item) => {
+  const casesToFilter = data?.cases || [];
+  const filteredCases = casesToFilter.filter((item) => {
     const matchesSearch = item.studentName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || item.status === statusFilter;
     const matchesWaktu = waktuFilter === "all" || item.slaStatus === waktuFilter;
-    return matchesSearch && matchesStatus && matchesWaktu;
+    const matchesGuru = guruFilter === "all" || item.counselorName === guruFilter;
+    return matchesSearch && matchesStatus && matchesWaktu && matchesGuru;
   });
 
   return (
@@ -91,7 +124,13 @@ function MonitoringPenangananContent() {
       </div>
 
       {/* Stats Cards */}
-      <DashboardPanel items={statsForPanel} />
+      {isLoading ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <DashboardPanel items={statsForPanel} />
+      )}
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -139,7 +178,12 @@ function MonitoringPenangananContent() {
 
       {/* List of Cases */}
       <div className="space-y-4">
-        {filteredCases.length > 0 ? (
+        {isLoading ? (
+          <div className="text-center py-12 bg-white border rounded-xl text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-gray-400" />
+            Memuat data...
+          </div>
+        ) : filteredCases.length > 0 ? (
           filteredCases.map((item) => (
             <MonitoringCaseCard key={item.id} item={item} />
           ))

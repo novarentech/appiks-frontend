@@ -170,9 +170,12 @@ export default function DetailCurhatanPage() {
     if (status === "Aman") return;
 
     // Timer logic
-    const createdAt = new Date(data.created_at).getTime();
-    const hoursToAdd = status === "Kritis" ? 2 : 48;
-    const targetTime = createdAt + hoursToAdd * 60 * 60 * 1000;
+    if (!data.cutdown_for_report) {
+      setTimeLeft("00:00:00");
+      return;
+    }
+
+    const targetTime = new Date(data.cutdown_for_report.replace(" ", "T") + "Z").getTime();
 
     const interval = setInterval(() => {
       const now = new Date().getTime();

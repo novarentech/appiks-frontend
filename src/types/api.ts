@@ -220,7 +220,7 @@ export interface Sharing {
   status: string;
   created_at: string;
   deleted_at?: string | null;
-  cutdown_for_report?: any;
+  cutdown_for_report?: string | null;
   nlp?: any;
   counseling?: any;
   user: SharingUser;
@@ -1500,4 +1500,40 @@ export interface UpdatePsychologistRequest {
   phone_number: string;
   password?: string;
   is_active: boolean;
+}
+
+// Interface untuk Monitoring Penanganan
+export interface MonitoringStats {
+  total_kasus_aktif: number;
+  intervensi_selesai: number;
+  rujukan_psikolog: number;
+  pelanggaran_sla: number | string;
+}
+
+export interface MonitoringTimelineItem {
+  date: string;
+  time: string;
+  description: string;
+  status: "success" | "pending";
+}
+
+export interface MonitoringCaseItem {
+  id: string | number;
+  studentName: string;
+  className: string;
+  date: string;
+  time: string;
+  counselorName: string;
+  status: string;
+  slaStatus: string;
+  timeline?: MonitoringTimelineItem[];
+}
+
+export interface MonitoringResponse {
+  success: boolean;
+  message: string;
+  data: {
+    stats: MonitoringStats;
+    cases: MonitoringCaseItem[];
+  };
 }

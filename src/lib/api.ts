@@ -84,6 +84,7 @@ import {
   BackendReferralOverviewResponse,
   BackendReferralsPaginatedResponse,
   BackendReferralSummaryResponse,
+  MonitoringResponse,
 } from "@/types/api";
 import {
   RoomResponse,
@@ -1399,6 +1400,14 @@ export async function getDashboardReportCount(): Promise<{
   };
 }> {
   const response = await authGet("/dashboard/report-count");
+  return response;
+}
+
+/**
+ * Get Monitoring Penanganan Data
+ */
+export async function getMonitoringPenanganan(): Promise<MonitoringResponse> {
+  const response = await authGet("/dashboard/monitoring");
   return response;
 }
 

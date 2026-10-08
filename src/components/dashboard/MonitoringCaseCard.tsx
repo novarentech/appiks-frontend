@@ -13,10 +13,10 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { MonitoringCase } from "@/data/mockMonitoring";
+import { MonitoringCaseItem } from "@/types/api";
 
 interface MonitoringCaseCardProps {
-  item: MonitoringCase;
+  item: MonitoringCaseItem;
 }
 
 export function MonitoringCaseCard({ item }: MonitoringCaseCardProps) {
