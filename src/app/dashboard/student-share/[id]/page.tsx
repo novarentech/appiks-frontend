@@ -179,7 +179,7 @@ export default function DetailCurhatanPage() {
       return;
     }
 
-    const targetTime = new Date(data.cutdown_for_report.replace(" ", "T") + "Z").getTime();
+    const targetTime = new Date(data.cutdown_for_report.replace(" ", "T")).getTime();
 
     const interval = setInterval(() => {
       const now = new Date().getTime();
