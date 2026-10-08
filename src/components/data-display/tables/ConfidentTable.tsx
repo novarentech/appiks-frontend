@@ -78,6 +78,10 @@ export default function ConfidentTable({
         return "bg-purple-50 text-purple-700 border-purple-200";
       case "menunggu persetujuan rujukan":
         return "bg-orange-50 text-orange-700 border-orange-200";
+      case "bukan urgent":
+        return "bg-slate-50 text-slate-700 border-slate-200";
+      case "sudah ditanggapi":
+        return "bg-green-50 text-green-700 border-green-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
     }

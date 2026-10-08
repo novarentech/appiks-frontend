@@ -183,6 +183,10 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
         return "bg-rose-100 text-rose-700 hover:bg-rose-200 border-rose-200";
       case "expired":
         return "bg-gray-100 text-gray-500 hover:bg-gray-200 border-gray-200";
+      case "bukan urgent":
+        return "bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200";
+      case "sudah ditanggapi":
+        return "bg-green-100 text-green-700 hover:bg-green-200 border-green-200";
       default:
         return "bg-gray-100 text-gray-700 hover:bg-gray-200";
     }
@@ -195,6 +199,8 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
       case "finished": return "Selesai";
       case "rejected": return "Dibatalkan";
       case "expired": return "Expired";
+      case "bukan urgent": return "Bukan Urgent";
+      case "sudah ditanggapi": return "Sudah Ditanggapi";
       default: return status;
     }
   };
