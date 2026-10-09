@@ -1854,3 +1854,26 @@ export async function getHeadTeacherDashboardStats(): Promise<{
 }> {
   return await authGet("/headteacher/dashboard/stats");
 }
+
+export interface HeadTeacherIncident {
+  id: number;
+  status: string;
+  priority: string;
+  created_at: string;
+  acknowledged_at: string | null;
+  assigned_counselor: string;
+  is_sla_breached: boolean;
+  student_name?: string;
+  class_name?: string;
+}
+
+/**
+ * Get HeadTeacher Incidents
+ */
+export async function getHeadTeacherIncidents(): Promise<{
+  success: boolean;
+  message: string;
+  data: HeadTeacherIncident[];
+}> {
+  return await authGet("/headteacher/incidents");
+}

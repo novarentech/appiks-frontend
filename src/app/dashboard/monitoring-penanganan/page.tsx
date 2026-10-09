@@ -20,6 +20,8 @@ import DashboardPanel from "@/components/dashboard/panels/DashboardPanel";
 import { getMonitoringPenanganan } from "@/lib/api";
 import { MonitoringStats, MonitoringCaseItem } from "@/types/api";
 import { toast } from "sonner";
+import { RedZoneAlertModal } from "@/components/dashboard/RedZoneAlertModal";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MonitoringPenangananPage() {
   return (
@@ -30,6 +32,7 @@ export default function MonitoringPenangananPage() {
 }
 
 function MonitoringPenangananContent() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [waktuFilter, setWaktuFilter] = useState("all");
@@ -109,6 +112,8 @@ function MonitoringPenangananContent() {
 
   return (
     <div className="space-y-6 pb-10">
+      {user?.role === "headteacher" && <RedZoneAlertModal />}
+      
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
