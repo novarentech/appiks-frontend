@@ -1485,6 +1485,7 @@ export interface PsychologistListResponse {
 export interface CreatePsychologistRequest {
   name: string;
   email: string;
+  password?: string;
   str_number: string;
   specialization: string;
   institution_name: string;

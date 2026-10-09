@@ -58,6 +58,7 @@ function AddPsychologistContent() {
       const res = await createPsychologist({
         name,
         email,
+        password,
         str_number: strNumber,
         specialization: selectedSpecialization,
         institution_name: institution,
