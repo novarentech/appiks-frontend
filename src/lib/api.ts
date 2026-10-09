@@ -1840,3 +1840,17 @@ export async function submitReferralFeedback(
   );
   return response;
 }
+
+/**
+ * Get HeadTeacher Dashboard Stats
+ */
+export async function getHeadTeacherDashboardStats(): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    need_intention: number;
+    resolved_interventions: number;
+  };
+}> {
+  return await authGet("/headteacher/dashboard/stats");
+}
