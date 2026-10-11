@@ -188,7 +188,8 @@ export default function DetailCurhatanPage() {
   useEffect(() => {
     if (!data) return;
     const status = mapPriorityToStatus(data.priority);
-    if (status === "Aman") return;
+    const isCompleted = ["diselesaikan", "selesai"].includes(data.status?.toLowerCase() || "");
+    if (status === "Aman" || isCompleted) return;
 
     // Timer logic
     if (!data.cutdown_for_report) {
@@ -546,7 +547,7 @@ export default function DetailCurhatanPage() {
               Kasus ini memerlukan penanganan dan tindak lanjut segera.
             </p>
           </div>
-          {status !== "Aman" && (
+          {status !== "Aman" && !["diselesaikan", "selesai"].includes(apiStatus) && (
             <div className="text-right">
               <div className="text-xs font-bold text-red-500 mb-1">BATAS TINDAK LANJUT</div>
               <div className="text-xl font-bold text-red-500 tracking-wider font-mono">

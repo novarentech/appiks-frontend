@@ -52,6 +52,7 @@ function RujukanMasukDetailContent() {
         return "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200";
       case "finished":
       case "selesai":
+      case "diselesaikan":
         return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
       case "rejected":
       case "ditolak":
@@ -67,8 +68,11 @@ function RujukanMasukDetailContent() {
     switch (status?.toLowerCase()) {
       case "pending": return "Menunggu Konfirmasi";
       case "confirmed": return "Terkonfirmasi";
-      case "finished": return "Selesai";
-      case "rejected": return "Dibatalkan";
+      case "finished":
+      case "selesai":
+      case "diselesaikan": return "Selesai";
+      case "rejected":
+      case "ditolak": return "Ditolak";
       case "expired": return "Expired";
       default: return status;
     }
@@ -380,13 +384,24 @@ function RujukanMasukDetailContent() {
     }
   }
 
+  // Check if status is finished / completed / selesai / diselesaikan
+  const isFinished = [
+    "finished",
+    "selesai",
+    "diselesaikan",
+  ].includes(referral.status?.toLowerCase() || "") || [
+    "finished",
+    "selesai",
+    "diselesaikan",
+  ].includes(((summary as any)?.status || "").toLowerCase());
+
   // Calculate dynamic countdown
   let dynamicRemainingTimeStr = "-";
   const dynamicIsExpired = referral.status?.toLowerCase() === "expired";
   
   const deadlineStr = summary?.student?.deadline_at || summary?.deadline_at || summary?.sharing?.deadline_at;
   
-  if (deadlineStr && !dynamicIsExpired) {
+  if (deadlineStr && !dynamicIsExpired && !isFinished) {
     const deadline = new Date(deadlineStr);
     const diffMs = deadline.getTime() - currentTime.getTime();
     
@@ -422,14 +437,14 @@ function RujukanMasukDetailContent() {
               <Badge variant="secondary" className="bg-red-50 text-red-600 border-red-100 hover:bg-red-100 font-normal">
                 {referral.priority}
               </Badge>
-              {dynamicRemainingTimeStr !== "-" && (
+              {!isFinished && dynamicRemainingTimeStr !== "-" && (
                 <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Sisa Waktu Respon</p>
               )}
             </div>
-            {dynamicRemainingTimeStr !== "-" && !dynamicIsExpired && (
+            {!isFinished && dynamicRemainingTimeStr !== "-" && !dynamicIsExpired && (
               <p className="text-red-500 font-bold text-lg">{dynamicRemainingTimeStr}</p>
             )}
-            {dynamicIsExpired && (
+            {!isFinished && dynamicIsExpired && (
               <p className="text-gray-500 font-bold">Kadaluarsa</p>
             )}
           </div>
