@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
 import { Referral, BackendReferralSummaryData } from "@/types/api";
-import { decideReferral, getReferralSummary, submitReferralFeedback, getCounselingConsent, getReferralAvailableDates, getReferralAvailableSlots } from "@/lib/api";
+import { decideReferral, getReferralSummary, submitReferralFeedback, getCounselingConsent, getReferralAvailableDates, getReferralAvailableSlots, getPsychologistReferralById, getPsychologistReferrals } from "@/lib/api";
 import { AlertTriangle, Sparkles, Book, ThumbsUp, ThumbsDown, Lock, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,70 +110,168 @@ function RujukanMasukDetailContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch AI Summary and Consent Data concurrently
-        const [summaryRes, consentRes] = await Promise.all([
-          getReferralSummary(id),
-          getCounselingConsent(Number(id)).catch(() => null)
+        setLoading(true);
+
+        // Fetch AI Summary, Consent Data, Referral Detail, and Referral List concurrently
+        const [summaryRes, consentRes, referralDetailRes, referralsListRes] = await Promise.all([
+          getReferralSummary(id).catch(() => null),
+          getCounselingConsent(Number(id)).catch(() => null),
+          getPsychologistReferralById(id).catch(() => null),
+          getPsychologistReferrals({ limit: 50 }).catch(() => null),
         ]);
 
-        if (summaryRes.success && summaryRes.data) {
+        if (summaryRes?.success && summaryRes?.data) {
           setSummary(summaryRes.data);
+        } else {
+          setSummary(null);
         }
         
         if (consentRes?.success && consentRes?.data) {
           setConsentScopes(consentRes.data.scopes || []);
         }
 
-        // Populate referral data purely from summary API as requested
-        if (summaryRes.success && summaryRes.data) {
-          const item = summaryRes.data;
-
-          let statusVal = "pending";
-          const rawStatus = ((item as any).status || item.student?.status || item.sharing?.status || "").toLowerCase();
-          if (rawStatus !== "") statusVal = rawStatus;
-
-          const rawPriority = (item.student?.priority || item.sharing?.priority || "") as string;
-          const priorityVal = ["sedang", "berat", "kritis", "tinggi"].includes(rawPriority.toLowerCase()) ? "Kritis" : "Prioritas";
-          
-          const mappedReferral: Referral = {
-            id: id,
-            student_name: item.student?.name || "Tanpa Nama",
-            priority: priorityVal,
-            status: statusVal,
-            remaining_time: "-", // Calculated dynamically during render now
-            date: (item as any).slot?.slot_date ? new Date((item as any).slot.slot_date).toLocaleDateString("id-ID", {
-              day: "numeric", month: "long", year: "numeric"
-            }) : (item.student?.reported_at ? new Date(item.student.reported_at).toLocaleDateString("id-ID", {
-              day: "numeric", month: "long", year: "numeric"
-            }) : "-"),
-            time: (item as any).slot?.slot_start_time ? ((item as any).slot.slot_end_time 
-                ? `${(item as any).slot.slot_start_time.slice(0,5)} - ${(item as any).slot.slot_end_time.slice(0,5)}` 
-                : `${(item as any).slot.slot_start_time.slice(0,5)}`) 
-            : (item.student?.reported_at ? new Date(item.student.reported_at).toLocaleTimeString("id-ID", {
-              hour: "2-digit", minute: "2-digit"
-            }) : "-"),
-            referrer_name: item.student?.counselor_name || "-",
-            counselor_notes: item.raw_payload?.assesment_logs?.[0]?.clinical_notes || "-", 
-            submitted_at: item.student?.reported_at ? new Date(item.student.reported_at).toLocaleDateString("id-ID", {
-              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
-            }) : (item.sharing?.created_at ? new Date(item.sharing.created_at).toLocaleDateString("id-ID", {
-              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
-            }) : (item.generated_at ? new Date(item.generated_at).toLocaleDateString("id-ID", {
-              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
-            }) : "-")),
-            is_expired: false, // Calculated dynamically during render now
-            nis: item.student?.nis || "-",
-            class_name: item.student?.class || "-",
-            student_story: item.sharing?.description || undefined,
-            detected_keywords: item.sharing?.nlp?.response?.matched_keywords?.map((k: any) => k.stem) || undefined,
-          };
-          
-          setReferral(mappedReferral);
-        } else {
-          setReferral(null);
+        // Find referral from referralDetailRes or search within referralsListRes
+        let rawReferralItem: any = null;
+        if (referralDetailRes?.success && referralDetailRes?.data) {
+          rawReferralItem = referralDetailRes.data;
+        } else if (referralsListRes?.success && referralsListRes?.data?.data) {
+          rawReferralItem = referralsListRes.data.data.find(
+            (item: any) =>
+              item.counseling_id?.toString() === id ||
+              item.counseling?.id?.toString() === id ||
+              item.id?.toString() === id
+          );
         }
+
+        const itemFromSummary = summaryRes?.success ? summaryRes.data : null;
+
+        const referralId = rawReferralItem?.id?.toString() || id;
+        const counselingId = rawReferralItem?.counseling_id?.toString() || rawReferralItem?.counseling?.id?.toString() || id;
+
+        const studentName =
+          rawReferralItem?.student?.name ||
+          itemFromSummary?.student?.name ||
+          "Tanpa Nama";
+
+        const rawStatus = (
+          rawReferralItem?.status ||
+          (itemFromSummary as any)?.status ||
+          itemFromSummary?.student?.status ||
+          itemFromSummary?.sharing?.status ||
+          "pending"
+        ).toLowerCase();
+
+        const rawPriority = (
+          (rawReferralItem?.counseling as any)?.sharing?.priority ||
+          itemFromSummary?.student?.priority ||
+          itemFromSummary?.sharing?.priority ||
+          ""
+        ).toLowerCase();
+        const priorityVal = ["sedang", "berat", "kritis", "tinggi"].includes(rawPriority) ? "Kritis" : "Prioritas";
+
+        // Date and Time formatting
+        let dateVal = "-";
+        let timeVal = "-";
+        const slot = rawReferralItem?.slot || (itemFromSummary as any)?.slot;
+        if (slot?.slot_date) {
+          dateVal = new Date(slot.slot_date).toLocaleDateString("id-ID", {
+            day: "numeric", month: "long", year: "numeric"
+          });
+        } else if (itemFromSummary?.student?.reported_at) {
+          dateVal = new Date(itemFromSummary.student.reported_at).toLocaleDateString("id-ID", {
+            day: "numeric", month: "long", year: "numeric"
+          });
+        }
+
+        if (slot?.slot_start_time) {
+          timeVal = slot.slot_end_time
+            ? `${slot.slot_start_time.slice(0, 5)} - ${slot.slot_end_time.slice(0, 5)} WIB`
+            : `${slot.slot_start_time.slice(0, 5)} WIB`;
+        } else if (itemFromSummary?.student?.reported_at) {
+          timeVal = new Date(itemFromSummary.student.reported_at).toLocaleTimeString("id-ID", {
+            hour: "2-digit", minute: "2-digit"
+          }) + " WIB";
+        }
+
+        const referrerName =
+          rawReferralItem?.counseling?.counselor?.name ||
+          itemFromSummary?.student?.counselor_name ||
+          "Guru BK";
+
+        const counselorNotes =
+          rawReferralItem?.counseling?.notes ||
+          itemFromSummary?.raw_payload?.assesment_logs?.[0]?.clinical_notes ||
+          "-";
+
+        const submittedAtRaw =
+          rawReferralItem?.created_at ||
+          itemFromSummary?.student?.reported_at ||
+          itemFromSummary?.sharing?.created_at ||
+          itemFromSummary?.generated_at;
+        const submittedAt = submittedAtRaw
+          ? new Date(submittedAtRaw).toLocaleDateString("id-ID", {
+              day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+            })
+          : "-";
+
+        const nis =
+          rawReferralItem?.student?.nis ||
+          rawReferralItem?.student?.identifier ||
+          itemFromSummary?.student?.nis ||
+          "-";
+
+        const className =
+          rawReferralItem?.student?.class ||
+          rawReferralItem?.student?.room?.name ||
+          itemFromSummary?.student?.class ||
+          "-";
+
+        const studentStory =
+          rawReferralItem?.counseling?.sharing?.description ||
+          itemFromSummary?.sharing?.description ||
+          undefined;
+
+        const detectedKeywords =
+          rawReferralItem?.counseling?.sharing?.nlp?.response?.matched_keywords?.map((k: any) => k.stem) ||
+          itemFromSummary?.sharing?.nlp?.response?.matched_keywords?.map((k: any) => k.stem) ||
+          undefined;
+
+        const mappedReferral: Referral = {
+          id: referralId,
+          counseling_id: counselingId,
+          student_name: studentName,
+          priority: priorityVal,
+          status: rawStatus,
+          remaining_time: "-",
+          date: dateVal,
+          time: timeVal,
+          referrer_name: referrerName,
+          counselor_notes: counselorNotes,
+          submitted_at: submittedAt,
+          is_expired: false,
+          nis: nis,
+          class_name: className,
+          student_story: studentStory,
+          detected_keywords: detectedKeywords,
+        };
+
+        setReferral(mappedReferral);
       } catch (error) {
         console.error("Error fetching detail:", error);
+        setReferral((prev) => prev || {
+          id: id,
+          counseling_id: id,
+          student_name: "Siswa",
+          priority: "Prioritas",
+          status: "pending",
+          remaining_time: "-",
+          date: "-",
+          time: "-",
+          referrer_name: "Guru BK",
+          counselor_notes: "-",
+          submitted_at: "-",
+          is_expired: false,
+        });
       } finally {
         setLoading(false);
       }
@@ -186,7 +284,7 @@ function RujukanMasukDetailContent() {
       const fetchDates = async () => {
         setIsLoadingDates(true);
         try {
-          const res = await getReferralAvailableDates(Number(referral.counseling_id));
+          const res = await getReferralAvailableDates(Number(referral.counseling_id || id));
           if (res.success && res.data) {
             setAvailableDates(res.data.available_dates || []);
             setSelectedDate("");
@@ -202,10 +300,9 @@ function RujukanMasukDetailContent() {
       };
       fetchDates();
     }
-  }, [isRescheduleOpen, referral?.counseling_id]);
+  }, [isRescheduleOpen, referral?.counseling_id, id]);
 
-  if (loading) return <div className="p-8 text-center">Memuat data...</div>;
-  if (!referral) return <div className="p-8 text-center text-red-500">Data tidak ditemukan.</div>;
+  if (loading || !referral) return <div className="p-8 text-center text-gray-500">Memuat data...</div>;
 
   const showConfirmButtons = referral.status?.toLowerCase() === "pending";
 
@@ -593,8 +690,10 @@ function RujukanMasukDetailContent() {
                 </div>
               </div>
             ) : (
-              <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {summary?.summary_text || referral.ai_summary || "Belum ada ringkasan AI untuk kasus ini."}
+              <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                {(summary?.summary_text && summary.summary_text !== "null" && summary.summary_text.trim() !== "")
+                  ? summary.summary_text
+                  : (referral?.ai_summary || "Ringkasan AI belum tersedia.")}
               </div>
             )}
           </div>
@@ -777,80 +876,82 @@ function RujukanMasukDetailContent() {
             )}
           </div>
 
-          {/* Feedback Kualitas AI */}
-          <div className="border rounded-lg p-5">
-            <h4 className="font-semibold text-gray-800">Feedback Kualitas AI</h4>
-            {summary?.rating || summary?.improvement_feedback ? (
-              <div className="mt-4 space-y-4">
-                {summary.rating && (
-                  <div>
+          {/* Feedback Kualitas AI (Hanya jika ringkasan AI tersedia) */}
+          {summary?.summary_text && summary.summary_text !== "null" && summary.summary_text.trim() !== "" && (
+            <div className="border rounded-lg p-5">
+              <h4 className="font-semibold text-gray-800">Feedback Kualitas AI</h4>
+              {summary?.rating || summary?.improvement_feedback ? (
+                <div className="mt-4 space-y-4">
+                  {summary.rating && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Penilaian Ringkasan AI</p>
+                      <Badge variant="outline" className={`py-1 px-3 ${summary.rating === 'good' ? 'border-green-500 text-green-600 bg-green-50' : 'border-red-500 text-red-600 bg-red-50'}`}>
+                        {summary.rating === 'good' ? (
+                          <div className="flex items-center gap-1.5"><ThumbsUp className="w-3.5 h-3.5" /> Membantu</div>
+                        ) : (
+                          <div className="flex items-center gap-1.5"><ThumbsDown className="w-3.5 h-3.5" /> Kurang Akurat</div>
+                        )}
+                      </Badge>
+                    </div>
+                  )}
+                  {summary.improvement_feedback && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Masukan untuk Perbaikan</p>
+                      <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700">
+                        {summary.improvement_feedback}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500 mb-4 mt-1">Bantu kami meningkatkan kualitas ringkasan AI berdasarkan pengalaman konseling Anda.</p>
+                  
+                  <div className="mb-4">
                     <p className="text-sm font-medium mb-2">Penilaian Ringkasan AI</p>
-                    <Badge variant="outline" className={`py-1 px-3 ${summary.rating === 'good' ? 'border-green-500 text-green-600 bg-green-50' : 'border-red-500 text-red-600 bg-red-50'}`}>
-                      {summary.rating === 'good' ? (
-                        <div className="flex items-center gap-1.5"><ThumbsUp className="w-3.5 h-3.5" /> Membantu</div>
-                      ) : (
-                        <div className="flex items-center gap-1.5"><ThumbsDown className="w-3.5 h-3.5" /> Kurang Akurat</div>
-                      )}
-                    </Badge>
-                  </div>
-                )}
-                {summary.improvement_feedback && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Masukan untuk Perbaikan</p>
-                    <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700">
-                      {summary.improvement_feedback}
+                    <div className="flex gap-3">
+                      <Button 
+                        variant="outline" 
+                        className={`flex gap-2 ${feedback === 'up' ? 'border-green-500 text-green-600 bg-green-50' : 'text-green-600 border-green-200 hover:bg-green-50'}`}
+                        onClick={() => setFeedback('up')}
+                      >
+                        Membantu <ThumbsUp className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className={`flex gap-2 ${feedback === 'down' ? 'border-red-500 text-red-600 bg-red-50' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
+                        onClick={() => setFeedback('down')}
+                      >
+                        Kurang Akurat <ThumbsDown className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <p className="text-sm text-gray-500 mb-4 mt-1">Bantu kami meningkatkan kualitas ringkasan AI berdasarkan pengalaman konseling Anda.</p>
-                
-                <div className="mb-4">
-                  <p className="text-sm font-medium mb-2">Penilaian Ringkasan AI</p>
-                  <div className="flex gap-3">
+
+                  <div>
+                    <p className="text-sm font-medium mb-2">Masukan untuk Perbaikan Ringkasan (opsional)</p>
+                    <Textarea 
+                      placeholder="Jelaskan konteks yang kurang tepat atau saran peningkatan AI..."
+                      className="min-h-[80px] bg-white resize-none"
+                      value={improvementFeedbackInput}
+                      onChange={(e) => setImprovementFeedbackInput(e.target.value)}
+                      disabled={isSubmittingFeedback}
+                    />
+                    <p className="text-xs text-gray-400 mt-2">Feedback ini tidak mengubah ringkasan secara langsung. Penilaian tidak memengaruhi rekam siswa.</p>
+                  </div>
+
+                  <div className="flex justify-end mt-4">
                     <Button 
-                      variant="outline" 
-                      className={`flex gap-2 ${feedback === 'up' ? 'border-green-500 text-green-600 bg-green-50' : 'text-green-600 border-green-200 hover:bg-green-50'}`}
-                      onClick={() => setFeedback('up')}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
+                      onClick={handleRatingSubmit}
+                      disabled={isSubmittingFeedback || !feedback}
                     >
-                      Membantu <ThumbsUp className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className={`flex gap-2 ${feedback === 'down' ? 'border-red-500 text-red-600 bg-red-50' : 'text-red-600 border-red-200 hover:bg-red-50'}`}
-                      onClick={() => setFeedback('down')}
-                    >
-                      Kurang Akurat <ThumbsDown className="w-4 h-4" />
+                      {isSubmittingFeedback ? "Memproses..." : "Kirim Feedback"}
                     </Button>
                   </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium mb-2">Masukan untuk Perbaikan Ringkasan (opsional)</p>
-                  <Textarea 
-                    placeholder="Jelaskan konteks yang kurang tepat atau saran peningkatan AI..."
-                    className="min-h-[80px] bg-white resize-none"
-                    value={improvementFeedbackInput}
-                    onChange={(e) => setImprovementFeedbackInput(e.target.value)}
-                    disabled={isSubmittingFeedback}
-                  />
-                  <p className="text-xs text-gray-400 mt-2">Feedback ini tidak mengubah ringkasan secara langsung. Penilaian tidak memengaruhi rekam siswa.</p>
-                </div>
-
-                <div className="flex justify-end mt-4">
-                  <Button 
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
-                    onClick={handleRatingSubmit}
-                    disabled={isSubmittingFeedback || !feedback}
-                  >
-                    {isSubmittingFeedback ? "Memproses..." : "Kirim Feedback"}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons Footer */}
@@ -872,11 +973,11 @@ function RujukanMasukDetailContent() {
                 <div className="bg-gray-50 border rounded-lg p-4 my-2">
                   <div className="mb-3">
                     <Label className="text-xs text-gray-500">Tanggal</Label>
-                    <p className="text-sm font-medium text-gray-800">Sabtu, 28 Agustus 2026</p>
+                    <p className="text-sm font-medium text-gray-800">{referral?.date || "-"}</p>
                   </div>
                   <div>
                     <Label className="text-xs text-gray-500">Waktu</Label>
-                    <p className="text-sm font-medium text-gray-800">10.00 WIB</p>
+                    <p className="text-sm font-medium text-gray-800">{referral?.time || "-"}</p>
                   </div>
                 </div>
                 <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
