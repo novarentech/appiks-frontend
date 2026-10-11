@@ -130,8 +130,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
     }
   };
 
-  const [isRejectOpen, setIsRejectOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
+
 
   const handleConfirm = async () => {
     try {
@@ -156,35 +155,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      toast.error("Alasan penolakan harus diisi");
-      return;
-    }
-    try {
-      setIsSubmitting(true);
-      const response = await decideReferral(referral.id, {
-        action: "reject",
-        reschedule_reason: rejectReason,
-      });
-      if (response.success) {
-        toast.success("Rujukan telah ditolak");
-        setIsRejectOpen(false);
-        if (onActionSuccess) {
-          onActionSuccess();
-        } else {
-          window.location.reload();
-        }
-      } else {
-        toast.error(response.message || "Gagal menolak rujukan");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Terjadi kesalahan saat menolak rujukan");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
 
 
   // Determine colors based on priority
@@ -408,54 +379,7 @@ export default function ReferralCard({ referral, onActionSuccess }: ReferralCard
                     Ubah Jadwal
                   </Button>
 
-                  <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="border-red-200 text-red-600 hover:bg-red-50 min-w-[100px]"
-                        disabled={referral.is_expired}
-                      >
-                        Tolak
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Tolak Permintaan Rujukan</DialogTitle>
-                        <DialogDescription className="text-gray-600 mt-2">
-                          Masukkan alasan penolakan rujukan ini. Siswa akan diarahkan untuk memilih jadwal baru pada rujukan yang sama.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="my-2">
-                        <Label className="text-sm font-medium text-gray-700">
-                          Alasan Penolakan <span className="text-red-500">*</span>
-                        </Label>
-                        <Textarea
-                          placeholder="Tulis alasan penolakan..."
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          className="mt-2"
-                          rows={3}
-                        />
-                      </div>
-                      <DialogFooter className="flex gap-3 pt-2 sm:justify-between">
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => setIsRejectOpen(false)}
-                          disabled={isSubmitting}
-                        >
-                          Batal
-                        </Button>
-                        <Button
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                          onClick={handleReject}
-                          disabled={isSubmitting || !rejectReason.trim()}
-                        >
-                          {isSubmitting ? "Memproses..." : "Ya, Tolak Rujukan"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+
                 </>
               )}
 
