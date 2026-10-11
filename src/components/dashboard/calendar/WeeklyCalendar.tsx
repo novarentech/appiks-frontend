@@ -37,7 +37,7 @@ export function WeeklyCalendar() {
         const mappedSlots: ScheduleSlot[] = response.data.map((item: BackendPsychologistSlot) => {
           let status: ScheduleSlot["status"] = "Tersedia"
           if (item.status === "tentative") status = "Menunggu Konfirmasi"
-          if (item.status === "booked") status = "Terkonfirmasi"
+          if (item.status === "confirmed" || item.status === "booked") status = "Terkonfirmasi"
 
           return {
             id: item.id.toString(),
@@ -151,17 +151,17 @@ export function WeeklyCalendar() {
         <div className="flex items-center gap-6 text-xs text-gray-600">
           <span className="font-medium mr-2">Status Slot:</span>
           <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div> Tersedia
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> Tersedia
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-yellow-500"></div> Menunggu Konfirmasi
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> Menunggu Konfirmasi
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div> Terkonfirmasi
+            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600"></div> Terkonfirmasi
           </div>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-gray-400">
-          <Trash2 className="w-3 h-3" /> Hapus disabled = tidak dapat dihapus
+          <Trash2 className="w-3.5 h-3.5" /> Hanya slot Tersedia yang dapat dihapus
         </div>
       </div>
 

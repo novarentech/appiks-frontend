@@ -2,8 +2,9 @@
 
 import { ScheduleSlot } from "@/types/api"
 import { Badge } from "@/components/ui/badge"
-import { Trash2 } from "lucide-react"
+import { Trash2, ArrowUpRight } from "lucide-react"
 import { isBefore, startOfDay, parseISO } from "date-fns"
+import Link from "next/link"
 
 interface SlotCardProps {
   slot: ScheduleSlot
@@ -16,14 +17,16 @@ export function SlotCard({ slot, onDeleteClick }: SlotCardProps) {
   let bgColor = ""
   let textColor = ""
   let badgeClass = ""
+  let dotColor = ""
   let canDelete = false
 
   switch (slot.status) {
     case "Tersedia":
-      borderColor = "border-green-200"
-      bgColor = "bg-green-50"
-      textColor = "text-green-800"
-      badgeClass = "bg-green-100 text-green-700 hover:bg-green-200"
+      borderColor = "border-emerald-200"
+      bgColor = "bg-emerald-50/70 hover:bg-emerald-50"
+      textColor = "text-emerald-900"
+      badgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200"
+      dotColor = "bg-emerald-500"
       
       const today = startOfDay(new Date())
       let slotDate = today
@@ -34,47 +37,71 @@ export function SlotCard({ slot, onDeleteClick }: SlotCardProps) {
       }
       canDelete = !isBefore(slotDate, today)
       break
+
     case "Menunggu Konfirmasi":
-      borderColor = "border-yellow-200"
-      bgColor = "bg-yellow-50"
-      textColor = "text-yellow-800"
-      badgeClass = "bg-orange-100 text-orange-700 hover:bg-orange-200"
+      borderColor = "border-amber-300"
+      bgColor = "bg-amber-50/80 hover:bg-amber-50"
+      textColor = "text-amber-950"
+      badgeClass = "bg-amber-100 text-amber-800 border-amber-300"
+      dotColor = "bg-amber-500"
+      canDelete = false
       break
+
     case "Terkonfirmasi":
-      borderColor = "border-blue-200"
-      bgColor = "bg-blue-50"
-      textColor = "text-blue-800"
-      badgeClass = "bg-blue-100 text-blue-700 hover:bg-blue-200"
+      borderColor = "border-indigo-200"
+      bgColor = "bg-indigo-50/70 hover:bg-indigo-50"
+      textColor = "text-indigo-950"
+      badgeClass = "bg-indigo-100 text-indigo-800 border-indigo-200"
+      dotColor = "bg-indigo-600"
+      canDelete = false
       break
   }
 
   return (
-    <div className={`p-3 rounded-lg border ${borderColor} ${bgColor} mb-3 relative group`}>
+    <div className={`p-3 rounded-lg border ${borderColor} ${bgColor} mb-3 relative group transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.03)]`}>
       <div className="flex items-center gap-1.5 mb-2">
-        <div className={`w-1.5 h-1.5 rounded-full ${slot.status === 'Tersedia' ? 'bg-green-500' : slot.status === 'Menunggu Konfirmasi' ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
+        <div className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`}></div>
         <p className={`font-semibold text-xs ${textColor}`}>
-          {slot.startTime}-{slot.endTime}
+          {slot.startTime} - {slot.endTime}
         </p>
       </div>
       
-      <Badge variant="secondary" className={`font-normal border-0 text-[10px] py-0 px-2 h-5 ${badgeClass}`}>
-        {slot.status}
-      </Badge>
+      <div className="flex items-center justify-between gap-1 flex-wrap">
+        <Badge variant="secondary" className={`font-medium border text-[10px] py-0 px-2 h-5 ${badgeClass}`}>
+          {slot.status}
+        </Badge>
+      </div>
       
       {slot.studentName && (
-        <p className="text-xs text-gray-500 mt-2 font-medium">
+        <p className="text-xs text-gray-600 mt-2 font-medium">
           {slot.studentName}
         </p>
       )}
 
-      {/* Delete Icon */}
-      <button 
-        className={`absolute bottom-2 right-2 p-1 rounded-sm ${canDelete ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
-        disabled={!canDelete}
-        onClick={() => canDelete && onDeleteClick && onDeleteClick(slot)}
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      {/* Action link for tentative (Menunggu Konfirmasi) slots */}
+      {slot.status === "Menunggu Konfirmasi" && (
+        <div className="mt-2.5 pt-2 border-t border-amber-200/60">
+          <Link
+            href="/dashboard/rujukan-masuk"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 hover:text-amber-950 hover:underline"
+          >
+            <span>Review Rujukan</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
+      {/* Delete Icon - only rendered for 'Tersedia' status */}
+      {slot.status === "Tersedia" && (
+        <button 
+          className={`absolute bottom-2 right-2 p-1 rounded-sm ${canDelete ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
+          disabled={!canDelete}
+          title={canDelete ? "Hapus slot" : "Slot tanggal lampau tidak dapat dihapus"}
+          onClick={() => canDelete && onDeleteClick && onDeleteClick(slot)}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   )
 }
