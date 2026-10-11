@@ -204,12 +204,12 @@ export function NotificationContent({
           </Button>
         )}
 
-        {referralNotification.status === "expired" && (
+        {(referralNotification.status === "expired" || referralNotification.statusText === "Kedaluwarsa") && (
           <Button
             className="w-full bg-[#E13A4B] hover:bg-[#C92F3E] text-white mt-2"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/rujukan/${referralNotification.id}/schedule`);
+              router.push(`/rujukan/${referralNotification.id}/consent`);
             }}
           >
             Pilih Jadwal Baru
