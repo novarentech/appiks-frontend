@@ -203,7 +203,7 @@ function NotificationsPageContent() {
               borderColor = "border-purple-400";
               mappedStatus = "menunggu";
               title = "Rujukan Psikolog";
-              description = "Anda mendapat rujukan baru, silakan kelola persetujuan.";
+              description = "Anda mendapat rujukan baru, silakan review persetujuan.";
             } else if (rawStatus === "menunggu_jadwal") {
               if (isExpired) {
                 statusText = "Kedaluwarsa";

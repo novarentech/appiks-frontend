@@ -180,23 +180,16 @@ export function NotificationContent({
           </div>
         )}
 
-        {referralNotification.status === "menunggu" && (
-          <>
-            <Button
-              className="w-full bg-primary hover:bg-primary/80 text-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsConsentOpen(true);
-              }}
-            >
-              Kelola Persetujuan
-            </Button>
-            <ManageConsentDialog
-              isOpen={isConsentOpen}
-              onOpenChange={setIsConsentOpen}
-              counselingId={referralNotification.id}
-            />
-          </>
+        {(referralNotification.status === "menunggu" || referralNotification.statusText === "Butuh Persetujuan") && (
+          <Button
+            className="w-full bg-primary hover:bg-primary/80 text-white mt-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/rujukan/${referralNotification.id}/consent`);
+            }}
+          >
+            Review Persetujuan
+          </Button>
         )}
 
         {referralNotification.status === "menunggu_jadwal" && (
@@ -221,6 +214,32 @@ export function NotificationContent({
           >
             Pilih Jadwal Baru
           </Button>
+        )}
+
+        {referralNotification.status !== "selesai" &&
+          referralNotification.statusText !== "Selesai" &&
+          (
+            referralNotification.status === "menunggu_konfirmasi" ||
+            referralNotification.statusText === "Menunggu Konfirmasi" ||
+            referralNotification.statusText === "Perubahan Jadwal" ||
+            (referralNotification.status === "dijadwalkan" && referralNotification.latest_booking?.was_rescheduled)
+          ) && (
+          <>
+            <Button
+              className="w-full bg-primary hover:bg-primary/80 text-white mt-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsConsentOpen(true);
+              }}
+            >
+              Kelola Persetujuan Data
+            </Button>
+            <ManageConsentDialog
+              isOpen={isConsentOpen}
+              onOpenChange={setIsConsentOpen}
+              counselingId={referralNotification.id}
+            />
+          </>
         )}
 
         {referralNotification.status === "selesai" && referralNotification.clinicalNotes && (

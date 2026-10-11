@@ -36,24 +36,26 @@ export default function ConsentPage() {
       if (!id) return;
       try {
         setLoading(true);
-        const [counselingResponse, consentResponse] = await Promise.all([
-          getCounselingList("external"),
-          getCounselingConsent(id)
-        ]);
-        
-        if (consentResponse.success && consentResponse.data) {
-          setConsentId(consentResponse.data.id);
+        let consentRes = null;
+        try {
+          consentRes = await getCounselingConsent(id);
+          if (consentRes?.success && consentRes.data) {
+            setConsentId(consentRes.data.id);
+          }
+        } catch (e) {
+          console.warn("Could not fetch consent record:", e);
         }
 
+        const counselingResponse = await getCounselingList("external");
         if (counselingResponse.success && counselingResponse.data) {
-          const item = counselingResponse.data.find((c: any) => c.id === id);
+          const item = counselingResponse.data.find((c: any) => Number(c.id) === id);
           if (item) {
             setReferral({
               id: item.id,
               type: "rujukan",
               title: "Rujukan Psikolog",
               description: "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.",
-              teacher: item.counselor?.name || "Guru BK",
+              teacher: item.counseling?.counselor?.name || item.counselor?.name || "Guru BK",
               date: new Date(item.created_at).toLocaleDateString("id-ID"),
               status: item.status,
               statusText: item.status,
@@ -61,9 +63,9 @@ export default function ConsentPage() {
               borderColor: "border-gray-400",
               icon: User,
               isNew: false,
-              psychologist: "Psikolog Eksternal", // Use generic name as payload might not have it
-              location: item.room || "Klinik / Platform Eksternal",
-              counselor: item.counselor?.name || "Guru BK",
+              psychologist: item.psychologist?.name || "Psikolog Eksternal",
+              location: item.room || item.slot?.room || "Klinik / Platform Eksternal",
+              counselor: item.counseling?.counselor?.name || item.counselor?.name || "Guru BK",
               referralReason: item.reason || "Penanganan lebih lanjut",
               referralDate: new Date(item.created_at).toLocaleDateString("id-ID"),
             });
