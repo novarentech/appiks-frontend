@@ -712,13 +712,82 @@ export interface BackendPsychologistSlotResponse {
   data: BackendPsychologistSlot[];
 }
 
+export type CounselingStatus =
+  | "menunggu"
+  | "menunggu_jadwal"
+  | "menunggu_konfirmasi"
+  | "dijadwalkan"
+  | "dijadwal_ulang"
+  | "selesai"
+  | "ditolak"
+  | "dibatalkan";
+
+export type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "rescheduled"
+  | "rejected"
+  | "expired"
+  | "finished";
+
+export interface LatestBooking {
+  id: number;
+  status: BookingStatus;
+  deadline_at: string;
+  reject_reason: string | null;
+  location: string | null;
+  is_expired: boolean;
+  was_rescheduled: boolean;
+}
+
+export interface BackendReferralOverviewData {
+  pending: number;
+  confirmed: number;
+  selesai: number;
+  by_status?: {
+    pending: number;
+    confirmed: number;
+    rescheduled: number;
+    rejected: number;
+    expired: number;
+    finished: number;
+  };
+  total?: number;
+}
+
 export interface BackendReferralOverviewResponse {
   success: boolean;
   message: string;
-  data: {
-    pending: number;
-    confirmed: number;
-    selesai: number;
+  data: BackendReferralOverviewData;
+}
+
+export interface CounselingCancelRequest {
+  notes?: string;
+}
+
+export interface CounselingReproposeRequest {
+  date: string;
+  time: string;
+  room?: string;
+  notes?: string;
+}
+
+export interface StudentCounselingsPaginatedResponse {
+  data: any[];
+  links?: {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
+  };
+  meta?: {
+    current_page: number;
+    from: number | null;
+    to: number | null;
+    per_page: number;
+    last_page: number;
+    total: number;
+    path: string;
   };
 }
 
@@ -1341,13 +1410,15 @@ export interface BackendReferralCounseling {
   type: string;
   resolution: string | null;
   method: string | null;
-  status: string;
+  status: CounselingStatus | string;
   scheduled_at: string | null;
   cutdown_at: string | null;
   created_at: string;
   updated_at: string;
   counselor: BackendReferralCounselor;
   logs: any[];
+  latest_booking?: LatestBooking | null;
+  slot?: BackendReferralSlot | null;
 }
 
 export interface BackendReferralSlot {
@@ -1367,12 +1438,13 @@ export interface BackendReferralItem {
   counseling_id: number;
   slot_id: number;
   student_id: number;
-  status: string;
+  status: BookingStatus | string;
   deadline_at: string;
   location: string | null;
   created_at: string;
   updated_at: string;
-  deleted_at: string | null;
+  deleted_at?: string | null;
+  is_expired?: boolean;
   student: BackendReferralStudent;
   counseling: BackendReferralCounseling;
   slot: BackendReferralSlot;

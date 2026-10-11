@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { LatestBooking } from "./api";
 
 export interface NotificationChanges {
   oldTeacher: string;
@@ -13,13 +14,16 @@ export type NotificationStatus =
   | "dijadwal_ulang"
   | "selesai"
   | "dibatalkan"
+  | "ditolak"
   | "dibalas"
   | "dikirim"
   | "menunggu"
+  | "menunggu_jadwal"
+  | "menunggu_konfirmasi"
   | "dijadwalkan"
   | "butuh_persetujuan"
-  | "menunggu_konfirmasi"
   | "terkonfirmasi"
+  | "perubahan_jadwal"
   | "expired";
 
 export interface BaseNotification {
@@ -64,6 +68,7 @@ export interface ReferralNotification extends BaseNotification {
   referralDate: string;
   time?: string;
   clinicalNotes?: string;
+  latest_booking?: LatestBooking | null;
 }
 
 export type Notification = CounselingNotification | CurhatNotification | ReferralNotification;

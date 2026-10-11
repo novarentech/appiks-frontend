@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { getSharingDetail, markSharingFalsePositive, replySharing, createCounseling, acknowledgeSharing, initialAckSharing, createCounselingLog, createReferralCounseling, getUsersByType } from "@/lib/api";
+import { getSharingDetail, markSharingFalsePositive, replySharing, createCounseling, acknowledgeSharing, initialAckSharing, createCounselingLog, createReferralCounseling, getUsersByType, reproposeCounseling } from "@/lib/api";
 import { Sharing, User } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,6 +82,15 @@ export default function DetailCurhatanPage() {
   const [psychologists, setPsychologists] = useState<User[]>([]);
   const [isLoadingPsychologists, setIsLoadingPsychologists] = useState(false);
 
+
+  // States for Repropose Counseling (Guru BK)
+  const [isReproposeOpen, setIsReproposeOpen] = useState(false);
+  const [reproposeDate, setReproposeDate] = useState<Date | undefined>(undefined);
+  const [reproposeTime, setReproposeTime] = useState("");
+  const [reproposeRoom, setReproposeRoom] = useState("");
+  const [reproposeNotes, setReproposeNotes] = useState("");
+  const [isReproposeSubmitting, setIsReproposeSubmitting] = useState(false);
+
   // Helper functions
   const mapPriorityToStatus = (priority: string) => {
     const p = priority?.toLowerCase() || "rendah";
@@ -99,15 +108,23 @@ export default function DetailCurhatanPage() {
       case "sedang ditangani":
         return "bg-blue-50 text-blue-700 border-blue-200";
       case "konseling dijadwalkan":
+      case "dijadwalkan":
         return "bg-indigo-50 text-indigo-700 border-indigo-200";
       case "diselesaikan":
+      case "selesai":
         return "bg-green-50 text-green-700 border-green-200";
       case "jadwal ditolak siswa":
-        return "bg-red-50 text-red-700 border-red-200";
+      case "ditolak oleh siswa":
+      case "ditolak":
+        return "bg-rose-50 text-rose-700 border-rose-200";
+      case "menunggu":
       case "menunggu persetujuan siswa":
         return "bg-purple-50 text-purple-700 border-purple-200";
+      case "dijadwal_ulang":
       case "menunggu persetujuan rujukan":
         return "bg-orange-50 text-orange-700 border-orange-200";
+      case "dibatalkan":
+        return "bg-red-50 text-red-700 border-red-200";
       case "bukan urgent":
         return "bg-slate-50 text-slate-700 border-slate-200";
       case "sudah ditanggapi":
@@ -415,6 +432,33 @@ export default function DetailCurhatanPage() {
     }
   };
 
+
+  const handleReproposeSubmit = async () => {
+    if (!data?.counseling?.id || !reproposeDate || !reproposeTime) return;
+    try {
+      setIsReproposeSubmitting(true);
+      const formattedDate = format(reproposeDate, "yyyy-MM-dd");
+      const res = await reproposeCounseling(data.counseling.id, {
+        date: formattedDate,
+        time: reproposeTime,
+        room: reproposeRoom || undefined,
+        notes: reproposeNotes || undefined,
+      });
+      if (res.success) {
+        toast.success("Jadwal konseling berhasil diajukan kembali.");
+        setIsReproposeOpen(false);
+        window.location.reload();
+      } else {
+        toast.error(res.message || "Gagal mengajukan jadwal konseling kembali.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Terjadi kesalahan saat mengajukan jadwal kembali.");
+    } finally {
+      setIsReproposeSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -438,6 +482,11 @@ export default function DetailCurhatanPage() {
 
   const status = mapPriorityToStatus(data.priority);
   const apiStatus = data.status?.toLowerCase() || "belum ditinjau";
+  const isJadwalDitolakSiswa =
+    apiStatus === "jadwal ditolak siswa" ||
+    apiStatus === "ditolak oleh siswa" ||
+    apiStatus === "ditolak" ||
+    data.counseling?.status?.toLowerCase() === "ditolak";
   const keywords: string[] = (data.nlp?.response?.matched_keywords || [])
     .map((k: any) => typeof k === 'string' ? k : k.stem || k.keyword);
 
@@ -629,7 +678,7 @@ export default function DetailCurhatanPage() {
         )}
 
         {/* Keputusan Tindak Lanjut (Read-Only) */}
-        {(data.action_confirmed === 1 || data.action_confirmed === true || (data.action && ["menunggu persetujuan siswa", "konseling dijadwalkan", "jadwal ditolak siswa"].includes(apiStatus))) && (
+        {(data.action_confirmed === 1 || data.action_confirmed === true || (data.action && ["menunggu persetujuan siswa", "konseling dijadwalkan", "jadwal ditolak siswa", "ditolak oleh siswa"].includes(apiStatus)) || isJadwalDitolakSiswa) && (
           <div className="border rounded-lg mb-8 p-6">
             <h3 className="font-bold text-gray-900 mb-4">Keputusan Tindak Lanjut :</h3>
             
@@ -644,7 +693,14 @@ export default function DetailCurhatanPage() {
             
             {data.action === "konseling_mandiri" && data.counseling ? (
               <div className="border border-gray-200 rounded-lg p-6">
-                <h4 className="font-bold text-gray-900 mb-6 text-[15px]">Detail Pengajuan Konseling</h4>
+                <div className="flex justify-between items-center mb-6">
+                  <h4 className="font-bold text-gray-900 text-[15px]">Detail Pengajuan Konseling</h4>
+                  {data.counseling.status && (
+                    <Badge variant="outline" className={`capitalize font-medium ${getApiStatusBadgeVariant(data.counseling.status)}`}>
+                      {data.counseling.status}
+                    </Badge>
+                  )}
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div>
@@ -662,13 +718,14 @@ export default function DetailCurhatanPage() {
                 </div>
 
                 {data.counseling.notes && (
-                  <div>
+                  <div className="mb-6">
                     <div className="text-sm font-semibold text-gray-500 mb-2">Catatan Tambahan</div>
                     <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
                       {data.counseling.notes}
                     </div>
                   </div>
                 )}
+
               </div>
             ) : (
               <div className="mb-4">
@@ -785,7 +842,7 @@ export default function DetailCurhatanPage() {
                 onClose={() => setIsViewReplyOpen(false)} 
               />
             </>
-          ) : status !== "Aman" && !isHandling && apiStatus !== "sedang ditangani" && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" ? (
+          ) : status !== "Aman" && !isHandling && apiStatus !== "sedang ditangani" && !isJadwalDitolakSiswa && apiStatus !== "konseling dijadwalkan" && apiStatus !== "bukan urgent" && apiStatus !== "diselesaikan" ? (
             <Dialog open={isStartHandlingOpen} onOpenChange={setIsStartHandlingOpen}>
               <DialogTrigger asChild>
                 <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
@@ -901,7 +958,14 @@ export default function DetailCurhatanPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : status !== "Aman" && !data.action_confirmed && (apiStatus === "sedang ditangani" || isHandling || apiStatus === "jadwal ditolak siswa") ? (
+          ) : status !== "Aman" && isJadwalDitolakSiswa ? (
+            <Button
+              className="w-full bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold"
+              onClick={() => setIsReproposeOpen(true)}
+            >
+              Ajukan Jadwal Konseling Kembali
+            </Button>
+          ) : status !== "Aman" && !data.action_confirmed && !isJadwalDitolakSiswa && (apiStatus === "sedang ditangani" || isHandling) ? (
           <div className="border rounded-lg mb-8 p-6">
                 <>
                   <h3 className="font-bold text-gray-900 mb-1">Keputusan Tindak Lanjut</h3>
@@ -1107,7 +1171,7 @@ export default function DetailCurhatanPage() {
           ) : null}
 
 
-          {status !== "Aman" && !isHandling && apiStatus !== "jadwal ditolak siswa" && apiStatus !== "konseling dijadwalkan" && apiStatus !== "sedang ditangani" && apiStatus !== "diselesaikan" && apiStatus !== "bukan urgent" && (
+          {status !== "Aman" && !isHandling && !isJadwalDitolakSiswa && apiStatus !== "konseling dijadwalkan" && apiStatus !== "sedang ditangani" && apiStatus !== "diselesaikan" && apiStatus !== "bukan urgent" && (
             <Dialog open={isFalsePositiveOpen} onOpenChange={setIsFalsePositiveOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -1386,6 +1450,102 @@ export default function DetailCurhatanPage() {
                {isMedicalSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                Simpan dan Rujuk
              </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Dialog Ajukan Jadwal Konseling Kembali (Guru BK) */}
+      <Dialog open={isReproposeOpen} onOpenChange={setIsReproposeOpen}>
+        <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-2xl font-bold">Ajukan Jadwal Konseling Kembali</DialogTitle>
+            <DialogDescription className="text-gray-600 mt-2 text-base">
+              Tentukan jadwal dan ruangan baru untuk diajukan kembali ke siswa.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <Label className="text-sm font-semibold text-gray-700">Tanggal <span className="text-red-500">*</span></Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full mt-2 justify-start text-left font-normal h-10",
+                      !reproposeDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {reproposeDate ? format(reproposeDate, "PPP") : <span>Pilih tanggal</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={reproposeDate}
+                    onSelect={setReproposeDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label className="text-sm font-semibold text-gray-700">Waktu <span className="text-red-500">*</span></Label>
+              <div className="relative mt-2">
+                <Input 
+                  type="time" 
+                  value={reproposeTime}
+                  onChange={(e) => setReproposeTime(e.target.value)}
+                  className="w-full h-10 pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Label className="text-sm font-semibold text-gray-700">Ruangan</Label>
+            <Select value={reproposeRoom} onValueChange={setReproposeRoom}>
+              <SelectTrigger className="mt-2 w-full">
+                <SelectValue placeholder="Pilih ruangan..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Ruang BK 1">Ruang BK 1</SelectItem>
+                <SelectItem value="Ruang BK 2">Ruang BK 2</SelectItem>
+                <SelectItem value="Klinik Sekolah">Klinik Sekolah</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mt-4 mb-4">
+            <Label className="text-sm font-semibold text-gray-700">Catatan Tambahan (Opsional)</Label>
+            <Textarea 
+              placeholder="Catatan tambahan untuk siswa..." 
+              className="mt-2 resize-none w-full" 
+              rows={3}
+              value={reproposeNotes}
+              onChange={(e) => setReproposeNotes(e.target.value)}
+            />
+          </div>
+
+          <DialogFooter className="flex flex-row gap-3 sm:space-x-0 w-full">
+            <DialogClose asChild>
+              <Button variant="outline" className="w-1/2 py-6 text-base font-semibold" disabled={isReproposeSubmitting}>
+                Batal
+              </Button>
+            </DialogClose>
+            <Button 
+              className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold"
+              onClick={handleReproposeSubmit}
+              disabled={!reproposeDate || !reproposeTime || isReproposeSubmitting}
+            >
+              {isReproposeSubmitting ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Proses...</>
+              ) : (
+                "Ajukan Kembali"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

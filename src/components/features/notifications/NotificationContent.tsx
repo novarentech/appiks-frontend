@@ -26,6 +26,7 @@ export function NotificationContent({
   const router = useRouter();
   const [isAccepting, setIsAccepting] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [isConsentOpen, setIsConsentOpen] = useState(false);
 
   const handleAcknowledge = async (id: number, type: "accept" | "reject") => {
     try {
@@ -69,7 +70,7 @@ export function NotificationContent({
 
         <ChangesSummary notification={counselingNotification} size={size} />
 
-        {counselingNotification.status === "menunggu" && (
+        {(counselingNotification.status === "menunggu" || counselingNotification.status === "dijadwal_ulang") && (
           <div className="flex gap-3 pt-2">
             <Button
               variant="outline"
@@ -143,7 +144,6 @@ export function NotificationContent({
 
   if (notification.type === "rujukan") {
     const referralNotification = notification as ReferralNotification;
-    const [isConsentOpen, setIsConsentOpen] = useState(false);
 
     return (
       <div className={`space-y-4 ${isSm ? "space-y-3" : "space-y-4"}`}>
@@ -197,6 +197,18 @@ export function NotificationContent({
               counselingId={referralNotification.id}
             />
           </>
+        )}
+
+        {referralNotification.status === "menunggu_jadwal" && (
+          <Button
+            className="w-full bg-primary hover:bg-primary/80 text-white mt-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/rujukan/${referralNotification.id}/schedule`);
+            }}
+          >
+            Pilih Jadwal
+          </Button>
         )}
 
         {referralNotification.status === "expired" && (

@@ -131,11 +131,31 @@ export default function SchedulePage() {
         sessionStorage.removeItem(`schedule_slot_${id}`);
         router.push(`/rujukan/${id}/schedule/success`);
       } else {
-        toast.error(res.message || "Gagal mengajukan jadwal");
+        const isConflict = res.status === 409 || res.code === 409 || res.message?.toLowerCase().includes("masih aktif");
+        if (isConflict) {
+          toast.error("Rujukan ini sudah memiliki jadwal yang masih aktif. Memperbarui status...", { duration: 4000 });
+          sessionStorage.removeItem(`schedule_date_${id}`);
+          sessionStorage.removeItem(`schedule_slot_${id}`);
+          setTimeout(() => {
+            router.push("/notifications");
+          }, 1500);
+        } else {
+          toast.error(res.message || "Gagal mengajukan jadwal");
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Terjadi kesalahan sistem");
+      const errMsg = error?.message || "";
+      if (errMsg.includes("409") || errMsg.toLowerCase().includes("masih aktif")) {
+        toast.error("Rujukan ini sudah memiliki jadwal yang masih aktif. Memperbarui status...", { duration: 4000 });
+        sessionStorage.removeItem(`schedule_date_${id}`);
+        sessionStorage.removeItem(`schedule_slot_${id}`);
+        setTimeout(() => {
+          router.push("/notifications");
+        }, 1500);
+      } else {
+        toast.error("Terjadi kesalahan sistem");
+      }
     } finally {
       setIsSubmitting(false);
     }

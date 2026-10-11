@@ -85,6 +85,9 @@ import {
   BackendReferralsPaginatedResponse,
   BackendReferralSummaryResponse,
   MonitoringResponse,
+  CounselingCancelRequest,
+  CounselingReproposeRequest,
+  StudentCounselingsPaginatedResponse,
 } from "@/types/api";
 import {
   RoomResponse,
@@ -1600,15 +1603,57 @@ export async function getLatestCounselingNotifications(): Promise<
 }
 
 /**
- * Acknowledge counseling schedule (accept/reject)
+ * Acknowledge counseling schedule (accept/decline)
  */
 export async function acknowledgeCounselingSchedule(
   id: number,
-  type: "accept" | "reject",
+  type: "accept" | "decline" | "reject",
 ): Promise<any> {
+  const normalizedType = type === "reject" ? "decline" : type;
   const response = await authPatch(`/student/counselings/${id}/acknowledge`, {
-    type,
+    type: normalizedType,
   });
+  return response;
+}
+
+/**
+ * Cancel counseling session (Guru BK)
+ */
+export async function cancelCounseling(
+  counselingId: number,
+  data?: CounselingCancelRequest,
+): Promise<any> {
+  const response = await authPatch(`/counseling/${counselingId}/cancel`, data || {});
+  return response;
+}
+
+/**
+ * Repropose a rejected counseling schedule (Guru BK)
+ */
+export async function reproposeCounseling(
+  counselingId: number,
+  data: CounselingReproposeRequest,
+): Promise<any> {
+  const response = await authPatch(`/counseling/${counselingId}/repropose`, data);
+  return response;
+}
+
+/**
+ * Get student counselings with optional pagination and search
+ */
+export async function getStudentCounselings(params?: {
+  page?: number;
+  search?: string;
+}): Promise<StudentCounselingsPaginatedResponse | any> {
+  let url = "/student/counselings";
+  if (params) {
+    const query = new URLSearchParams();
+    if (params.page) query.append("page", params.page.toString());
+    if (params.search) query.append("search", params.search);
+    const qs = query.toString();
+    if (qs) url += `?${qs}`;
+  }
+  const response = await authGet(url);
   return response;
 }
 
@@ -1666,15 +1711,27 @@ export async function getPendingReferrals(): Promise<BackendReferralResponse> {
 }
 
 /**
- * Decide (confirm or reject) a psychologist referral
+ * Decide (confirm, reject, or reschedule) a psychologist referral
  */
 export async function decideReferral(
   id: string,
-  data: { action: "confirm" | "reject" | "reschedule"; reject_reason?: string; reschedule_reason?: string; slot_id?: number },
+  data: {
+    action: "confirm" | "reject" | "reschedule";
+    reject_reason?: string;
+    reschedule_reason?: string;
+    slot_id?: number;
+  },
 ): Promise<any> {
+  const payload: any = { action: data.action };
+  if (data.action === "reschedule") {
+    payload.slot_id = data.slot_id;
+    payload.reschedule_reason = data.reschedule_reason || data.reject_reason || "";
+  } else if (data.action === "reject") {
+    payload.reschedule_reason = data.reschedule_reason || data.reject_reason || "";
+  }
   const response = await authPatch(
     `/psychologist/referrals/${id}/decide`,
-    data,
+    payload,
   );
   return response;
 }

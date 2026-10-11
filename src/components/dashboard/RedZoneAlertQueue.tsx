@@ -10,7 +10,7 @@ import { Sharing } from "@/types/api";
 import { AlertCircle, X } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
-function CountdownTimer({ targetDate }: { targetDate: string }) {
+function CountdownTimer({ targetDate }: { targetDate?: string | null }) {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {

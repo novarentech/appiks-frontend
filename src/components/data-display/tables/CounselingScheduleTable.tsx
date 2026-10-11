@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import {
   ArrowUpDown,
   Edit,
-  X,
   ClipboardCheck,
   Check,
   Loader2,
@@ -42,7 +41,7 @@ import { User, CounselingSchedule } from "@/types/api";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import RescheduleDialog from "@/components/dialogs/RescheduleDialog";
 import CompleteDialog from "@/components/dialogs/CompleteDialog";
-import CancelDialog from "@/components/dialogs/CancelDialog";
+
 
 export default function CounselingScheduleTable() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,7 +60,7 @@ export default function CounselingScheduleTable() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+
 
   // Fetch data from API
   useEffect(() => {
@@ -159,6 +158,9 @@ export default function CounselingScheduleTable() {
       dijadwalkanUlang: "bg-orange-100 text-orange-800 border-orange-200",
       selesai: "bg-green-100 text-green-800 border-green-200",
       dibatalkan: "bg-red-100 text-red-800 border-red-200",
+      ditolak: "bg-rose-100 text-rose-800 border-rose-200",
+      "ditolak oleh siswa": "bg-rose-100 text-rose-800 border-rose-200",
+      "jadwal ditolak siswa": "bg-rose-100 text-rose-800 border-rose-200",
     };
     return (
       variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
@@ -172,6 +174,9 @@ export default function CounselingScheduleTable() {
       dijadwalkanUlang: "Dijadwalkan Ulang",
       selesai: "Selesai",
       dibatalkan: "Dibatalkan",
+      ditolak: "Ditolak Siswa",
+      "ditolak oleh siswa": "Ditolak Siswa",
+      "jadwal ditolak siswa": "Ditolak Siswa",
     };
     return labels[status as keyof typeof labels] || status;
   };
@@ -191,13 +196,16 @@ export default function CounselingScheduleTable() {
   const isActionEnabled = (schedule: CounselingSchedule, action: string) => {
     switch (schedule.status) {
       case "menunggu":
-        return ["confirm", "cancel"].includes(action);
+        return ["confirm"].includes(action);
       case "disetujui":
-        return ["reschedule", "complete", "cancel"].includes(action);
+        return ["reschedule", "complete"].includes(action);
       case "dijadwalkan":
-        return ["complete", "cancel"].includes(action);
+        return ["complete"].includes(action);
       case "selesai":
       case "dibatalkan":
+      case "ditolak":
+      case "ditolak oleh siswa":
+      case "jadwal ditolak siswa":
         return false;
       default:
         return false;
@@ -220,10 +228,7 @@ export default function CounselingScheduleTable() {
     setIsCompleteDialogOpen(true);
   };
 
-  const handleCancel = (schedule: CounselingSchedule) => {
-    setSelectedSchedule(schedule);
-    setIsCancelDialogOpen(true);
-  };
+
 
   // Column definitions
   const columns: ColumnDef<CounselingSchedule>[] = [
@@ -417,29 +422,7 @@ export default function CounselingScheduleTable() {
                 </TooltipContent>
               </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`h-8 w-8 p-0 ${
-                      isActionEnabled(schedule, "cancel")
-                        ? "text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-                        : "text-gray-300 border-gray-200 cursor-not-allowed hover:bg-gray-50"
-                    }`}
-                    onClick={() =>
-                      isActionEnabled(schedule, "cancel") &&
-                      handleCancel(schedule)
-                    }
-                    disabled={!isActionEnabled(schedule, "cancel")}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Batalkan Jadwal</p>
-                </TooltipContent>
-              </Tooltip>
+
             </div>
           </TooltipProvider>
         );
@@ -588,12 +571,7 @@ export default function CounselingScheduleTable() {
         onRefreshData={refreshData}
       />
 
-      <CancelDialog
-        isOpen={isCancelDialogOpen}
-        onClose={() => setIsCancelDialogOpen(false)}
-        schedule={selectedSchedule}
-        onRefreshData={refreshData}
-      />
+
     </div>
   );
 }

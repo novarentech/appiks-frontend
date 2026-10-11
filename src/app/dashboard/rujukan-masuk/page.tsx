@@ -67,7 +67,7 @@ function RujukanMasukContent() {
           const status = item.status || "pending";
 
           let remainingTimeStr = "";
-          const isExpired = status?.toLowerCase() === "expired";
+          const isExpired = item.is_expired !== undefined ? item.is_expired : (status?.toLowerCase() === "expired" || diffHours <= 0);
           if (!isExpired && diffHours > 0) {
             const diffDays = Math.floor(diffHours / 24);
             const remainingHours = Math.floor(diffHours % 24);
@@ -191,8 +191,9 @@ function RujukanMasukContent() {
             <SelectItem value="all">Semua Status</SelectItem>
             <SelectItem value="pending">Menunggu Konfirmasi</SelectItem>
             <SelectItem value="confirmed">Terkonfirmasi</SelectItem>
+            <SelectItem value="rescheduled">Dijadwal Ulang</SelectItem>
             <SelectItem value="finished">Selesai</SelectItem>
-            <SelectItem value="rejected">Dibatalkan</SelectItem>
+            <SelectItem value="rejected">Ditolak</SelectItem>
             <SelectItem value="expired">Expired</SelectItem>
           </SelectContent>
         </Select>

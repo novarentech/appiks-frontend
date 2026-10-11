@@ -90,50 +90,64 @@ function NotificationsPageContent() {
             let borderColor = "border-gray-400";
 
             switch (item.status?.toLowerCase()) {
-              case "belum ditinjau":
-              case "belum ditanggapi":
-                statusColor = "yellow";
-                borderColor = "border-yellow-400";
-                break;
-              case "sedang ditangani":
-                statusColor = "blue";
-                borderColor = "border-blue-400";
-                break;
-              case "konseling dijadwalkan":
-                statusColor = "indigo";
-                borderColor = "border-indigo-400";
-                break;
-              case "diselesaikan":
-              case "selesai": // fallback
-                statusColor = "emerald";
-                borderColor = "border-emerald-400";
-                break;
-              case "jadwal ditolak siswa":
-              case "dibatalkan": // fallback
-                statusColor = "red";
-                borderColor = "border-red-400";
-                break;
-              case "bukan urgent":
-                statusColor = "gray";
-                borderColor = "border-gray-400";
-                break;
+              case "menunggu":
               case "menunggu persetujuan siswa":
-              case "menunggu": // fallback
+                status = "menunggu";
+                statusText = "Menunggu Persetujuan";
                 statusColor = "purple";
                 borderColor = "border-purple-400";
-                status = "menunggu"; // Important: keep internal status as "menunggu" to show action buttons
                 break;
-              case "menunggu persetujuan rujukan":
+              case "dijadwal_ulang":
+                status = "dijadwal_ulang";
+                statusText = "Dijadwal Ulang";
                 statusColor = "orange";
                 borderColor = "border-orange-400";
                 break;
               case "dijadwalkan":
+              case "konseling dijadwalkan":
+              case "disetujui":
+                status = "dijadwalkan";
+                statusText = "Dijadwalkan";
                 statusColor = "blue";
                 borderColor = "border-blue-400";
                 break;
-              case "disetujui":
-                statusColor = "green";
-                borderColor = "border-green-400";
+              case "selesai":
+              case "diselesaikan":
+                status = "selesai";
+                statusText = "Selesai";
+                statusColor = "emerald";
+                borderColor = "border-emerald-400";
+                break;
+              case "ditolak":
+              case "jadwal ditolak siswa":
+                status = "ditolak";
+                statusText = "Jadwal Ditolak Siswa";
+                statusColor = "rose";
+                borderColor = "border-rose-400";
+                break;
+              case "dibatalkan":
+                status = "dibatalkan";
+                statusText = "Dibatalkan";
+                statusColor = "red";
+                borderColor = "border-red-400";
+                break;
+              case "sedang ditangani":
+                status = "sedang ditangani";
+                statusText = "Sedang Ditangani";
+                statusColor = "blue";
+                borderColor = "border-blue-400";
+                break;
+              case "bukan urgent":
+                status = "bukan urgent";
+                statusText = "Bukan Urgent";
+                statusColor = "gray";
+                borderColor = "border-gray-400";
+                break;
+              default:
+                status = item.status || "menunggu";
+                statusText = item.status || "Menunggu";
+                statusColor = "gray";
+                borderColor = "border-gray-400";
                 break;
             }
 
@@ -175,62 +189,88 @@ function NotificationsPageContent() {
             let statusColor = "green";
             let borderColor = "border-green-400";
             let mappedStatus = item.status;
-            
-            switch (item.status?.toLowerCase()) {
-              case "selesai":
-              case "diselesaikan":
-                statusColor = "emerald";
-                borderColor = "border-emerald-400";
-                statusText = "Selesai";
-                mappedStatus = "selesai";
-                break;
-              case "menunggu persetujuan siswa":
-              case "menunggu":
-              case "pending":
-              case "rescheduled":
-              case "dijadwal_ulang":
-                statusColor = "orange";
-                borderColor = "border-orange-400";
-                statusText = "Menunggu";
-                mappedStatus = "menunggu";
-                break;
-              case "ditolak":
-              case "jadwal ditolak siswa":
-              case "dibatalkan":
-              case "rejected":
+            let title = "Rujukan Psikolog";
+            let description = "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.";
+
+            const rawStatus = (item.status || "").toLowerCase();
+            const latestBooking = item.latest_booking;
+            const isExpired = latestBooking?.is_expired || rawStatus === "expired";
+            const wasRescheduled = latestBooking?.was_rescheduled;
+
+            if (rawStatus === "menunggu") {
+              statusText = "Butuh Persetujuan";
+              statusColor = "purple";
+              borderColor = "border-purple-400";
+              mappedStatus = "menunggu";
+              title = "Rujukan Psikolog";
+              description = "Anda mendapat rujukan baru, silakan kelola persetujuan.";
+            } else if (rawStatus === "menunggu_jadwal") {
+              if (isExpired) {
+                statusText = "Kedaluwarsa";
                 statusColor = "red";
                 borderColor = "border-red-400";
-                statusText = "Ditolak";
-                mappedStatus = "ditolak";
-                break;
-              case "dijadwalkan":
-              case "disetujui":
-              case "confirmed":
+                mappedStatus = "expired";
+                title = "Konseling Terlewat";
+                description = "Batas waktu rujukan telah berakhir. Silakan pilih jadwal konsultasi yang baru.";
+              } else {
+                statusText = "Pilih Jadwal";
                 statusColor = "blue";
                 borderColor = "border-blue-400";
-                statusText = "Dijadwalkan";
+                mappedStatus = "menunggu_jadwal";
+                title = "Pilih Jadwal Konsultasi";
+                description = "Persetujuan telah diberikan. Silakan pilih jadwal konsultasi yang sesuai.";
+              }
+            } else if (rawStatus === "menunggu_konfirmasi") {
+              statusText = "Menunggu Konfirmasi";
+              statusColor = "orange";
+              borderColor = "border-orange-400";
+              mappedStatus = "menunggu_konfirmasi";
+              title = "Rujukan Psikolog";
+              description = "Jadwal telah diajukan dan sedang menunggu konfirmasi psikolog.";
+            } else if (rawStatus === "dijadwalkan") {
+              if (wasRescheduled) {
+                statusText = "Perubahan Jadwal";
+                statusColor = "amber";
+                borderColor = "border-amber-400";
                 mappedStatus = "dijadwalkan";
-                break;
-              case "expired":
-                statusColor = "red";
-                borderColor = "border-red-400";
-                statusText = "Expired";
-                mappedStatus = "expired";
-                break;
-            }
-
-            let description = "Kamu dirujuk ke psikolog untuk penanganan lebih lanjut.";
-            
-            if (statusText === "Menunggu") {
-              description = "Anda mendapat rujukan baru, silakan kelola persetujuan.";
-            } else if (statusText === "Dijadwalkan") {
-              description = "Jadwal rujukan telah dikonfirmasi oleh psikolog.";
-            } else if (statusText === "Ditolak") {
-              description = "Jadwal rujukan telah ditolak.";
-            } else if (statusText === "Selesai") {
-              description = "Sesi rujukan telah selesai.";
-            } else if (statusText === "Expired") {
-              description = "Batas waktu rujukan telah berakhir. Silakan ajukan ulang untuk memilih jadwal konsultasi yang baru.";
+                title = "Perubahan Jadwal Konseling";
+                description = latestBooking?.reject_reason
+                  ? `Jadwal konsultasi digeser oleh psikolog: "${latestBooking.reject_reason}"`
+                  : "Jadwal konsultasi telah digeser oleh psikolog.";
+              } else {
+                statusText = "Terkonfirmasi";
+                statusColor = "green";
+                borderColor = "border-green-400";
+                mappedStatus = "dijadwalkan";
+                title = "Konseling Terjadwal";
+                description = "Jadwal rujukan telah dikonfirmasi oleh psikolog.";
+              }
+            } else if (rawStatus === "selesai") {
+              statusText = "Selesai";
+              statusColor = "emerald";
+              borderColor = "border-emerald-400";
+              mappedStatus = "selesai";
+              title = "Konseling Selesai";
+              description = "Sesi konsultasi rujukan telah selesai.";
+            } else if (rawStatus === "ditolak") {
+              statusText = "Jadwal Ditolak Siswa";
+              statusColor = "rose";
+              borderColor = "border-rose-400";
+              mappedStatus = "ditolak";
+              title = "Konseling Ditolak";
+              description = "Jadwal atau rujukan telah ditolak.";
+            } else if (rawStatus === "dibatalkan") {
+              statusText = "Dibatalkan";
+              statusColor = "red";
+              borderColor = "border-red-400";
+              mappedStatus = "dibatalkan";
+              title = "Rujukan Dibatalkan";
+              description = item.notes ? `Rujukan dibatalkan: ${item.notes}` : "Rujukan telah dibatalkan oleh Guru BK.";
+            } else {
+              statusText = item.status || "Menunggu";
+              statusColor = "gray";
+              borderColor = "border-gray-400";
+              mappedStatus = item.status;
             }
 
             const scheduledAt = item.scheduled_at || item.counseling?.scheduled_at;
@@ -256,12 +296,6 @@ function NotificationsPageContent() {
               }
             }
 
-            let title = "Rujukan Psikolog";
-            if (mappedStatus === "selesai") title = "Konseling Selesai";
-            else if (mappedStatus === "ditolak") title = "Konseling Ditolak";
-            else if (mappedStatus === "dijadwalkan") title = "Konseling Terjadwal";
-            else if (mappedStatus === "expired") title = "Rujukan Kedaluwarsa";
-
             return {
               id: item.id,
               type: "rujukan" as const,
@@ -283,6 +317,7 @@ function NotificationsPageContent() {
               time: referralTime,
               createdAt: item.created_at,
               clinicalNotes: item.clinical_summary?.clinical_notes || item.assesment_logs?.[0]?.clinical_notes,
+              latest_booking: latestBooking || null,
             };
           }) || [];
 
