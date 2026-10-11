@@ -10,6 +10,8 @@ import {
   ClipboardCheck,
   Check,
   Loader2,
+  RotateCcw,
+  FileText,
 } from "lucide-react";
 
 // UI Components
@@ -30,6 +32,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // Utils and API
 import { getInitials } from "@/lib/utils";
@@ -60,6 +70,7 @@ export default function CounselingScheduleTable() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [isViewResultDialogOpen, setIsViewResultDialogOpen] = useState(false);
 
 
   // Fetch data from API
@@ -111,9 +122,29 @@ export default function CounselingScheduleTable() {
     }
   };
 
+  // 9 Enum ReportStatus dari BE
+  const predefinedStatuses = [
+    "Belum Ditinjau",
+    "Sedang Ditangani",
+    "Belum Ditanggapi",
+    "Menunggu Persetujuan Siswa",
+    "Konseling Dijadwalkan",
+    "Diselesaikan",
+    "Dibatalkan",
+    "Jadwal Ditolak Siswa",
+    "Bukan Urgent",
+  ];
+
   // Get unique values for filters
-  const uniqueStatus = [...new Set(schedules.map((item) => item.status))];
-  const uniquePriorities = [...new Set(schedules.map((item) => item.priority))];
+  const uniqueStatus = Array.from(
+    new Set([
+      ...predefinedStatuses,
+      ...schedules.map((item) => item.status).filter(Boolean),
+    ])
+  );
+  const uniquePriorities = Array.from(
+    new Set(["tinggi", "rendah", ...schedules.map((item) => (item.priority || "").toLowerCase()).filter(Boolean)])
+  );
   const uniqueKelas = [
     ...new Set(schedules.map((item) => item.user?.room?.name || "-")),
   ];
@@ -124,12 +155,16 @@ export default function CounselingScheduleTable() {
       const matchesSearch =
         (item.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.user?.username || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.topic || "").toLowerCase().includes(searchTerm.toLowerCase());
+        (item.user?.identifier || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.topic || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.notes || "").toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "all" || item.status === statusFilter;
+        statusFilter === "all" ||
+        (item.status || "").toLowerCase() === statusFilter.toLowerCase();
       const matchesPriority =
-        priorityFilter === "all" || item.priority === priorityFilter;
+        priorityFilter === "all" ||
+        (item.priority || "").toLowerCase() === priorityFilter.toLowerCase();
       const matchesKelas =
         kelasFilter === "all" || (item.user?.room?.name || "-") === kelasFilter;
 
@@ -150,63 +185,81 @@ export default function CounselingScheduleTable() {
     }
   };
 
-  // Helper functions
+  // Helper functions for badges
   const getStatusBadge = (status: string) => {
-    const variants = {
-      menunggu: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      disetujui: "bg-blue-100 text-blue-800 border-blue-200",
-      dijadwalkanUlang: "bg-orange-100 text-orange-800 border-orange-200",
-      selesai: "bg-green-100 text-green-800 border-green-200",
-      dibatalkan: "bg-red-100 text-red-800 border-red-200",
-      ditolak: "bg-rose-100 text-rose-800 border-rose-200",
-      "ditolak oleh siswa": "bg-rose-100 text-rose-800 border-rose-200",
-      "jadwal ditolak siswa": "bg-rose-100 text-rose-800 border-rose-200",
-    };
-    return (
-      variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
-    );
+    switch ((status || "").toLowerCase()) {
+      case "belum ditinjau":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "sedang ditangani":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "belum ditanggapi":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "menunggu persetujuan siswa":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      case "konseling dijadwalkan":
+      case "dijadwalkan":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case "diselesaikan":
+      case "selesai":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "dibatalkan":
+        return "bg-gray-100 text-gray-700 border-gray-200";
+      case "jadwal ditolak siswa":
+      case "ditolak oleh siswa":
+      case "ditolak":
+        return "bg-rose-100 text-rose-800 border-rose-200";
+      case "bukan urgent":
+        return "bg-slate-100 text-slate-700 border-slate-200";
+      case "menunggu":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "disetujui":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
   };
 
   const getStatusLabel = (status: string) => {
-    const labels = {
-      menunggu: "Menunggu",
-      disetujui: "Disetujui",
-      dijadwalkanUlang: "Dijadwalkan Ulang",
-      selesai: "Selesai",
-      dibatalkan: "Dibatalkan",
-      ditolak: "Ditolak Siswa",
-      "ditolak oleh siswa": "Ditolak Siswa",
-      "jadwal ditolak siswa": "Ditolak Siswa",
-    };
-    return labels[status as keyof typeof labels] || status;
+    return status || "-";
   };
 
   const getPrioritasBadge = (prioritas: string) => {
-    const variants = {
-      rendah: "bg-blue-100 text-blue-800 border-blue-200",
-      sedang: "bg-orange-100 text-orange-800 border-orange-200",
-      tinggi: "bg-red-100 text-red-800 border-red-200",
-    };
-    return (
-      variants[prioritas as keyof typeof variants] ||
-      "bg-gray-100 text-gray-800"
-    );
+    switch ((prioritas || "").toLowerCase()) {
+      case "tinggi":
+        return "bg-red-100 text-red-700 border-red-200";
+      case "sedang":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "rendah":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
   };
 
   const isActionEnabled = (schedule: CounselingSchedule, action: string) => {
-    switch (schedule.status) {
-      case "menunggu":
-        return ["confirm"].includes(action);
-      case "disetujui":
-        return ["reschedule", "complete"].includes(action);
-      case "dijadwalkan":
-        return ["complete"].includes(action);
-      case "selesai":
-      case "dibatalkan":
-      case "ditolak":
-      case "ditolak oleh siswa":
-      case "jadwal ditolak siswa":
-        return false;
+    const status = (schedule.status || "").toLowerCase();
+    switch (action) {
+      case "confirm":
+        return [
+          "belum ditinjau",
+          "sedang ditangani",
+          "belum ditanggapi",
+          "bukan urgent",
+          "menunggu",
+        ].includes(status);
+      case "reschedule":
+        return [
+          "konseling dijadwalkan",
+          "menunggu persetujuan siswa",
+          "disetujui",
+          "dijadwalkan",
+        ].includes(status);
+      case "complete":
+        return [
+          "konseling dijadwalkan",
+          "dijadwalkan",
+          "disetujui",
+        ].includes(status);
       default:
         return false;
     }
@@ -226,6 +279,11 @@ export default function CounselingScheduleTable() {
   const handleComplete = (schedule: CounselingSchedule) => {
     setSelectedSchedule(schedule);
     setIsCompleteDialogOpen(true);
+  };
+
+  const handleViewResult = (schedule: CounselingSchedule) => {
+    setSelectedSchedule(schedule);
+    setIsViewResultDialogOpen(true);
   };
 
 
@@ -347,6 +405,49 @@ export default function CounselingScheduleTable() {
       header: "Aksi",
       cell: ({ row }) => {
         const schedule = row.original;
+        const normalizedStatus = (schedule.status || "").toLowerCase();
+
+        // 1. Status 'Jadwal Ditolak Siswa' (atau 'ditolak oleh siswa'): Tombol 'Ajukan Jadwal Konseling Kembali'
+        if (
+          normalizedStatus === "jadwal ditolak siswa" ||
+          normalizedStatus === "ditolak oleh siswa" ||
+          normalizedStatus === "ditolak"
+        ) {
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 px-2.5 font-medium border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800 flex items-center gap-1.5 whitespace-nowrap"
+              onClick={() => handleConfirm(schedule)}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Ajukan Jadwal Konseling Kembali</span>
+            </Button>
+          );
+        }
+
+        // 2. Status 'Diselesaikan' atau 'Dibatalkan': Tombol 'Lihat Hasil' / 'Lihat Alasan'
+        if (
+          normalizedStatus === "diselesaikan" ||
+          normalizedStatus === "selesai" ||
+          normalizedStatus === "dibatalkan"
+        ) {
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 px-2.5 font-medium border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center gap-1.5 whitespace-nowrap"
+              onClick={() => handleViewResult(schedule)}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>
+                {normalizedStatus === "dibatalkan" ? "Lihat Alasan" : "Lihat Hasil"}
+              </span>
+            </Button>
+          );
+        }
+
+        // 3. Status aktif lainnya: 3 aksi (Konfirmasi/Jadwalkan, Ubah Jadwal, Tandai Selesai)
         return (
           <TooltipProvider>
             <div className="flex space-x-2">
@@ -370,7 +471,7 @@ export default function CounselingScheduleTable() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Konfirmasi Konseling</p>
+                  <p>Atur / Konfirmasi Jadwal</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -418,11 +519,9 @@ export default function CounselingScheduleTable() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Tandai Selesai</p>
+                  <p>Tandai Selesai & Catat Hasil</p>
                 </TooltipContent>
               </Tooltip>
-
-
             </div>
           </TooltipProvider>
         );
@@ -570,6 +669,85 @@ export default function CounselingScheduleTable() {
         schedule={selectedSchedule}
         onRefreshData={refreshData}
       />
+
+      {/* View Result Dialog for Diselesaikan / Dibatalkan */}
+      <Dialog open={isViewResultDialogOpen} onOpenChange={setIsViewResultDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedSchedule?.status?.toLowerCase() === "dibatalkan"
+                ? "Detail Pembatalan Konseling"
+                : "Catatan Hasil Konseling"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSchedule?.status?.toLowerCase() === "dibatalkan"
+                ? "Alasan dan informasi terkait pembatalan sesi konseling siswa."
+                : "Rangkuman dan catatan hasil dari sesi konseling yang telah diselesaikan."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-sm">
+            <div className="p-3 bg-gray-50 border rounded-lg space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-500 text-xs">Siswa</span>
+                <span className="font-medium text-gray-800">
+                  {selectedSchedule?.user?.name || "Tanpa Nama"} (
+                  {selectedSchedule?.user?.room?.name || selectedSchedule?.user?.username || "-"}
+                  )
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 text-xs">Topik</span>
+                <span className="font-medium text-gray-800">
+                  {selectedSchedule?.topic || "-"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 text-xs">Waktu Sesi</span>
+                <span className="font-medium text-gray-800">
+                  {selectedSchedule?.date
+                    ? formatCounselingDateTime(selectedSchedule.date, selectedSchedule.time)
+                    : "-"}
+                </span>
+              </div>
+            </div>
+
+            {selectedSchedule?.notes && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">
+                  Keluhan / Catatan Awal Siswa:
+                </p>
+                <div className="p-3 bg-gray-50 border rounded-lg text-gray-700 italic text-xs leading-relaxed">
+                  "{selectedSchedule.notes}"
+                </div>
+              </div>
+            )}
+
+            <div>
+              <p className="text-xs font-semibold text-gray-700 mb-1">
+                {selectedSchedule?.status?.toLowerCase() === "dibatalkan"
+                  ? "Alasan Pembatalan:"
+                  : "Catatan Hasil Konseling:"}
+              </p>
+              <div className="p-3 bg-white border border-gray-200 rounded-lg text-gray-800 text-sm leading-relaxed whitespace-pre-wrap min-h-[60px]">
+                {selectedSchedule?.result || (
+                  <span className="text-gray-400 italic">Belum ada catatan.</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsViewResultDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
 
     </div>
