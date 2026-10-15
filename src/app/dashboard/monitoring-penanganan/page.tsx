@@ -17,6 +17,7 @@ import {
   getHeadTeacherIncidents,
   getHeadTeacherDashboardStats,
   getMonitoringPenanganan,
+  getUsersByType,
   HeadTeacherIncident,
   HeadTeacherIncidentsParams,
 } from "@/lib/api";
@@ -144,22 +145,32 @@ function MonitoringPenangananContent() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [incidentsRes, monitoringRes, statsRes] = await Promise.allSettled([
+        const [incidentsRes, monitoringRes, statsRes, counselorsRes] = await Promise.allSettled([
           getHeadTeacherIncidents({ per_page: 100 }),
           getMonitoringPenanganan(),
           getHeadTeacherDashboardStats(),
+          getUsersByType("counselor"),
         ]);
 
         let allIncidents: HeadTeacherIncident[] = [];
         if (incidentsRes.status === "fulfilled" && incidentsRes.value?.success && Array.isArray(incidentsRes.value.data)) {
           allIncidents = incidentsRes.value.data;
-          
-          // Populate unique counselors list
-          const uniqueCounselors = Array.from(
-            new Set(allIncidents.map((i) => i.assigned_counselor).filter(Boolean))
-          );
-          setAvailableCounselors(uniqueCounselors);
         }
+
+        // Populate counselors from /dashboard/users/type/counselor with fallback to incidents
+        let counselorNames: string[] = [];
+        if (
+          counselorsRes.status === "fulfilled" &&
+          counselorsRes.value?.success &&
+          Array.isArray(counselorsRes.value.data)
+        ) {
+          counselorNames = counselorsRes.value.data.map((u: any) => u.name).filter(Boolean);
+        }
+
+        // Merge with any assigned_counselor present in incidents
+        const fromIncidents = allIncidents.map((i) => i.assigned_counselor).filter(Boolean);
+        const mergedCounselors = Array.from(new Set([...counselorNames, ...fromIncidents]));
+        setAvailableCounselors(mergedCounselors);
 
         // Determine stats
         let totalAktif = allIncidents.filter((i) => i.status !== "Diselesaikan" && i.status !== "Selesai").length;
