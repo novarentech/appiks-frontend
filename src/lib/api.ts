@@ -1907,6 +1907,8 @@ export async function getHeadTeacherDashboardStats(): Promise<{
   data: {
     need_intention: number;
     resolved_interventions: number;
+    sla_breached_count: number;
+    external_counseling_count: number;
   };
 }> {
   return await authGet("/headteacher/dashboard/stats");

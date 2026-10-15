@@ -181,6 +181,8 @@ function MonitoringPenangananContent() {
           const s = statsRes.value.data;
           if (s.need_intention !== undefined) totalAktif = s.need_intention;
           if (s.resolved_interventions !== undefined) selesai = s.resolved_interventions;
+          if (s.external_counseling_count !== undefined) rujukan = s.external_counseling_count;
+          if (s.sla_breached_count !== undefined) slaBreached = s.sla_breached_count;
         }
 
         setStats({
