@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { MonitoringCaseItem, SharingTimelineEvent } from "@/types/api";
 import { markNotificationAsRead, getSharingTimeline } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface MonitoringCaseCardProps {
   item: MonitoringCaseItem;
@@ -157,23 +158,60 @@ export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardPro
 
   const renderPayloadInfo = (payload: any) => {
     if (!payload || typeof payload !== "object") return null;
-    const items: string[] = [];
-    if (payload.action) items.push(`Tindakan: ${payload.action.replace(/_/g, " ")}`);
-    if (payload.type) items.push(`Tipe: ${payload.type}`);
-    if (payload.zone) items.push(`Zona: ${payload.zone}`);
-    if (payload.priority) items.push(`Prioritas: ${payload.priority}`);
-    if (payload.slot_date && payload.slot_time) items.push(`Jadwal: ${payload.slot_date} ${payload.slot_time}`);
-    else if (payload.scheduled_at) {
+    const items: { label: string; value: string }[] = [];
+    if (payload.action) items.push({ label: "Tindakan", value: String(payload.action).replace(/_/g, " ") });
+    if (payload.type) items.push({ label: "Tipe", value: String(payload.type) });
+    if (payload.zone) items.push({ label: "Zona", value: String(payload.zone) });
+    if (payload.priority) items.push({ label: "Prioritas", value: String(payload.priority) });
+    if (payload.slot_date && payload.slot_time) {
+      items.push({ label: "Jadwal", value: `${payload.slot_date} ${payload.slot_time}` });
+    } else if (payload.scheduled_at) {
       const d = new Date(payload.scheduled_at);
       if (!isNaN(d.getTime())) {
-        items.push(`Jadwal: ${d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`);
+        items.push({
+          label: "Jadwal",
+          value: d.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        });
       }
     }
+    if (payload.deadline_at) {
+      const d = new Date(payload.deadline_at);
+      if (!isNaN(d.getTime())) {
+        items.push({
+          label: "Batas Waktu",
+          value: d.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        });
+      }
+    }
+    if (payload.scopes_count !== undefined) {
+      items.push({ label: "Akses Data", value: `${payload.scopes_count} cakupan` });
+    }
+
     if (items.length === 0) return null;
     return (
-      <p className="text-xs text-gray-500 mt-0.5">
-        {items.join(" • ")}
-      </p>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {items.map((it, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center text-[11px] bg-white text-gray-600 border border-gray-200 rounded-md px-2 py-0.5 shadow-2xs"
+          >
+            <span className="text-gray-400 mr-1">{it.label}:</span>
+            <span className="font-medium text-gray-700 capitalize">{it.value}</span>
+          </span>
+        ))}
+      </div>
     );
   };
 
@@ -269,34 +307,55 @@ export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardPro
                   <span className="text-sm">Memuat jejak penanganan...</span>
                 </div>
               ) : timelineEvents.length > 0 ? (
-                <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 pb-2 max-h-[320px] overflow-y-auto pr-2">
-                  {timelineEvents.map((step) => {
+                <div className="relative pl-1 py-1 max-h-[340px] overflow-y-auto pr-3">
+                  {timelineEvents.map((step, idx) => {
+                    const isLast = idx === timelineEvents.length - 1;
                     const { date, time } = formatTimelineDate(step.occurred_at);
                     const { dot, badge } = getStageBadgeStyle(step.stage, step.event);
                     return (
-                      <div key={step.id} className="relative pl-6">
+                      <div key={step.id} className="relative flex items-start gap-3.5 pb-6 last:pb-1">
+                        {/* Connecting line */}
+                        {!isLast && (
+                          <span
+                            className="absolute left-[9px] top-3.5 -bottom-2.5 w-0.5 bg-gray-200"
+                            aria-hidden="true"
+                          />
+                        )}
+                        {/* Dot node */}
                         <div
-                          className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full ${dot} shadow-sm border-2 border-white`}
-                        />
-                        <div className="flex flex-col gap-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-500">
-                              {date} {time}
-                            </span>
-                            <span
-                              className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${badge}`}
-                            >
-                              {step.stage}
-                            </span>
-                            {step.is_system && (
-                              <span className="text-[10px] text-gray-400 font-medium">
-                                (Sistem)
+                          className={cn(
+                            "relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-white shadow-xs",
+                            dot
+                          )}
+                        >
+                          <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="min-w-0 flex-1 -mt-0.5">
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={cn(
+                                  "text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border tracking-wide",
+                                  badge
+                                )}
+                              >
+                                {step.stage}
                               </span>
-                            )}
+                              {step.is_system && (
+                                <span className="text-[10px] text-gray-400 font-medium bg-gray-100 px-1.5 py-0.5 rounded">
+                                  Sistem
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs font-medium text-gray-500">
+                              {date} • {time}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-800">
+                          <p className="text-sm font-semibold text-gray-800 leading-snug">
                             {step.label}
-                          </span>
+                          </p>
                           {renderPayloadInfo(step.payload)}
                         </div>
                       </div>
@@ -304,16 +363,31 @@ export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardPro
                   })}
                 </div>
               ) : item.timeline && item.timeline.length > 0 ? (
-                <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 pb-2">
-                  {item.timeline.map((step, idx) => (
-                    <div key={idx} className="relative pl-6">
-                      <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-green-500 shadow-sm border-2 border-white"></div>
-                      <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
-                        <span className="text-sm font-medium text-gray-500">{step.date} {step.time}</span>
-                        <span className="text-sm text-gray-700">{step.description}</span>
+                <div className="relative pl-1 py-1 max-h-[340px] overflow-y-auto pr-3">
+                  {item.timeline.map((step, idx) => {
+                    const isLast = idx === item.timeline!.length - 1;
+                    return (
+                      <div key={idx} className="relative flex items-start gap-3.5 pb-6 last:pb-1">
+                        {!isLast && (
+                          <span
+                            className="absolute left-[9px] top-3.5 -bottom-2.5 w-0.5 bg-gray-200"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div className="relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 border-2 border-white shadow-xs">
+                          <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                        </div>
+                        <div className="min-w-0 flex-1 -mt-0.5">
+                          <span className="text-xs font-semibold text-gray-500 block mb-0.5">
+                            {step.date} • {step.time}
+                          </span>
+                          <p className="text-sm font-medium text-gray-800">
+                            {step.description}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-gray-500 italic pl-6">Belum ada jejak penanganan kasus.</p>
