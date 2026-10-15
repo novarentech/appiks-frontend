@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Calendar, Clock, User, ChevronRight, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, User, ChevronRight, AlertTriangle, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { MonitoringCaseItem } from "@/types/api";
-import { markNotificationAsRead } from "@/lib/api";
+import { MonitoringCaseItem, SharingTimelineEvent } from "@/types/api";
+import { markNotificationAsRead, getSharingTimeline } from "@/lib/api";
 
 interface MonitoringCaseCardProps {
   item: MonitoringCaseItem;
@@ -24,21 +24,43 @@ interface MonitoringCaseCardProps {
 export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isMarked, setIsMarked] = useState(item.marked ?? false);
+  const [timelineEvents, setTimelineEvents] = useState<SharingTimelineEvent[]>([]);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
 
   useEffect(() => {
     setIsMarked(item.marked ?? false);
   }, [item.marked]);
 
-  const handleOpenDetail = (open: boolean) => {
+  const handleOpenDetail = async (open: boolean) => {
     setIsDetailOpen(open);
-    if (open && !isMarked) {
-      setIsMarked(true);
-      if (item.notification_id) {
-        markNotificationAsRead(item.notification_id).catch((err) =>
-          console.error("Gagal menandai notifikasi:", err)
-        );
+    if (open) {
+      if (!isMarked) {
+        setIsMarked(true);
+        if (item.notification_id) {
+          markNotificationAsRead(item.notification_id).catch((err) =>
+            console.error("Gagal menandai notifikasi:", err)
+          );
+        }
+        onCaseMarked?.(item.id);
       }
-      onCaseMarked?.(item.id);
+
+      // Fetch dynamic timeline events
+      setIsLoadingTimeline(true);
+      try {
+        const res = await getSharingTimeline(item.id);
+        if (res.success && res.data?.events && Array.isArray(res.data.events)) {
+          const sorted = [...res.data.events].sort(
+            (a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime()
+          );
+          setTimelineEvents(sorted);
+        } else {
+          setTimelineEvents([]);
+        }
+      } catch (err) {
+        console.error("Gagal memuat timeline sharing:", err);
+      } finally {
+        setIsLoadingTimeline(false);
+      }
     }
   };
 
@@ -78,6 +100,80 @@ export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardPro
         <AlertTriangle className="w-3.5 h-3.5 mr-1" />
         {slaStatus}
       </span>
+    );
+  };
+
+  const formatTimelineDate = (dateStr?: string) => {
+    if (!dateStr) return { date: "-", time: "-" };
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return { date: "-", time: "-" };
+      return {
+        date: d.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        time: d.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }).replace(".", ":"),
+      };
+    } catch {
+      return { date: "-", time: "-" };
+    }
+  };
+
+  const getStageBadgeStyle = (stage: string, event: string) => {
+    if (event === "sla_deadline_elapsed") {
+      return {
+        dot: "bg-rose-500",
+        badge: "bg-rose-50 text-rose-700 border-rose-200",
+      };
+    }
+    switch (stage?.toLowerCase()) {
+      case "triage":
+        return {
+          dot: "bg-amber-500",
+          badge: "bg-amber-50 text-amber-700 border-amber-200",
+        };
+      case "konseling":
+        return {
+          dot: "bg-sky-500",
+          badge: "bg-sky-50 text-sky-700 border-sky-200",
+        };
+      case "rujukan":
+        return {
+          dot: "bg-indigo-500",
+          badge: "bg-indigo-50 text-indigo-700 border-indigo-200",
+        };
+      default:
+        return {
+          dot: "bg-green-500",
+          badge: "bg-green-50 text-green-700 border-green-200",
+        };
+    }
+  };
+
+  const renderPayloadInfo = (payload: any) => {
+    if (!payload || typeof payload !== "object") return null;
+    const items: string[] = [];
+    if (payload.action) items.push(`Tindakan: ${payload.action.replace(/_/g, " ")}`);
+    if (payload.type) items.push(`Tipe: ${payload.type}`);
+    if (payload.zone) items.push(`Zona: ${payload.zone}`);
+    if (payload.priority) items.push(`Prioritas: ${payload.priority}`);
+    if (payload.slot_date && payload.slot_time) items.push(`Jadwal: ${payload.slot_date} ${payload.slot_time}`);
+    else if (payload.scheduled_at) {
+      const d = new Date(payload.scheduled_at);
+      if (!isNaN(d.getTime())) {
+        items.push(`Jadwal: ${d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`);
+      }
+    }
+    if (items.length === 0) return null;
+    return (
+      <p className="text-xs text-gray-500 mt-0.5">
+        {items.join(" • ")}
+      </p>
     );
   };
 
@@ -166,9 +262,50 @@ export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardPro
 
             <div className="mt-6">
               <h4 className="font-semibold text-gray-900 mb-4">Timeline Penanganan</h4>
-              <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 pb-2">
-                {item.timeline && item.timeline.length > 0 ? (
-                  item.timeline.map((step, idx) => (
+              
+              {isLoadingTimeline ? (
+                <div className="flex items-center justify-center py-8 text-gray-400">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  <span className="text-sm">Memuat jejak penanganan...</span>
+                </div>
+              ) : timelineEvents.length > 0 ? (
+                <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 pb-2 max-h-[320px] overflow-y-auto pr-2">
+                  {timelineEvents.map((step) => {
+                    const { date, time } = formatTimelineDate(step.occurred_at);
+                    const { dot, badge } = getStageBadgeStyle(step.stage, step.event);
+                    return (
+                      <div key={step.id} className="relative pl-6">
+                        <div
+                          className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full ${dot} shadow-sm border-2 border-white`}
+                        />
+                        <div className="flex flex-col gap-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold text-gray-500">
+                              {date} {time}
+                            </span>
+                            <span
+                              className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${badge}`}
+                            >
+                              {step.stage}
+                            </span>
+                            {step.is_system && (
+                              <span className="text-[10px] text-gray-400 font-medium">
+                                (Sistem)
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-gray-800">
+                            {step.label}
+                          </span>
+                          {renderPayloadInfo(step.payload)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : item.timeline && item.timeline.length > 0 ? (
+                <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 pb-2">
+                  {item.timeline.map((step, idx) => (
                     <div key={idx} className="relative pl-6">
                       <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-green-500 shadow-sm border-2 border-white"></div>
                       <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
@@ -176,11 +313,11 @@ export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardPro
                         <span className="text-sm text-gray-700">{step.description}</span>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500 italic pl-6">Belum ada timeline penanganan.</p>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic pl-6">Belum ada jejak penanganan kasus.</p>
+              )}
             </div>
 
             <div className="mt-6 pt-4">

@@ -1583,6 +1583,28 @@ export interface MonitoringStats {
   pelanggaran_sla: number | string;
 }
 
+export interface SharingTimelineEvent {
+  id: number;
+  event: string;
+  label: string;
+  stage: "triage" | "konseling" | "rujukan" | string;
+  is_system: boolean;
+  occurred_at: string;
+  payload?: any;
+}
+
+export interface SharingTimelineData {
+  sharing_id: number;
+  opened_at?: string | null;
+  events: SharingTimelineEvent[];
+}
+
+export interface SharingTimelineResponse {
+  success: boolean;
+  message: string;
+  data: SharingTimelineData;
+}
+
 export interface MonitoringTimelineItem {
   date: string;
   time: string;

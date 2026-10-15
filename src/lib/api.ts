@@ -88,6 +88,7 @@ import {
   CounselingCancelRequest,
   CounselingReproposeRequest,
   StudentCounselingsPaginatedResponse,
+  SharingTimelineResponse,
 } from "@/types/api";
 import {
   RoomResponse,
@@ -2079,4 +2080,14 @@ export async function markAllNotificationsAsRead(): Promise<{
 }> {
   return await authPatch("/notifications/read-all", {});
 }
+
+/**
+ * Get case handling timeline (Jejak penanganan kasus)
+ */
+export async function getSharingTimeline(
+  sharingId: string | number
+): Promise<SharingTimelineResponse> {
+  return await authGet(`/sharing/${sharingId}/timeline`);
+}
+
 
