@@ -1917,20 +1917,164 @@ export interface HeadTeacherIncident {
   status: string;
   priority: string;
   created_at: string;
+  scheduled_at?: string | null;
   acknowledged_at: string | null;
   assigned_counselor: string;
   is_sla_breached: boolean;
+  name?: string;
   student_name?: string;
+  room?: string;
   class_name?: string;
+  marked?: boolean;
+  notification_id?: string | null;
+}
+
+export interface HeadTeacherIncidentsParams {
+  name?: string;
+  counselor_name?: string;
+  counselor?: string;
+  assigned_counselor?: string;
+  is_breached?: string | boolean | number;
+  status?: string;
+  per_page?: string | number;
+  page?: string | number;
+  marked?: boolean | string;
 }
 
 /**
  * Get HeadTeacher Incidents
  */
-export async function getHeadTeacherIncidents(): Promise<{
+export async function getHeadTeacherIncidents(
+  params?: HeadTeacherIncidentsParams,
+): Promise<{
   success: boolean;
   message: string;
   data: HeadTeacherIncident[];
 }> {
-  return await authGet("/headteacher/incidents");
+  let url = "/headteacher/incidents";
+  if (params) {
+    const query = new URLSearchParams();
+    if (params.name) query.append("name", params.name);
+    if (params.counselor_name && params.counselor_name !== "all") {
+      query.append("counselor_name", params.counselor_name);
+    }
+    if (params.counselor && params.counselor !== "all") {
+      query.append("counselor", params.counselor);
+    }
+    if (params.assigned_counselor && params.assigned_counselor !== "all") {
+      query.append("assigned_counselor", params.assigned_counselor);
+    }
+    if (params.status && params.status !== "all") {
+      query.append("status", params.status);
+    }
+    if (params.is_breached !== undefined && params.is_breached !== "all") {
+      query.append("is_breached", params.is_breached.toString());
+    }
+    if (params.per_page) {
+      query.append("per_page", params.per_page.toString());
+    }
+    if (params.page) {
+      query.append("page", params.page.toString());
+    }
+    if (params.marked !== undefined) {
+      query.append("marked", params.marked.toString());
+    }
+
+    const qs = query.toString();
+    if (qs) {
+      url += `?${qs}`;
+    }
+  }
+  return await authGet(url);
 }
+
+export interface AppNotificationData {
+  incident_id?: number;
+  counseling_id?: number | null;
+  counseling_status?: string | null;
+  student_name?: string;
+  student_room?: string;
+  counselor_name?: string;
+  zone?: "Yellow Zone" | "Red Zone" | string;
+  level?: "warning" | "critical" | string;
+  time?: string;
+  url?: string;
+  message?: string;
+  created_at?: string;
+  room?: string;
+  assigned_counselor?: string;
+  status?: string;
+  [key: string]: any;
+}
+
+export interface AppNotificationItem {
+  id: string;
+  type: "YellowZoneAlertNotification" | "RedZoneAlertNotification" | string;
+  data: AppNotificationData;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface AppNotificationsParams {
+  per_page?: number | string;
+  unread?: boolean | string;
+  page?: number | string;
+  class?: string;
+}
+
+/**
+ * Get notifications list
+ */
+export async function getAppNotifications(
+  params?: AppNotificationsParams,
+): Promise<{
+  success: boolean;
+  message: string;
+  data: AppNotificationItem[];
+}> {
+  let url = "/notifications";
+  if (params) {
+    const query = new URLSearchParams();
+    if (params.per_page !== undefined) query.append("per_page", params.per_page.toString());
+    if (params.unread !== undefined) query.append("unread", params.unread.toString());
+    if (params.page !== undefined) query.append("page", params.page.toString());
+    if (params.class !== undefined) query.append("class", params.class);
+    const qs = query.toString();
+    if (qs) url += `?${qs}`;
+  }
+  return await authGet(url);
+}
+
+/**
+ * Get unread notifications count
+ */
+export async function getUnreadNotificationsCount(): Promise<{
+  success: boolean;
+  message: string;
+  data: {
+    unread_count: number;
+  };
+}> {
+  return await authGet("/notifications/unread-count");
+}
+
+/**
+ * Mark a single notification as read
+ */
+export async function markNotificationAsRead(id: string): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  return await authPatch(`/notifications/${id}/read`, {});
+}
+
+/**
+ * Mark all notifications as read
+ */
+export async function markAllNotificationsAsRead(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  return await authPatch("/notifications/read-all", {});
+}
+

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Calendar, Clock, User, ChevronRight, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -14,23 +14,50 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { MonitoringCaseItem } from "@/types/api";
+import { markNotificationAsRead } from "@/lib/api";
 
 interface MonitoringCaseCardProps {
   item: MonitoringCaseItem;
+  onCaseMarked?: (id: string | number) => void;
 }
 
-export function MonitoringCaseCard({ item }: MonitoringCaseCardProps) {
+export function MonitoringCaseCard({ item, onCaseMarked }: MonitoringCaseCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isMarked, setIsMarked] = useState(item.marked ?? false);
+
+  useEffect(() => {
+    setIsMarked(item.marked ?? false);
+  }, [item.marked]);
+
+  const handleOpenDetail = (open: boolean) => {
+    setIsDetailOpen(open);
+    if (open && !isMarked) {
+      setIsMarked(true);
+      if (item.notification_id) {
+        markNotificationAsRead(item.notification_id).catch((err) =>
+          console.error("Gagal menandai notifikasi:", err)
+        );
+      }
+      onCaseMarked?.(item.id);
+    }
+  };
 
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "Belum Ditangani BK":
+      case "Belum Ditinjau":
         return "bg-red-50 text-red-600";
       case "Sedang Ditangani BK":
+      case "Sedang Ditangani":
         return "bg-cyan-50 text-cyan-600";
+      case "Menunggu Persetujuan Siswa":
+        return "bg-amber-50 text-amber-600";
+      case "Konseling Dijadwalkan":
+        return "bg-purple-50 text-purple-600";
       case "Dirujuk ke Psikolog":
         return "bg-blue-50 text-blue-600";
       case "Diselesaikan":
+      case "Selesai":
         return "bg-green-50 text-green-600";
       default:
         return "bg-gray-50 text-gray-600";
@@ -59,7 +86,14 @@ export function MonitoringCaseCard({ item }: MonitoringCaseCardProps) {
       {/* Top Row: Name and Status */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
         <div>
-          <h3 className="font-bold text-gray-900 text-lg">{item.studentName}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-gray-900 text-lg">{item.studentName}</h3>
+            {!isMarked && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-700 animate-pulse">
+                Baru
+              </span>
+            )}
+          </div>
           <p className="text-sm text-gray-500">{item.className}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -87,7 +121,7 @@ export function MonitoringCaseCard({ item }: MonitoringCaseCardProps) {
           </div>
         </div>
         
-        <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <Dialog open={isDetailOpen} onOpenChange={handleOpenDetail}>
           <DialogTrigger asChild>
             <button className="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-700 mt-2">
               Lihat Detail
@@ -113,7 +147,7 @@ export function MonitoringCaseCard({ item }: MonitoringCaseCardProps) {
               </div>
               <div className="space-y-1 mt-2">
                 <p className="text-sm font-medium text-gray-500">Tanggal Trigger</p>
-                <p className="font-bold text-gray-900">08/27/2025 09:00 AM</p>
+                <p className="font-bold text-gray-900">{item.date} {item.time}</p>
               </div>
               <div className="space-y-1 mt-2">
                 <p className="text-sm font-medium text-gray-500">Status</p>

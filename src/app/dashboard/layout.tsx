@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { SafetyCheckProvider } from "@/contexts/SafetyCheckContext";
 import { SafetyCheckDialogWrapper } from "@/components/dialogs/SafetyCheckDialogWrapper";
+import { HeadTeacherNotificationPopover } from "@/components/dashboard/HeadTeacherNotificationPopover";
 
 export default function DashboardLayout({
   children,
@@ -50,11 +51,14 @@ export default function DashboardLayout({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2 px-3">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b sticky top-0 bg-white z-10 px-4">
+          <div className="flex items-center gap-2">
             <SidebarTrigger />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <DynamicBreadcrumb />
+          </div>
+          <div className="flex items-center gap-2">
+            {user?.role === "headteacher" && <HeadTeacherNotificationPopover />}
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>

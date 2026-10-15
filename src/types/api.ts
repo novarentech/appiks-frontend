@@ -1600,6 +1600,8 @@ export interface MonitoringCaseItem {
   status: string;
   slaStatus: string;
   timeline?: MonitoringTimelineItem[];
+  marked?: boolean;
+  notification_id?: string | null;
 }
 
 export interface MonitoringResponse {

@@ -1,83 +1,166 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { AlertCircle, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { getHeadTeacherIncidents, HeadTeacherIncident } from "@/lib/api";
+import {
+  getAppNotifications,
+  markNotificationAsRead,
+  AppNotificationItem,
+} from "@/lib/api";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export function RedZoneAlertModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [incidents, setIncidents] = useState<HeadTeacherIncident[]>([]);
+  const [notifications, setNotifications] = useState<AppNotificationItem[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     const fetchIncidents = async () => {
       try {
-        const res = await getHeadTeacherIncidents();
-        if (res.success && res.data && res.data.length > 0) {
-          const activeIncidents = res.data.filter((i: any) => i.acknowledged_at === null);
-          if (activeIncidents.length > 0) {
-            setIncidents(activeIncidents);
+        const res = await getAppNotifications({
+          unread: "true",
+          class: "RedZoneAlertNotification",
+          per_page: 50,
+        });
+        if (res.success && res.data && Array.isArray(res.data)) {
+          const redZoneNotifs = res.data.filter(
+            (n) => n.type === "RedZoneAlertNotification" || n.data?.zone === "Red Zone"
+          );
+          if (redZoneNotifs.length > 0) {
+            setNotifications(redZoneNotifs);
             setIsOpen(true);
           }
         }
       } catch (err) {
-        console.error("Failed to fetch red zone incidents:", err);
+        console.error("Failed to fetch red zone notifications:", err);
       }
     };
     fetchIncidents();
   }, []);
 
-  const currentIncident = incidents[0];
+  const currentNotification = notifications[0];
 
-  const handleCloseCurrent = () => {
-    if (incidents.length > 1) {
-      setIncidents(prev => prev.slice(1));
+  const handleCloseCurrent = async () => {
+    if (currentNotification) {
+      try {
+        await markNotificationAsRead(currentNotification.id);
+      } catch (err) {
+        console.error("Gagal menandai notifikasi sebagai dibaca:", err);
+      }
+    }
+    if (notifications.length > 1) {
+      setNotifications((prev) => prev.slice(1));
     } else {
       setIsOpen(false);
     }
   };
 
-  const getPriorityBadge = (priority: string) => {
-    if (priority?.toLowerCase() === "tinggi" || priority?.toLowerCase() === "kritis") {
-      return "bg-red-50 text-red-600 border-red-200";
+  const handleViewDetail = async () => {
+    if (currentNotification) {
+      try {
+        await markNotificationAsRead(currentNotification.id);
+      } catch (err) {
+        console.error("Gagal menandai notifikasi sebagai dibaca:", err);
+      }
     }
-    return "bg-yellow-50 text-yellow-600 border-yellow-200";
+    setIsOpen(false);
+    router.push("/dashboard/monitoring-penanganan");
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "pending":
+  if (!isOpen || !currentNotification) return null;
+
+  const data = currentNotification.data || {};
+  const studentName = data.student_name || "Siswa";
+  const message = data.message || "Peringatan Red Zone terdeteksi.";
+  const time = data.time || data.created_at || currentNotification.created_at;
+
+  const formatTime = (timeStr?: string) => {
+    if (!timeStr) return "-";
+    try {
+      const d = new Date(timeStr);
+      if (isNaN(d.getTime())) return timeStr;
+      return d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return timeStr;
+    }
+  };
+
+  const studentRoom = data.student_room || data.room || "-";
+  const counselorName = data.counselor_name || data.assigned_counselor || "-";
+
+  const getCounselingStatusInfo = (status: string | null | undefined) => {
+    if (!status) {
+      return {
+        label: "Belum Ditangani BK",
+        style: "bg-rose-50 text-rose-600 border-rose-200",
+      };
+    }
+
+    switch (status.toLowerCase()) {
       case "menunggu":
-      case "belum ditinjau":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "confirmed":
+        return {
+          label: "Menunggu Tindakan",
+          style: "bg-amber-50 text-amber-700 border-amber-200",
+        };
+      case "menunggu_jadwal":
+        return {
+          label: "Menunggu Jadwal",
+          style: "bg-amber-50 text-amber-700 border-amber-200",
+        };
+      case "menunggu_konfirmasi":
+        return {
+          label: "Menunggu Konfirmasi",
+          style: "bg-orange-50 text-orange-700 border-orange-200",
+        };
       case "dijadwalkan":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "finished":
+        return {
+          label: "Dijadwalkan",
+          style: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        };
+      case "dijadwal_ulang":
+        return {
+          label: "Dijadwalkan Ulang",
+          style: "bg-blue-50 text-blue-700 border-blue-200",
+        };
+      case "menunggu_diskusi":
+        return {
+          label: "Menunggu Diskusi",
+          style: "bg-purple-50 text-purple-700 border-purple-200",
+        };
       case "selesai":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "rejected":
+        return {
+          label: "Selesai",
+          style: "bg-green-50 text-green-700 border-green-200",
+        };
       case "ditolak":
-        return "bg-rose-50 text-rose-700 border-rose-200";
-      case "menunggu persetujuan siswa":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "menunggu persetujuan rujukan":
-        return "bg-orange-50 text-orange-700 border-orange-200";
-      case "expired":
-        return "bg-gray-50 text-gray-500 border-gray-200";
-      case "bukan urgent":
-        return "bg-slate-50 text-slate-700 border-slate-200";
-      case "sudah ditanggapi":
-        return "bg-green-50 text-green-700 border-green-200";
+        return {
+          label: "Ditolak",
+          style: "bg-rose-50 text-rose-700 border-rose-200",
+        };
+      case "dibatalkan":
+        return {
+          label: "Dibatalkan",
+          style: "bg-gray-100 text-gray-600 border-gray-200",
+        };
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
+        return {
+          label: status.replace(/_/g, " "),
+          style: "bg-gray-100 text-gray-700 border-gray-200",
+        };
     }
   };
 
-  if (!isOpen || !currentIncident) return null;
+  const statusInfo = getCounselingStatusInfo(data.counseling_status ?? data.status);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -104,28 +187,36 @@ export function RedZoneAlertModal() {
             <div className="bg-gray-50/80 rounded-xl p-5 border border-gray-100">
               <div className="flex items-center gap-2 mb-3">
                 <h3 className="text-lg font-bold text-gray-900">
-                  {currentIncident.student_name || "Siswa Anonim"}
+                  {studentName}
                 </h3>
-                <Badge variant="outline" className={`px-2 py-0 text-[10px] uppercase font-bold tracking-wider rounded ${getPriorityBadge(currentIncident.priority)}`}>
-                  {currentIncident.priority === "tinggi" ? "Kritis" : currentIncident.priority}
+                <Badge variant="outline" className="px-2 py-0 text-[10px] uppercase font-bold tracking-wider rounded bg-red-50 text-red-600 border-red-200">
+                  {data.level === "critical" ? "Kritis" : "Red Zone"}
                 </Badge>
               </div>
               
               <div className="space-y-2.5 text-sm">
                 <div className="flex">
-                  <span className="text-gray-500 w-20">Kelas</span>
-                  <span className="font-medium text-gray-900">: {currentIncident.class_name || "Belum ada data kelas"}</span>
+                  <span className="text-gray-500 w-24">Kelas</span>
+                  <span className="font-medium text-gray-900">: {studentRoom}</span>
                 </div>
                 <div className="flex">
-                  <span className="text-gray-500 w-20">Guru BK</span>
-                  <span className="font-medium text-gray-900">: {currentIncident.assigned_counselor || "-"}</span>
+                  <span className="text-gray-500 w-24">Guru BK</span>
+                  <span className="font-medium text-gray-900">: {counselorName}</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-gray-500 w-20">Status</span>
+                  <span className="text-gray-500 w-24">Status</span>
                   <span className="font-medium mr-1">:</span>
-                  <Badge variant="outline" className={`font-normal border ${getStatusColor(currentIncident.status)}`}>
-                    {currentIncident.status}
+                  <Badge variant="outline" className={`font-medium border ${statusInfo.style}`}>
+                    {statusInfo.label}
                   </Badge>
+                </div>
+                <div className="flex">
+                  <span className="text-gray-500 w-24">Keterangan</span>
+                  <span className="font-medium text-gray-900">: {message}</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-500 w-24">Waktu</span>
+                  <span className="font-medium text-gray-900">: {formatTime(time)}</span>
                 </div>
               </div>
             </div>
@@ -137,13 +228,10 @@ export function RedZoneAlertModal() {
               onClick={handleCloseCurrent}
               className="flex-1 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 font-semibold focus:ring-0"
             >
-              Tutup {incidents.length > 1 ? `(Tersisa ${incidents.length - 1})` : ""}
+              Tutup {notifications.length > 1 ? `(Tersisa ${notifications.length - 1})` : ""}
             </Button>
             <Button 
-              onClick={() => {
-                setIsOpen(false);
-                router.push("/dashboard/monitoring-penanganan");
-              }}
+              onClick={handleViewDetail}
               className="flex-1 bg-[#e53e51] hover:bg-red-700 text-white font-semibold focus:ring-0"
             >
               Lihat Detail
