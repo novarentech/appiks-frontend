@@ -65,6 +65,7 @@ interface MoodChartProps {
   onDownload?: () => void;
   isDownloading?: boolean;
   hidePeriodSelector?: boolean;
+  hideHeader?: boolean;
 }
 
 export default function MoodChart({
@@ -79,6 +80,7 @@ export default function MoodChart({
   onDownload,
   isDownloading = false,
   hidePeriodSelector = false,
+  hideHeader = false,
 }: MoodChartProps) {
   // Transform mood data for chart
   const getCurrentData = () => {
@@ -124,33 +126,35 @@ export default function MoodChart({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex-1">
-          <CardTitle className="text-xl md:text-2xl font-semibold">
-            {title}
-          </CardTitle>
-          <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+      {!hideHeader && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex-1">
+            <CardTitle className="text-xl md:text-2xl font-semibold">
+              {title}
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">{subtitle}</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            {!hidePeriodSelector && (
+              <Select value={selectedPeriod} onValueChange={onPeriodChange}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Pilih periode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 hari terakhir</SelectItem>
+                  <SelectItem value="30">30 hari terakhir</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            {showDownloadButton && onDownload && (
+              <Button onClick={onDownload} disabled={isDownloading}>
+                <Download className="w-4 h-4 mr-2" /> 
+                {isDownloading ? "Mengunduh..." : "Download"}
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {!hidePeriodSelector && (
-            <Select value={selectedPeriod} onValueChange={onPeriodChange}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Pilih periode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">7 hari terakhir</SelectItem>
-                <SelectItem value="30">30 hari terakhir</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-          {showDownloadButton && onDownload && (
-            <Button onClick={onDownload} disabled={isDownloading}>
-              <Download className="w-4 h-4 mr-2" /> 
-              {isDownloading ? "Mengunduh..." : "Download"}
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
 
       <Card className="w-full">
         <CardContent className="space-y-6">

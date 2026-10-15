@@ -127,6 +127,7 @@ export interface Student {
   room: Room;
   mentor: Mentor;
   lastmoodres: LastMoodRes | null;
+  last_counseling_id?: number | null;
 }
 
 // Interface untuk response API dashboard student

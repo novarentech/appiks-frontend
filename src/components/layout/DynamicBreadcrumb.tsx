@@ -34,9 +34,14 @@ export default function DynamicBreadcrumb() {
     .filter(Boolean);
 
   // Mapping untuk membuat nama yang lebih readable dari URL
-  const segmentToName = (segment: string): string => {
+  const segmentToName = (segment: string, index?: number): string => {
     // Decode URL-encoded characters terlebih dahulu
     const decodedSegment = decodeURIComponent(segment);
+
+    // If segment is under student-data (e.g. /dashboard/student-data/1)
+    if (index !== undefined && index > 0 && pathSegments[index - 1] === "student-data") {
+      return "Detail Data Siswa";
+    }
 
     const nameMap: Record<string, string> = {
       "account-management": "Manajemen Akun",
@@ -143,12 +148,12 @@ export default function DynamicBreadcrumb() {
                     className="flex items-center gap-1"
                   >
                     {icon}
-                    <span>{segmentToName(segment)}</span>
+                    <span>{segmentToName(segment, index)}</span>
                   </BreadcrumbLink>
                 ) : (
                   <BreadcrumbPage className="flex items-center gap-1">
                     {icon}
-                    <span>{segmentToName(segment)}</span>
+                    <span>{segmentToName(segment, index)}</span>
                   </BreadcrumbPage>
                 )}
               </BreadcrumbItem>

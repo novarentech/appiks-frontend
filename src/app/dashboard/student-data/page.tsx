@@ -22,6 +22,7 @@ interface Student {
   noTelp?: string; // Optional for counselor view
   guruWali?: string; // Optional for counselor view
   aksi: string;
+  last_counseling_id?: number | null;
 }
 
 export default function DashboardDataSiswaPage() {

@@ -13,7 +13,7 @@ import {
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState, useEffect } from "react";
-import { Eye, ArrowUpDown } from "lucide-react";
+import { Share2, ArrowUpDown } from "lucide-react";
 import { getDashboardStudent } from "@/lib/api";
 import { Student as ApiStudent, DashboardStudentResponse } from "@/types/api";
 import { getInitials } from "@/lib/utils";
@@ -28,6 +28,7 @@ interface Student {
   guruWali: string;
   aksi: string;
   username: string;
+  last_counseling_id?: number | null;
 }
 
 interface StudentDataTableProps {
@@ -61,8 +62,9 @@ export default function CounselorStudentData({}: StudentDataTableProps) {
               kelas: student.room?.name || "-",
               noTelp: student.phone,
               guruWali: student.mentor?.name || "-",
-              aksi: "Lihat Pola Mood",
+              aksi: "Data dibagikan",
               username: student.username,
+              last_counseling_id: student.last_counseling_id ?? null,
             };
           }
         );
@@ -241,18 +243,37 @@ export default function CounselorStudentData({}: StudentDataTableProps) {
       header: "Aksi",
       cell: ({ row }) => {
         const student = row.original;
+        const hasCounseling =
+          student.last_counseling_id !== null &&
+          student.last_counseling_id !== undefined;
+
+        if (!hasCounseling) {
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed text-xs px-3 py-1 h-8 opacity-60"
+            >
+              <Share2 className="w-3 h-3 mr-1" />
+              Data dibagikan
+            </Button>
+          );
+        }
+
         return (
           <Button
             variant="outline"
             size="sm"
+            asChild
             className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs px-3 py-1 h-8"
           >
             <Link
-              href={`/dashboard/mood-detail/${student.username}`}
+              href={`/dashboard/student-data/${student.last_counseling_id}?name=${encodeURIComponent(student.name)}`}
               className="flex items-center justify-center"
             >
-              <Eye className="w-3 h-3 mr-1" />
-              Lihat Pola Mood
+              <Share2 className="w-3 h-3 mr-1" />
+              Data dibagikan
             </Link>
           </Button>
         );
