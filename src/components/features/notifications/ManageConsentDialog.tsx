@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, Check, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, Check, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getCounselingConsent, submitReferralConsent } from "@/lib/api";
@@ -11,15 +12,20 @@ interface ManageConsentDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   counselingId: number;
+  onSuccess?: () => void;
 }
 
 export function ManageConsentDialog({
   isOpen,
   onOpenChange,
   counselingId,
+  onSuccess,
 }: ManageConsentDialogProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
   const [consentId, setConsentId] = useState<number | null>(null);
   const [psychologistInfo, setPsychologistInfo] = useState<{
     name: string;
@@ -104,6 +110,11 @@ export function ManageConsentDialog({
       if (res.success) {
         toast.success("Berhasil menyimpan pengaturan persetujuan");
         onOpenChange(false);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.refresh();
+        }
       } else {
         toast.error(res.message || "Gagal menyimpan persetujuan");
       }
@@ -112,6 +123,31 @@ export function ManageConsentDialog({
       toast.error("Terjadi kesalahan sistem");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!consentId) return;
+    try {
+      setIsRejecting(true);
+      const res = await submitReferralConsent(consentId, false, []);
+      if (res.success) {
+        toast.success("Persetujuan berhasil ditolak.");
+        setIsRejectConfirmOpen(false);
+        onOpenChange(false);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.refresh();
+        }
+      } else {
+        toast.error(res.message || "Gagal menolak persetujuan");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan sistem saat menolak persetujuan");
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -240,15 +276,25 @@ export function ManageConsentDialog({
               </div>
             </div>
 
-            {/* Action */}
-            <div className="pt-2">
+            {/* Actions: Tolak Persetujuan & Simpan */}
+            <div className="pt-2 flex flex-col-reverse sm:flex-row items-center gap-3">
               <Button
-                className="w-full h-14 bg-indigo-500 hover:bg-indigo-600 text-white text-lg font-semibold rounded-xl"
+                type="button"
+                variant="outline"
+                className="w-full sm:w-1/2 h-12 sm:h-14 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 text-base font-semibold rounded-xl"
+                onClick={() => setIsRejectConfirmOpen(true)}
+                disabled={isSubmitting || isRejecting}
+              >
+                Tolak Persetujuan
+              </Button>
+              <Button
+                type="button"
+                className="w-full sm:w-1/2 h-12 sm:h-14 bg-indigo-500 hover:bg-indigo-600 text-white text-base font-semibold rounded-xl"
                 onClick={handleSave}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isRejecting}
               >
                 {isSubmitting ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   "Simpan"
                 )}
@@ -257,6 +303,50 @@ export function ManageConsentDialog({
           </div>
         )}
       </DialogContent>
+
+      {/* Modal Konfirmasi Tolak Persetujuan */}
+      <Dialog
+        open={isRejectConfirmOpen}
+        onOpenChange={(open) => !isRejecting && setIsRejectConfirmOpen(open)}
+      >
+        <DialogContent className="sm:max-w-[420px] p-6 rounded-2xl">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Tolak Persetujuan Data?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-gray-600 text-sm leading-relaxed mb-3">
+              Apakah Anda yakin ingin menolak atau mencabut persetujuan akses data untuk sesi konseling ini?
+            </p>
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 rounded-xl leading-relaxed">
+              Catatan: Psikolog tidak akan dapat mengakses data yang dibagikan dan Guru BK akan menerima notifikasi agar dapat segera menindaklanjuti.
+            </div>
+          </div>
+          <div className="flex flex-row gap-3 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-1/2 h-11 border-gray-200 text-gray-700 hover:bg-gray-50 font-medium rounded-xl"
+              onClick={() => setIsRejectConfirmOpen(false)}
+              disabled={isRejecting}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              className="w-1/2 h-11 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl"
+              onClick={handleReject}
+              disabled={isRejecting}
+            >
+              {isRejecting ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+              ) : null}
+              Ya, Tolak
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

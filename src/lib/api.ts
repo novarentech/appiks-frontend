@@ -1689,7 +1689,7 @@ export async function getStudentCounselings(params?: {
 export async function submitReferralConsent(
   consentId: number,
   isGranted: boolean,
-  scopes: string[]
+  scopes: string[] = []
 ) {
   const response = await authPatch(`/student/consents/${consentId}`, {
     is_granted: isGranted,

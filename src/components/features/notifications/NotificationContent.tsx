@@ -238,6 +238,7 @@ export function NotificationContent({
               isOpen={isConsentOpen}
               onOpenChange={setIsConsentOpen}
               counselingId={referralNotification.id}
+              onSuccess={() => window.location.reload()}
             />
           </>
         )}
