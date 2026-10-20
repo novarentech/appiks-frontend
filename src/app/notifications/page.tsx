@@ -227,6 +227,19 @@ function NotificationsPageContent() {
               mappedStatus = "menunggu_konfirmasi";
               title = "Rujukan Psikolog";
               description = "Jadwal telah diajukan dan sedang menunggu konfirmasi psikolog.";
+            } else if (
+              rawStatus === "menunggu_diskusi" ||
+              rawStatus === "menunggu diskusi" ||
+              item.counseling_status === "menunggu_diskusi" ||
+              item.consent?.status === "revoked" ||
+              item.consent?.status === "menunggu_diskusi"
+            ) {
+              statusText = "Menunggu Diskusi";
+              statusColor = "purple";
+              borderColor = "border-purple-400";
+              mappedStatus = "menunggu_diskusi";
+              title = "Menunggu Diskusi";
+              description = "Persetujuan telah dicabut. Anda dapat berdialog dengan Guru BK atau memilih jadwal konsultasi baru.";
             } else if (rawStatus === "dijadwalkan") {
               if (wasRescheduled) {
                 statusText = "Perubahan Jadwal";

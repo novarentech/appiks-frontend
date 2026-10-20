@@ -204,7 +204,10 @@ export function NotificationContent({
           </Button>
         )}
 
-        {(referralNotification.status === "expired" || referralNotification.statusText === "Kedaluwarsa") && (
+        {(referralNotification.status === "expired" ||
+          referralNotification.statusText === "Kedaluwarsa" ||
+          referralNotification.status === "menunggu_diskusi" ||
+          referralNotification.statusText === "Menunggu Diskusi") && (
           <Button
             className="w-full bg-[#E13A4B] hover:bg-[#C92F3E] text-white mt-2"
             onClick={(e) => {
