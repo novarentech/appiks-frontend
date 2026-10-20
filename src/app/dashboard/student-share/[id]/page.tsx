@@ -26,7 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Loader2, AlertTriangle, ArrowLeft, Calendar as CalendarIcon, Clock, User as UserIcon, FileText, Building, Phone, X, Copy } from "lucide-react";
+import { Loader2, AlertTriangle, ArrowLeft, Calendar as CalendarIcon, Clock, User as UserIcon, FileText, Building, Phone, X, Copy, Edit } from "lucide-react";
 import CurhatViewDialog from "@/components/dialogs/CurhatViewDialog";
 import { toast } from "sonner";
 
@@ -150,6 +150,19 @@ export default function DetailCurhatanPage() {
             item = result.data;
           }
           setData(item);
+          if (item?.counseling) {
+            const c = item.counseling;
+            const existingNote = c.clinical_notes || c.notes || c.counseling_notes || c.assessment || "";
+            if (existingNote) {
+              setCounselingNote(existingNote);
+            }
+            if (c.method) {
+              setCounselingMethod(c.method);
+            }
+            if (c.resolution) {
+              setResolutionStatus(c.resolution);
+            }
+          }
         } else {
           setError(result.message || "Gagal mengambil data detail");
         }
@@ -167,7 +180,7 @@ export default function DetailCurhatanPage() {
 
   useEffect(() => {
     const fetchPsychologists = async () => {
-      if (isReferralOpen && psychologists.length === 0) {
+      if (psychologists.length === 0) {
         setIsLoadingPsychologists(true);
         try {
           const res = await getUsersByType("psychologist");
@@ -183,7 +196,21 @@ export default function DetailCurhatanPage() {
     };
     
     fetchPsychologists();
-  }, [isReferralOpen, psychologists.length]);
+  }, [psychologists.length]);
+
+  // Resolve psychologist name with fallback to "Psikolog Mitra" (never show raw ID)
+  const getPsychologistName = () => {
+    if (data?.counseling?.psychologist?.name) {
+      return data.counseling.psychologist.name;
+    }
+    if (data?.counseling?.psychologist_id) {
+      const found = psychologists.find(
+        (p) => p.id === Number(data.counseling.psychologist_id)
+      );
+      if (found?.name) return found.name;
+    }
+    return "Psikolog Mitra";
+  };
 
   useEffect(() => {
     if (!data) return;
@@ -491,6 +518,57 @@ export default function DetailCurhatanPage() {
   const keywords: string[] = (data.nlp?.response?.matched_keywords || [])
     .map((k: any) => typeof k === 'string' ? k : k.stem || k.keyword);
 
+  const isCompleted = ["diselesaikan", "selesai"].includes(apiStatus);
+  const hasAssessment = Boolean(
+    counselingNote ||
+    data.counseling?.clinical_notes ||
+    data.counseling?.notes ||
+    data.counseling?.method ||
+    data.counseling?.resolution ||
+    data.counseling?.counseling_notes ||
+    data.counseling?.assessment ||
+    (data.counseling?.assesment_logs && data.counseling.assesment_logs.length > 0)
+  );
+  const hasReferralInfo = Boolean(
+    data.counseling && (
+      data.counseling.psychologist_id ||
+      data.counseling.psychologist ||
+      data.counseling.reason ||
+      data.counseling.type === "external" ||
+      [
+        "menunggu persetujuan rujukan",
+        "menunggu persetujuan siswa",
+        "menunggu_diskusi",
+        "menunggu diskusi",
+        "rujukan disetujui",
+        "dirujuk",
+        "selesai dirujuk",
+      ].includes(apiStatus)
+    )
+  );
+  const hasReferralSubmitted = Boolean(
+    data.counseling?.type === "external" ||
+    data.counseling?.psychologist_id ||
+    [
+      "menunggu persetujuan rujukan",
+      "menunggu persetujuan siswa",
+      "menunggu_diskusi",
+      "menunggu diskusi",
+      "rujukan disetujui",
+      "dirujuk",
+      "selesai dirujuk",
+    ].includes(apiStatus)
+  );
+  const canEditAssessment = !isCompleted && !hasReferralSubmitted;
+
+  const isCounselingScheduledRenderedAbove = Boolean(
+    (data.action_confirmed === 1 || data.action_confirmed === true || (data.action && ["menunggu persetujuan siswa", "konseling dijadwalkan", "jadwal ditolak siswa", "ditolak oleh siswa"].includes(apiStatus)) || isJadwalDitolakSiswa) &&
+    !hasReferralInfo &&
+    !isCompleted &&
+    data.action === "konseling_mandiri" &&
+    data.counseling
+  );
+
   // Status Configurations
   const config = {
     Kritis: {
@@ -679,7 +757,7 @@ export default function DetailCurhatanPage() {
         )}
 
         {/* Keputusan Tindak Lanjut (Read-Only) */}
-        {(data.action_confirmed === 1 || data.action_confirmed === true || (data.action && ["menunggu persetujuan siswa", "konseling dijadwalkan", "jadwal ditolak siswa", "ditolak oleh siswa"].includes(apiStatus)) || isJadwalDitolakSiswa) && (
+        {(data.action_confirmed === 1 || data.action_confirmed === true || (data.action && ["menunggu persetujuan siswa", "konseling dijadwalkan", "jadwal ditolak siswa", "ditolak oleh siswa"].includes(apiStatus)) || isJadwalDitolakSiswa) && !hasReferralInfo && !isCompleted && (
           <div className="border rounded-lg mb-8 p-6">
             <h3 className="font-bold text-gray-900 mb-4">Keputusan Tindak Lanjut :</h3>
             
@@ -750,79 +828,117 @@ export default function DetailCurhatanPage() {
           </div>
         )}
 
-        {/* Detail Pengajuan Konseling / Informasi Rujukan / Catatan Hasil Konseling */}
-        {data.counseling && (
-          apiStatus === "menunggu persetujuan rujukan" ? (
-            <div className="border rounded-lg mb-8">
-              <div className="bg-gray-50/50 p-4 border-b font-semibold">Informasi Rujukan</div>
-              <div className="p-6 space-y-6">
+        {/* 1. Detail Pengajuan Konseling */}
+        {data.counseling?.scheduled_at && !isCounselingScheduledRenderedAbove && (
+          <div className="border rounded-lg mb-8">
+            <div className="bg-gray-50/50 p-4 border-b font-semibold flex justify-between items-center">
+              <span>Detail Pengajuan Konseling</span>
+              {data.counseling.status && (
+                <Badge variant="outline" className={`capitalize font-medium ${getApiStatusBadgeVariant(data.counseling.status)}`}>
+                  {data.counseling.status}
+                </Badge>
+              )}
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
-                  <div className="text-gray-500 text-xs mb-1">Dikirim pada</div>
+                  <div className="text-gray-500 text-xs mb-1">Tanggal</div>
                   <div className="font-semibold text-sm">
-                    {data.counseling.created_at 
-                      ? format(new Date(data.counseling.created_at), "MM/dd/yyyy hh:mm a") 
+                    {data.counseling.scheduled_at 
+                      ? format(new Date(data.counseling.scheduled_at), "MM/dd/yyyy") 
                       : "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-500 text-xs mb-1">Psikolog Tujuan</div>
+                  <div className="text-gray-500 text-xs mb-1">Waktu</div>
                   <div className="font-semibold text-sm">
-                    {data.counseling.psychologist?.name || (data.counseling.psychologist_id ? `Psikolog ID: ${data.counseling.psychologist_id}` : "-")}
+                    {data.counseling.scheduled_at 
+                      ? format(new Date(data.counseling.scheduled_at), "hh:mm a") 
+                      : "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-500 text-xs mb-1">Alasan Rujukan</div>
-                  <div className="font-semibold text-sm leading-relaxed">{data.counseling.reason || "-"}</div>
+                  <div className="text-gray-500 text-xs mb-1">Ruangan</div>
+                  <div className="font-semibold text-sm">{data.counseling.room || "-"}</div>
                 </div>
+              </div>
+              {data.counseling.notes && (
                 <div>
                   <div className="text-gray-500 text-xs mb-1">Catatan Tambahan</div>
-                  <div className="font-semibold text-sm leading-relaxed">{data.counseling.notes || "-"}</div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
+                    {data.counseling.notes}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 2. Catatan Asesmen & Hasil Konseling */}
+        {(hasAssessment || isCompleted) && data.counseling && (
+          <div className="border rounded-lg mb-8">
+            <div className="bg-gray-50/50 p-4 border-b font-semibold flex justify-between items-center">
+              <span>Catatan Asesmen &amp; Hasil Konseling</span>
+              {canEditAssessment && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs font-semibold text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer"
+                  onClick={() => setIsRecordCounselingOpen(true)}
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  Sunting Asesmen
+                </Button>
+              )}
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <div className="text-gray-500 text-xs mb-1">Metode Konseling</div>
+                <div className="font-semibold text-sm">{data.counseling.method || counselingMethod || "-"}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-xs mb-1">Catatan Asesmen</div>
+                <div className="font-semibold text-sm leading-relaxed whitespace-pre-wrap">
+                  {data.counseling.clinical_notes || data.counseling.counseling_notes || counselingNote || data.counseling.notes || "-"}
                 </div>
               </div>
-            </div>
-          ) : apiStatus === "diselesaikan" ? (
-            <div className="border rounded-lg mb-8">
-              <div className="bg-gray-50/50 p-4 border-b font-semibold">Catatan Hasil Konseling</div>
-              <div className="p-6">
-                <div className="grid grid-cols-3 gap-6 mb-6">
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Tanggal</div>
-                    <div className="font-semibold text-sm">
-                      {data.counseling.scheduled_at 
-                        ? format(new Date(data.counseling.scheduled_at), "MM/dd/yyyy") 
-                        : "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Waktu</div>
-                    <div className="font-semibold text-sm">
-                      {data.counseling.scheduled_at 
-                        ? format(new Date(data.counseling.scheduled_at), "hh:mm a") 
-                        : "-"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Ruangan</div>
-                    <div className="font-semibold text-sm">{data.counseling.room || "-"}</div>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Metode Konseling</div>
-                    <div className="font-semibold text-sm">{data.counseling.method || "-"}</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Catatan</div>
-                    <div className="font-semibold text-sm leading-relaxed">{data.counseling.clinical_notes || data.counseling.notes || "-"}</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500 text-xs mb-1">Status Resolusi Insiden</div>
-                    <div className="font-semibold text-sm">{data.counseling.resolution || "-"}</div>
-                  </div>
-                </div>
+              <div>
+                <div className="text-gray-500 text-xs mb-1">Status Resolusi Insiden</div>
+                <div className="font-semibold text-sm">{data.counseling.resolution || resolutionStatus || "-"}</div>
               </div>
             </div>
-          ) : null
+          </div>
+        )}
+
+        {/* 3. Informasi Rujukan */}
+        {hasReferralInfo && data.counseling && (
+          <div className="border rounded-lg mb-8">
+            <div className="bg-gray-50/50 p-4 border-b font-semibold">Informasi Rujukan</div>
+            <div className="p-6 space-y-6">
+              <div>
+                <div className="text-gray-500 text-xs mb-1">Dikirim pada</div>
+                <div className="font-semibold text-sm">
+                  {data.counseling.created_at 
+                    ? format(new Date(data.counseling.created_at), "MM/dd/yyyy hh:mm a") 
+                    : "-"}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-xs mb-1">Psikolog Tujuan</div>
+                <div className="font-semibold text-sm">
+                  {getPsychologistName()}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-xs mb-1">Alasan Rujukan</div>
+                <div className="font-semibold text-sm leading-relaxed">{data.counseling.reason || "-"}</div>
+              </div>
+              <div>
+                <div className="text-gray-500 text-xs mb-1">Catatan Tambahan</div>
+                <div className="font-semibold text-sm leading-relaxed">{data.counseling.notes || "-"}</div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Actions */}
@@ -876,89 +992,12 @@ export default function DetailCurhatanPage() {
               </DialogContent>
             </Dialog>
           ) : status !== "Aman" && apiStatus === "konseling dijadwalkan" ? (
-            <Dialog open={isRecordCounselingOpen} onOpenChange={setIsRecordCounselingOpen}>
-              <DialogTrigger asChild>
-                <Button className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}>
-                  Catat Hasil Konseling
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
-                <DialogHeader className="mb-2">
-                  <DialogTitle className="text-2xl font-bold">Catat Hasil Konseling</DialogTitle>
-                  <DialogDescription className="text-gray-600 mt-2 text-base">
-                    Dokumentasikan hasil sesi konseling dan tentukan tindak lanjut kasus siswa.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="grid gap-4 mt-2">
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700">Metode Konseling <span className="text-red-500">*</span></Label>
-                    <Select value={counselingMethod} onValueChange={setCounselingMethod}>
-                      <SelectTrigger className="w-full mt-2 h-10">
-                        <SelectValue placeholder="Pilih metode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Tatap Muka">Tatap Muka</SelectItem>
-                        <SelectItem value="Video Call">Video Call</SelectItem>
-                        <SelectItem value="Chat">Chat</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700">Catatan <span className="text-red-500">*</span></Label>
-                    <Textarea 
-                      placeholder="Tuliskan hasil observasi, kondisi emosional siswa, respons selama sesi, dan evaluasi Guru BK..." 
-                      className="mt-2 h-32 resize-none"
-                      value={counselingNote}
-                      onChange={(e) => setCounselingNote(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700">Status Resolusi Insiden <span className="text-red-500">*</span></Label>
-                    <Select value={resolutionStatus} onValueChange={setResolutionStatus}>
-                      <SelectTrigger className="w-full mt-2 h-10">
-                        <SelectValue placeholder="Pilih status resolusi insiden" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Perlu Rujukan Professional">Perlu Rujukan Professional</SelectItem>
-                        {status === "Kritis" && (
-                          <SelectItem value="Bukan Kondisi Kritis (Red Zone)">Bukan Kondisi Kritis (Red Zone)</SelectItem>
-                        )}
-                        {status === "Prioritas" && (
-                          <SelectItem value="Bukan Kondisi Prioritas (Yellow Zone)">Bukan Kondisi Prioritas (Yellow Zone)</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {resolutionStatus === "Perlu Rujukan Professional" && (
-                      <p className="text-xs text-blue-600 mt-2 italic">Anda akan diarahkan ke form pengajuan rujukan setelah data disimpan</p>
-                    )}
-                    {resolutionStatus === "Bukan Kondisi Kritis (Red Zone)" && (
-                      <p className="text-xs text-green-600 mt-2 italic">Status zona merah (kritis) akan dicabut dari monitoring aktif</p>
-                    )}
-                    {resolutionStatus === "Bukan Kondisi Prioritas (Yellow Zone)" && (
-                      <p className="text-xs text-green-600 mt-2 italic">Status zona kuning (prioritas) akan dicabut dari monitoring aktif</p>
-                    )}
-                  </div>
-                </div>
-
-                <DialogFooter className="mt-6 flex flex-row gap-3 sm:space-x-0">
-                  <DialogClose asChild>
-                    <Button variant="outline" className="w-1/2 border-gray-300 hover:bg-gray-50 text-blue-600 font-semibold h-11">
-                      Batal
-                    </Button>
-                  </DialogClose>
-                  <Button 
-                    className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
-                    onClick={handleRecordCounselingSubmit}
-                    disabled={isRecordSubmitting || !counselingMethod || !counselingNote || !resolutionStatus}
-                  >
-                    {isRecordSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Simpan Hasil Konseling"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              className={`${currentConfig.primaryBtn} py-6 text-base font-semibold`}
+              onClick={() => setIsRecordCounselingOpen(true)}
+            >
+              {hasAssessment ? "Sunting Hasil Konseling" : "Catat Hasil Konseling"}
+            </Button>
           ) : status !== "Aman" && isJadwalDitolakSiswa ? (
             <Button
               className="w-full bg-[#5b61e2] hover:bg-[#4b51d2] text-white py-6 text-base font-semibold"
@@ -1224,6 +1263,88 @@ export default function DetailCurhatanPage() {
               </DialogContent>
             </Dialog>
           )}
+
+          {/* Dialog Catat / Sunting Hasil Konseling */}
+          <Dialog open={isRecordCounselingOpen} onOpenChange={setIsRecordCounselingOpen}>
+            <DialogContent className="sm:max-w-[500px] p-6 rounded-2xl">
+              <DialogHeader className="mb-2">
+                <DialogTitle className="text-2xl font-bold">
+                  {hasAssessment ? "Sunting Hasil Konseling" : "Catat Hasil Konseling"}
+                </DialogTitle>
+                <DialogDescription className="text-gray-600 mt-2 text-base">
+                  Dokumentasikan hasil sesi konseling dan tentukan tindak lanjut kasus siswa.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4 mt-2">
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Metode Konseling <span className="text-red-500">*</span></Label>
+                  <Select value={counselingMethod} onValueChange={setCounselingMethod}>
+                    <SelectTrigger className="w-full mt-2 h-10">
+                      <SelectValue placeholder="Pilih metode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tatap Muka">Tatap Muka</SelectItem>
+                      <SelectItem value="Video Call">Video Call</SelectItem>
+                      <SelectItem value="Chat">Chat</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Catatan <span className="text-red-500">*</span></Label>
+                  <Textarea 
+                    placeholder="Tuliskan hasil observasi, kondisi emosional siswa, respons selama sesi, dan evaluasi Guru BK..." 
+                    className="mt-2 h-32 resize-none"
+                    value={counselingNote}
+                    onChange={(e) => setCounselingNote(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700">Status Resolusi Insiden <span className="text-red-500">*</span></Label>
+                  <Select value={resolutionStatus} onValueChange={setResolutionStatus}>
+                    <SelectTrigger className="w-full mt-2 h-10">
+                      <SelectValue placeholder="Pilih status resolusi insiden" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Perlu Rujukan Professional">Perlu Rujukan Professional</SelectItem>
+                      {status === "Kritis" && (
+                        <SelectItem value="Bukan Kondisi Kritis (Red Zone)">Bukan Kondisi Kritis (Red Zone)</SelectItem>
+                      )}
+                      {status === "Prioritas" && (
+                        <SelectItem value="Bukan Kondisi Prioritas (Yellow Zone)">Bukan Kondisi Prioritas (Yellow Zone)</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {resolutionStatus === "Perlu Rujukan Professional" && (
+                    <p className="text-xs text-blue-600 mt-2 italic">Anda akan diarahkan ke form pengajuan rujukan setelah data disimpan</p>
+                  )}
+                  {resolutionStatus === "Bukan Kondisi Kritis (Red Zone)" && (
+                    <p className="text-xs text-green-600 mt-2 italic">Status zona merah (kritis) akan dicabut dari monitoring aktif</p>
+                  )}
+                  {resolutionStatus === "Bukan Kondisi Prioritas (Yellow Zone)" && (
+                    <p className="text-xs text-green-600 mt-2 italic">Status zona kuning (prioritas) akan dicabut dari monitoring aktif</p>
+                  )}
+                </div>
+              </div>
+
+              <DialogFooter className="mt-6 flex flex-row gap-3 sm:space-x-0">
+                <DialogClose asChild>
+                  <Button variant="outline" className="w-1/2 border-gray-300 hover:bg-gray-50 text-blue-600 font-semibold h-11">
+                    Batal
+                  </Button>
+                </DialogClose>
+                <Button 
+                  className="w-1/2 bg-[#5b61e2] hover:bg-[#4b51d2] text-white font-semibold h-11"
+                  onClick={handleRecordCounselingSubmit}
+                  disabled={isRecordSubmitting || !counselingMethod || !counselingNote || !resolutionStatus}
+                >
+                  {isRecordSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Simpan Hasil Konseling"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Dialog Pengajuan Rujukan Psikolog */}
           <Dialog open={isReferralOpen} onOpenChange={setIsReferralOpen}>
