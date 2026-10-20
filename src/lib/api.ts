@@ -2020,12 +2020,15 @@ export async function getHeadTeacherIncidents(
 }
 
 export interface AppNotificationData {
-  incident_id?: number;
-  counseling_id?: number | null;
+  incident_id?: number | string | null;
+  counseling_id?: number | string | null;
   counseling_status?: string | null;
+  student_id?: number | string;
   student_name?: string;
   student_room?: string;
   counselor_name?: string;
+  revoked_at?: string;
+  formatted_time?: string;
   zone?: "Yellow Zone" | "Red Zone" | string;
   level?: "warning" | "critical" | string;
   time?: string;
@@ -2040,7 +2043,11 @@ export interface AppNotificationData {
 
 export interface AppNotificationItem {
   id: string;
-  type: "YellowZoneAlertNotification" | "RedZoneAlertNotification" | string;
+  type:
+    | "YellowZoneAlertNotification"
+    | "RedZoneAlertNotification"
+    | "ConsentRevokedNotification"
+    | string;
   data: AppNotificationData;
   read_at: string | null;
   created_at: string;
@@ -2079,14 +2086,20 @@ export async function getAppNotifications(
 /**
  * Get unread notifications count
  */
-export async function getUnreadNotificationsCount(): Promise<{
+export async function getUnreadNotificationsCount(params?: {
+  class?: string;
+}): Promise<{
   success: boolean;
   message: string;
   data: {
     unread_count: number;
   };
 }> {
-  return await authGet("/notifications/unread-count");
+  let url = "/notifications/unread-count";
+  if (params?.class) {
+    url += `?class=${encodeURIComponent(params.class)}`;
+  }
+  return await authGet(url);
 }
 
 /**
@@ -2102,11 +2115,17 @@ export async function markNotificationAsRead(id: string): Promise<{
 /**
  * Mark all notifications as read
  */
-export async function markAllNotificationsAsRead(): Promise<{
+export async function markAllNotificationsAsRead(params?: {
+  class?: string;
+}): Promise<{
   success: boolean;
   message: string;
 }> {
-  return await authPatch("/notifications/read-all", {});
+  let url = "/notifications/read-all";
+  if (params?.class) {
+    url += `?class=${encodeURIComponent(params.class)}`;
+  }
+  return await authPatch(url, {});
 }
 
 /**

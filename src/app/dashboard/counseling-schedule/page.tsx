@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import CounselingSchedulePanel from "@/components/dashboard/panels/CouncelingSchedulePanel";
 import CounselingScheduleTable from "@/components/data-display/tables/CounselingScheduleTable";
 import { RoleGuard } from "@/components/auth/guards/RoleGuard";
@@ -8,7 +9,9 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 export default function DashboardDataSiswaPage() {
   return (
     <RoleGuard permissionType="counseling-schedule">
-      <DashboardDataSiswaPageContent />
+      <Suspense fallback={<div className="p-4 text-sm text-gray-500">Memuat...</div>}>
+        <DashboardDataSiswaPageContent />
+      </Suspense>
     </RoleGuard>
   );
 }

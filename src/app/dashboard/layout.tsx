@@ -13,6 +13,7 @@ import {
 import { SafetyCheckProvider } from "@/contexts/SafetyCheckContext";
 import { SafetyCheckDialogWrapper } from "@/components/dialogs/SafetyCheckDialogWrapper";
 import { HeadTeacherNotificationPopover } from "@/components/dashboard/HeadTeacherNotificationPopover";
+import { CounselorNotificationPopover } from "@/components/dashboard/CounselorNotificationPopover";
 
 export default function DashboardLayout({
   children,
@@ -59,6 +60,7 @@ export default function DashboardLayout({
           </div>
           <div className="flex items-center gap-2">
             {user?.role === "headteacher" && <HeadTeacherNotificationPopover />}
+            {user?.role === "counselor" && <CounselorNotificationPopover />}
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>

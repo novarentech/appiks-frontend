@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Link from "next/link";
 import {
   Smile,
   MessageCircle,
@@ -34,6 +35,7 @@ import {
   ChevronLeft,
   Eye,
   Loader2,
+  ShieldAlert,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -123,6 +125,14 @@ function StudentDataSharedDetailContent() {
     consentData?.status === "granted" &&
     !consentData?.rejected_at;
   const scopes: string[] = consentData?.scopes || [];
+
+  const isConsentRevoked =
+    !loadingConsent &&
+    (!isConsentGranted ||
+      consentData?.status === "revoked" ||
+      consentData?.status === "menunggu_diskusi" ||
+      Boolean(consentData?.rejected_at) ||
+      consentData?.counseling?.status === "menunggu_diskusi");
 
   const hasMoodConsent = isConsentGranted && scopes.includes("mood_history");
   const hasSharingConsent = isConsentGranted && scopes.includes("sharing_history");
@@ -776,6 +786,48 @@ function StudentDataSharedDetailContent() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Alert Banner: Persetujuan Dicabut Siswa */}
+      {isConsentRevoked && (
+        <div className="bg-purple-50/80 border border-purple-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0 text-purple-600 mt-0.5 sm:mt-0">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h3 className="text-base font-semibold text-purple-950">
+                  Persetujuan Akses Data Dicabut Siswa
+                </h3>
+                <Badge
+                  variant="outline"
+                  className="bg-purple-100 text-purple-700 border-purple-300 text-xs font-medium"
+                >
+                  Menunggu Diskusi
+                </Badge>
+              </div>
+              <p className="text-sm text-purple-800 leading-relaxed max-w-2xl">
+                <span className="font-semibold">{studentName}</span> telah
+                mencabut persetujuan akses data. Silakan segera menindaklanjuti
+                dengan dialog bersama siswa untuk memahami kendala atau
+                kekhawatirannya.
+              </p>
+            </div>
+          </div>
+          <Button
+            asChild
+            className="bg-purple-600 hover:bg-purple-700 text-white shadow-xs rounded-xl flex-shrink-0 text-sm font-medium px-4 h-10 w-full sm:w-auto"
+          >
+            <Link
+              href={`/dashboard/counseling-schedule?search=${encodeURIComponent(
+                studentName
+              )}`}
+            >
+              Jadwalkan Sesi Dialog
+            </Link>
+          </Button>
+        </div>
+      )}
+
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 gap-6 sm:gap-8 overflow-x-auto">
         <button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -55,9 +56,12 @@ import RescheduleDialog from "@/components/dialogs/RescheduleDialog";
 import CompleteDialog from "@/components/dialogs/CompleteDialog";
 
 export default function CounselingScheduleTable() {
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search");
+
   // Filter States
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState(urlSearch || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(urlSearch || "");
   const [kelasFilter, setKelasFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "student" | "curhat" | "regular">("all");
@@ -77,6 +81,14 @@ export default function CounselingScheduleTable() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+
+  // Sync search query parameter if provided
+  useEffect(() => {
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+      setDebouncedSearch(urlSearch);
+    }
+  }, [urlSearch]);
 
   // Debounce search input (400ms)
   useEffect(() => {
