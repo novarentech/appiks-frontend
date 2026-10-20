@@ -6,6 +6,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
   ChevronDown,
+  ChevronUp,
   Edit,
   ClipboardCheck,
   Check,
@@ -14,8 +15,9 @@ import {
   FileText,
   Search,
   User as UserIcon,
-  MessageCircle,
+  MessageSquare,
   GraduationCap,
+  X,
 } from "lucide-react";
 
 // UI Components
@@ -406,16 +408,23 @@ export default function CounselingScheduleTable() {
   const columns: ColumnDef<CounselingSchedule>[] = [
     {
       accessorKey: "user.name",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent"
-        >
-          Nama
-          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        const isSorted = column.getIsSorted();
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(isSorted === "asc")}
+            className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent inline-flex items-center gap-1"
+          >
+            <span>Nama</span>
+            {isSorted === "desc" ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronUp className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        );
+      },
       cell: ({ row }) => {
         const name = row.original.user?.name || "Tanpa Nama";
         const initials = getInitials(name);
@@ -448,16 +457,23 @@ export default function CounselingScheduleTable() {
     {
       id: "kelas",
       accessorFn: (row) => row.user?.room?.name || row.room || "-",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent"
-        >
-          Kelas
-          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        const isSorted = column.getIsSorted();
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(isSorted === "asc")}
+            className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent inline-flex items-center gap-1"
+          >
+            <span>Kelas</span>
+            {isSorted === "desc" ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronUp className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        );
+      },
       cell: ({ row }) => {
         const roomName = row.original.user?.room?.name || row.original.room || "-";
         return (
@@ -506,16 +522,23 @@ export default function CounselingScheduleTable() {
     {
       id: "waktu_diajukan",
       accessorFn: (row) => row.created_at || row.date || "",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent"
-        >
-          Waktu Diajukan
-          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
-        </Button>
-      ),
+      header: ({ column }) => {
+        const isSorted = column.getIsSorted();
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(isSorted === "asc")}
+            className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent inline-flex items-center gap-1"
+          >
+            <span>Waktu Diajukan</span>
+            {isSorted === "desc" ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronUp className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        );
+      },
       cell: ({ row }) => (
         <span className="text-sm text-gray-600 font-medium whitespace-nowrap">
           {formatSubmittedTime(
@@ -662,27 +685,38 @@ export default function CounselingScheduleTable() {
   return (
     <div className="space-y-4">
       {/* Top Filter Bar: Search, Kelas, Status, and Source Buttons */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 py-1">
-        {/* Left Side: Search & Filter Dropdowns */}
-        <div className="flex flex-1 flex-wrap sm:flex-nowrap items-center gap-3">
-          {/* Search Input with Search Icon */}
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 py-1">
+        {/* Left Side: Search & Filter Dropdowns with Fixed Widths */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+          {/* Search Input with Search Icon (Fixed Width 240px) */}
+          <div className="relative w-[240px] shrink-0">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             <Input
               placeholder="Cari..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-10 bg-white border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-indigo-500 shadow-none"
+              className="w-full pl-9.5 pr-8 h-10 bg-white border-slate-200 rounded-xl text-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:border-indigo-500 shadow-none transition-all"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Pilih Kelas Dropdown */}
-          <div className="w-[140px] sm:w-[150px]">
+          {/* Pilih Kelas Dropdown (Fixed Width 150px) */}
+          <div className="w-[150px] shrink-0">
             <Select value={kelasFilter} onValueChange={setKelasFilter}>
-              <SelectTrigger className="h-10 bg-white border-gray-300 rounded-lg text-sm text-gray-700 shadow-none">
-                <SelectValue placeholder="Pilih Kelas" />
+              <SelectTrigger className="w-full h-10 bg-white border-slate-200 rounded-xl text-sm text-slate-600 shadow-none hover:border-slate-300 transition-all font-normal">
+                <SelectValue placeholder="Pilih Kelas" className="truncate">
+                  {kelasFilter === "all" ? "Pilih Kelas" : kelasFilter}
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl shadow-lg border-slate-200">
                 <SelectItem value="all">Semua Kelas</SelectItem>
                 {roomOptions.map((room) => (
                   <SelectItem key={room} value={room}>
@@ -693,13 +727,15 @@ export default function CounselingScheduleTable() {
             </Select>
           </div>
 
-          {/* Pilih Status Dropdown */}
-          <div className="w-[140px] sm:w-[150px]">
+          {/* Pilih Status Dropdown (Fixed Width 160px) */}
+          <div className="w-[160px] shrink-0">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-10 bg-white border-gray-300 rounded-lg text-sm text-gray-700 shadow-none">
-                <SelectValue placeholder="Pilih Status" />
+              <SelectTrigger className="w-full h-10 bg-white border-slate-200 rounded-xl text-sm text-slate-600 shadow-none hover:border-slate-300 transition-all font-normal">
+                <SelectValue placeholder="Pilih Status" className="truncate">
+                  {statusFilter === "all" ? "Pilih Status" : getStatusLabel(statusFilter)}
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl shadow-lg border-slate-200">
                 <SelectItem value="all">Semua Status</SelectItem>
                 {statusOptions.map((status) => (
                   <SelectItem key={status} value={status}>
@@ -713,7 +749,7 @@ export default function CounselingScheduleTable() {
 
         {/* Right Side: Source Filter Pills */}
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <span className="text-sm text-gray-500 font-normal mr-1 whitespace-nowrap">
+          <span className="text-sm text-slate-500 font-normal mr-1 whitespace-nowrap">
             Sumber:
           </span>
 
@@ -721,10 +757,10 @@ export default function CounselingScheduleTable() {
           <button
             type="button"
             onClick={() => setSourceFilter("all")}
-            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+            className={`px-4 h-9 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
               sourceFilter === "all"
-                ? "border border-gray-500 text-gray-900 bg-gray-50 font-semibold shadow-xs"
-                : "border border-gray-300 text-gray-600 bg-white hover:border-gray-400"
+                ? "border border-slate-400 bg-slate-100/80 text-slate-900 font-semibold shadow-xs"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
             }`}
           >
             Semua
@@ -734,13 +770,13 @@ export default function CounselingScheduleTable() {
           <button
             type="button"
             onClick={() => setSourceFilter("student")}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-3.5 h-9 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
               sourceFilter === "student"
-                ? "border-2 border-indigo-600 text-indigo-600 bg-indigo-50/50 font-semibold"
-                : "border border-indigo-300 text-indigo-600 bg-white hover:bg-indigo-50/20"
+                ? "border-2 border-[#5D5FEF] bg-[#5D5FEF]/10 text-[#5D5FEF] font-semibold shadow-xs"
+                : "border border-[#5D5FEF]/40 bg-white text-[#5D5FEF] hover:bg-[#5D5FEF]/5"
             }`}
           >
-            <UserIcon className="h-3.5 w-3.5 text-indigo-600" />
+            <UserIcon className="h-4 w-4 text-[#5D5FEF]" />
             <span>Siswa ({counts.siswa})</span>
           </button>
 
@@ -748,13 +784,13 @@ export default function CounselingScheduleTable() {
           <button
             type="button"
             onClick={() => setSourceFilter("curhat")}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-3.5 h-9 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
               sourceFilter === "curhat"
-                ? "border-2 border-indigo-600 text-indigo-600 bg-indigo-50/50 font-semibold"
-                : "border border-indigo-300 text-indigo-600 bg-white hover:bg-indigo-50/20"
+                ? "border-2 border-[#5D5FEF] bg-[#5D5FEF]/10 text-[#5D5FEF] font-semibold shadow-xs"
+                : "border border-[#5D5FEF]/40 bg-white text-[#5D5FEF] hover:bg-[#5D5FEF]/5"
             }`}
           >
-            <MessageCircle className="h-3.5 w-3.5 text-indigo-600" />
+            <MessageSquare className="h-4 w-4 text-[#5D5FEF]" />
             <span>Curhat ({counts.curhat})</span>
           </button>
 
@@ -762,13 +798,13 @@ export default function CounselingScheduleTable() {
           <button
             type="button"
             onClick={() => setSourceFilter("regular")}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-3.5 h-9 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
               sourceFilter === "regular"
-                ? "border-2 border-indigo-600 text-indigo-600 bg-indigo-50/50 font-semibold"
-                : "border border-indigo-300 text-indigo-600 bg-white hover:bg-indigo-50/20"
+                ? "border-2 border-[#5D5FEF] bg-[#5D5FEF]/10 text-[#5D5FEF] font-semibold shadow-xs"
+                : "border border-[#5D5FEF]/40 bg-white text-[#5D5FEF] hover:bg-[#5D5FEF]/5"
             }`}
           >
-            <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
+            <GraduationCap className="h-4 w-4 text-[#5D5FEF]" />
             <span>Guru BK ({counts.guruBk})</span>
           </button>
         </div>
