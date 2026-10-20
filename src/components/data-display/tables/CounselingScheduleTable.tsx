@@ -1,21 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
-  ArrowUpDown,
+  ChevronDown,
   Edit,
   ClipboardCheck,
   Check,
   Loader2,
   RotateCcw,
   FileText,
+  Search,
+  User as UserIcon,
+  MessageCircle,
+  GraduationCap,
 } from "lucide-react";
 
 // UI Components
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
@@ -43,86 +46,45 @@ import {
 
 // Utils and API
 import { getInitials } from "@/lib/utils";
-import {
-  getReportList,
-  getUsersByType,
-} from "@/lib/api";
-import { User, CounselingSchedule } from "@/types/api";
+import { getReportList, getUsersByType, getRooms } from "@/lib/api";
+import { User, CounselingSchedule, ReportListParams } from "@/types/api";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import RescheduleDialog from "@/components/dialogs/RescheduleDialog";
 import CompleteDialog from "@/components/dialogs/CompleteDialog";
 
-
 export default function CounselingScheduleTable() {
+  // Filter States
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [kelasFilter, setKelasFilter] = useState("all");
-  const [schedules, setSchedules] = useState<CounselingSchedule[]>([]);
-  const [filteredData, setFilteredData] = useState<CounselingSchedule[]>([]);
-  const [currentPageSize, setCurrentPageSize] = useState(10);
-  const [isLoading, setIsLoading] = useState(true);
-  const [counselors, setCounselors] = useState<User[]>([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "student" | "curhat" | "regular">("all");
 
-  // Dialog states
-  const [selectedSchedule, setSelectedSchedule] =
-    useState<CounselingSchedule | null>(null);
+  // Data States
+  const [allReports, setAllReports] = useState<CounselingSchedule[]>([]);
+  const [filteredData, setFilteredData] = useState<CounselingSchedule[]>([]);
+  const [availableRooms, setAvailableRooms] = useState<string[]>([]);
+  const [counselors, setCounselors] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoaded, setIsInitialLoaded] = useState(false);
+  const [currentPageSize, setCurrentPageSize] = useState(10);
+
+  // Dialog States
+  const [selectedSchedule, setSelectedSchedule] = useState<CounselingSchedule | null>(null);
+  const [isViewResultDialogOpen, setIsViewResultDialogOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
-  const [isViewResultDialogOpen, setIsViewResultDialogOpen] = useState(false);
 
-
-  // Fetch data from API
+  // Debounce search input (400ms)
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [reportResponse, counselorResponse] = await Promise.all([
-          getReportList(),
-          getUsersByType("counselor"),
-        ]);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
-        if (reportResponse.success) {
-          setSchedules(reportResponse.data);
-          setFilteredData(reportResponse.data);
-        } else {
-          toast.error(
-            reportResponse.message || "Gagal memuat data jadwal konseling"
-          );
-        }
-
-        if (counselorResponse.success) {
-          setCounselors(counselorResponse.data);
-        } else {
-          toast.error(counselorResponse.message || "Gagal memuat data guru BK");
-        }
-      } catch (error) {
-        toast.error("Terjadi kesalahan saat memuat data");
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // Refresh data utility
-  const refreshData = async () => {
-    try {
-      const reportResponse = await getReportList();
-      if (reportResponse.success) {
-        setSchedules(reportResponse.data);
-        setFilteredData(reportResponse.data);
-      }
-    } catch (error) {
-      toast.error("Gagal memperbarui data");
-      console.error("Error refreshing data:", error);
-    }
-  };
-
-  // 9 Enum ReportStatus dari BE
+  // Predefined statuses in system
   const predefinedStatuses = [
     "Belum Ditinjau",
     "Sedang Ditangani",
@@ -135,49 +97,206 @@ export default function CounselingScheduleTable() {
     "Bukan Urgent",
   ];
 
-  // Get unique values for filters
-  const uniqueStatus = Array.from(
-    new Set([
-      ...predefinedStatuses,
-      ...schedules.map((item) => item.status).filter(Boolean),
-    ])
-  );
-  const uniquePriorities = Array.from(
-    new Set(["tinggi", "rendah", ...schedules.map((item) => (item.priority || "").toLowerCase()).filter(Boolean)])
-  );
-  const uniqueKelas = [
-    ...new Set(schedules.map((item) => item.user?.room?.name || "-")),
-  ];
+  // Room options from API & reports
+  const roomOptions = useMemo(() => {
+    const fromReports = allReports
+      .map((r) => r.user?.room?.name || r.room)
+      .filter((name): name is string => Boolean(name && name !== "-"));
+    return Array.from(new Set([...availableRooms, ...fromReports])).sort();
+  }, [availableRooms, allReports]);
 
-  // Apply filters
-  useEffect(() => {
-    const filtered = schedules.filter((item) => {
-      const matchesSearch =
-        (item.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.user?.username || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.user?.identifier || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.topic || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.notes || "").toLowerCase().includes(searchTerm.toLowerCase());
+  // Status options from predefined & reports
+  const statusOptions = useMemo(() => {
+    const fromReports = allReports
+      .map((r) => r.status)
+      .filter((st): st is string => Boolean(st));
+    return Array.from(new Set([...predefinedStatuses, ...fromReports]));
+  }, [allReports]);
 
-      const matchesStatus =
-        statusFilter === "all" ||
-        (item.status || "").toLowerCase() === statusFilter.toLowerCase();
-      const matchesPriority =
-        priorityFilter === "all" ||
-        (item.priority || "").toLowerCase() === priorityFilter.toLowerCase();
-      const matchesKelas =
-        kelasFilter === "all" || (item.user?.room?.name || "-") === kelasFilter;
+  // Calculate dynamic counts for source filter pills from all reports
+  const counts = useMemo(() => {
+    let siswaCount = 0;
+    let curhatCount = 0;
+    let guruBkCount = 0;
 
-      return matchesSearch && matchesStatus && matchesPriority && matchesKelas;
+    allReports.forEach((item) => {
+      const isCurhat =
+        Boolean(item.sharing_id) ||
+        item.source_type === "sharing" ||
+        (item as any).source === "sharing";
+      const isStudent =
+        item.source_type === "student" || (item as any).source === "student";
+
+      if (isCurhat) {
+        curhatCount++;
+      } else if (isStudent) {
+        siswaCount++;
+      } else {
+        guruBkCount++;
+      }
     });
-    setFilteredData(filtered);
-  }, [searchTerm, statusFilter, priorityFilter, kelasFilter, schedules]);
 
-  // Format counseling date and time helper function
-  const formatCounselingDateTime = (dateString: string, timeString: string) => {
+    return {
+      all: allReports.length,
+      siswa: siswaCount,
+      curhat: curhatCount,
+      guruBk: guruBkCount,
+    };
+  }, [allReports]);
+
+  // Server-side filtered data fetcher
+  const fetchFilteredData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      const params: ReportListParams = {};
+      if (debouncedSearch.trim()) {
+        params.search = debouncedSearch.trim();
+      }
+      if (kelasFilter !== "all") {
+        params.room = kelasFilter;
+      }
+      if (statusFilter !== "all") {
+        params.status = statusFilter;
+      }
+
+      // Backend accepts "all", "student", "regular"
+      if (sourceFilter === "student") {
+        params.source = "student";
+      } else if (sourceFilter === "regular") {
+        params.source = "regular";
+      } else if (sourceFilter === "curhat") {
+        params.source = "regular"; // curhat uses regular source with sharing_id
+      } else {
+        params.source = "all";
+      }
+
+      const reportResponse = await getReportList(params);
+
+      if (reportResponse.success && Array.isArray(reportResponse.data)) {
+        let items = reportResponse.data;
+
+        // Specific client-side refinement for curhat vs direct regular
+        if (sourceFilter === "curhat") {
+          items = items.filter(
+            (item) =>
+              Boolean(item.sharing_id) ||
+              item.source_type === "sharing" ||
+              (item as any).source === "sharing"
+          );
+        } else if (sourceFilter === "regular") {
+          items = items.filter(
+            (item) =>
+              !item.sharing_id &&
+              item.source_type !== "sharing" &&
+              (item as any).source !== "sharing"
+          );
+        }
+
+        setFilteredData(items);
+      } else {
+        setFilteredData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching filtered report list:", error);
+      toast.error("Gagal memuat data jadwal konseling");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [debouncedSearch, kelasFilter, statusFilter, sourceFilter]);
+
+  // Initial fetch for total data, room list, and counselor list
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setIsLoading(true);
+        const [reportResponse, roomResponse, counselorResponse] = await Promise.all([
+          getReportList(),
+          getRooms().catch(() => ({ success: false, data: [] })),
+          getUsersByType("counselor").catch(() => ({ success: false, data: [] })),
+        ]);
+
+        if (reportResponse.success && Array.isArray(reportResponse.data)) {
+          setAllReports(reportResponse.data);
+          setFilteredData(reportResponse.data);
+        } else {
+          toast.error(reportResponse.message || "Gagal memuat data jadwal konseling");
+        }
+
+        if (roomResponse.success && Array.isArray(roomResponse.data)) {
+          setAvailableRooms(
+            roomResponse.data.map((r: any) => r.name).filter(Boolean)
+          );
+        }
+
+        if (counselorResponse.success && Array.isArray(counselorResponse.data)) {
+          setCounselors(counselorResponse.data);
+        }
+      } catch (error) {
+        toast.error("Terjadi kesalahan saat memuat data awal");
+        console.error("Error loading initial data:", error);
+      } finally {
+        setIsLoading(false);
+        setIsInitialLoaded(true);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
+
+  // Fetch updated data when filters change after initial load
+  useEffect(() => {
+    if (!isInitialLoaded) return;
+    fetchFilteredData();
+  }, [debouncedSearch, kelasFilter, statusFilter, sourceFilter, isInitialLoaded, fetchFilteredData]);
+
+  // Refresh data utility for child dialogs
+  const refreshData = async () => {
+    try {
+      const [allReportRes] = await Promise.all([
+        getReportList(),
+        fetchFilteredData(),
+      ]);
+      if (allReportRes.success && Array.isArray(allReportRes.data)) {
+        setAllReports(allReportRes.data);
+      }
+    } catch (error) {
+      toast.error("Gagal memperbarui data");
+      console.error("Error refreshing data:", error);
+    }
+  };
+
+  // Date and Time Formatting Helpers
+  const formatSubmittedTime = (
+    createdAt?: string,
+    dateString?: string,
+    timeString?: string
+  ) => {
+    try {
+      if (createdAt) {
+        const parsed = new Date(createdAt);
+        if (!isNaN(parsed.getTime())) {
+          return format(parsed, "MM/dd/yyyy  hh:mm a");
+        }
+      }
+      if (dateString) {
+        const dateParts = dateString.split("T")[0];
+        const timeParts = timeString || "10:00";
+        const parsed = new Date(`${dateParts}T${timeParts}:00`);
+        if (!isNaN(parsed.getTime())) {
+          return format(parsed, "MM/dd/yyyy  hh:mm a");
+        }
+        return `${dateString} ${timeString || ""}`.trim();
+      }
+      return "-";
+    } catch {
+      return "-";
+    }
+  };
+
+  const formatCounselingDateTime = (dateString?: string, timeString?: string) => {
     try {
       if (!dateString) return "Belum dijadwalkan";
-
       const formattedDate = format(new Date(dateString), "dd/MM/yyyy");
       return `${formattedDate}, ${timeString || "00.00"}`;
     } catch {
@@ -185,37 +304,33 @@ export default function CounselingScheduleTable() {
     }
   };
 
-  // Helper functions for badges
+  // Badge Style Helpers
   const getStatusBadge = (status: string) => {
     switch ((status || "").toLowerCase()) {
-      case "belum ditinjau":
-        return "bg-amber-100 text-amber-800 border-amber-200";
-      case "sedang ditangani":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "belum ditanggapi":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "menunggu persetujuan siswa":
-        return "bg-purple-100 text-purple-800 border-purple-200";
-      case "konseling dijadwalkan":
-      case "dijadwalkan":
-        return "bg-emerald-100 text-emerald-800 border-emerald-200";
       case "diselesaikan":
       case "selesai":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-[#E8FAF0] text-[#12B76A]";
+      case "sedang ditangani":
+        return "bg-blue-50 text-blue-600 border border-blue-200";
+      case "belum ditinjau":
+      case "menunggu":
+      case "belum ditanggapi":
+        return "bg-amber-50 text-amber-600 border border-amber-200";
+      case "menunggu persetujuan siswa":
+        return "bg-purple-50 text-purple-600 border border-purple-200";
+      case "konseling dijadwalkan":
+      case "dijadwalkan":
+      case "disetujui":
+        return "bg-emerald-50 text-emerald-600 border border-emerald-200";
       case "dibatalkan":
-        return "bg-gray-100 text-gray-700 border-gray-200";
       case "jadwal ditolak siswa":
       case "ditolak oleh siswa":
       case "ditolak":
-        return "bg-rose-100 text-rose-800 border-rose-200";
+        return "bg-rose-50 text-rose-600 border border-rose-200";
       case "bukan urgent":
-        return "bg-slate-100 text-slate-700 border-slate-200";
-      case "menunggu":
-        return "bg-amber-100 text-amber-800 border-amber-200";
-      case "disetujui":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-slate-100 text-slate-700 border border-slate-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-gray-100 text-gray-700 border border-gray-200";
     }
   };
 
@@ -226,16 +341,17 @@ export default function CounselingScheduleTable() {
   const getPrioritasBadge = (prioritas: string) => {
     switch ((prioritas || "").toLowerCase()) {
       case "tinggi":
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-red-50 text-red-600 border border-red-200";
       case "sedang":
-        return "bg-orange-100 text-orange-800 border-orange-200";
+        return "bg-amber-50 text-amber-600 border border-amber-200";
       case "rendah":
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "bg-blue-50 text-blue-600 border border-blue-200";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-100 text-gray-700 border border-gray-200";
     }
   };
 
+  // Action enablement logic
   const isActionEnabled = (schedule: CounselingSchedule, action: string) => {
     const status = (schedule.status || "").toLowerCase();
     switch (action) {
@@ -265,7 +381,12 @@ export default function CounselingScheduleTable() {
     }
   };
 
-  // Dialog handlers
+  // Dialog open triggers
+  const handleViewResult = (schedule: CounselingSchedule) => {
+    setSelectedSchedule(schedule);
+    setIsViewResultDialogOpen(true);
+  };
+
   const handleConfirm = (schedule: CounselingSchedule) => {
     setSelectedSchedule(schedule);
     setIsConfirmDialogOpen(true);
@@ -281,14 +402,7 @@ export default function CounselingScheduleTable() {
     setIsCompleteDialogOpen(true);
   };
 
-  const handleViewResult = (schedule: CounselingSchedule) => {
-    setSelectedSchedule(schedule);
-    setIsViewResultDialogOpen(true);
-  };
-
-
-
-  // Column definitions
+  // Columns definition matching UI design
   const columns: ColumnDef<CounselingSchedule>[] = [
     {
       accessorKey: "user.name",
@@ -296,113 +410,129 @@ export default function CounselingScheduleTable() {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
+          className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent"
         >
           Nama
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <div className="min-w-[150px] flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-medium text-blue-600">
-              {getInitials(row.original.user?.name || "Tanpa Nama")}
+      cell: ({ row }) => {
+        const name = row.original.user?.name || "Tanpa Nama";
+        const initials = getInitials(name);
+        return (
+          <div className="flex items-center space-x-3 py-1">
+            <div className="w-9 h-9 rounded-full bg-[#5D5FEF] text-white flex items-center justify-center flex-shrink-0 font-semibold text-xs shadow-xs">
+              {initials}
+            </div>
+            <span className="font-medium text-gray-900 text-sm truncate max-w-[190px]">
+              {name}
             </span>
           </div>
-          <span className="font-medium text-gray-900 truncate">
-            <p>{row.original.user?.name || "Tanpa Nama"}</p>
-            <p className="text-xs text-foreground">
-              {row.original.user?.username || "-"}
-            </p>
-          </span>
-        </div>
+        );
+      },
+    },
+    {
+      id: "nisn",
+      accessorFn: (row) => row.user?.identifier || "-",
+      header: () => (
+        <span className="font-semibold text-indigo-600 text-xs sm:text-sm">
+          NISN
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600 font-medium">
+          {row.original.user?.identifier || "-"}
+        </span>
       ),
     },
     {
       id: "kelas",
-      accessorFn: (row) => row.user?.room?.name || "-",
+      accessorFn: (row) => row.user?.room?.name || row.room || "-",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
+          className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent"
         >
           Kelas
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <Badge
-          variant="outline"
-          className="bg-blue-50 text-blue-700 border-blue-200"
-        >
-          {row.original.user?.room?.name || "-"}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const roomName = row.original.user?.room?.name || row.original.room || "-";
+        return (
+          <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full border border-gray-300 text-xs font-medium text-gray-700 bg-white shadow-none whitespace-nowrap">
+            {roomName}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "topic",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
-        >
+      header: () => (
+        <span className="font-semibold text-indigo-600 text-xs sm:text-sm">
           Topik Konseling
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        </span>
       ),
       cell: ({ row }) => (
-        <div className="min-w-[200px] max-w-[300px]">
-          <div className="font-medium truncate">{row.original.topic}</div>
+        <div
+          className="max-w-[260px] text-sm text-gray-800 truncate"
+          title={row.original.topic}
+        >
+          {row.original.topic || "-"}
         </div>
       ),
     },
     {
       accessorKey: "status",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
-        >
+      header: () => (
+        <span className="font-semibold text-indigo-600 text-xs sm:text-sm">
           Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        </span>
       ),
-      cell: ({ row }) => (
-        <div className="flex items-center space-x-3">
-          <Badge className={getStatusBadge(row.original.status)}>
-            {getStatusLabel(row.original.status)}
-          </Badge>
-          <Badge className={getPrioritasBadge(row.original.priority)}>
-            {row.original.priority.charAt(0).toUpperCase() +
-              row.original.priority.slice(1)}
-          </Badge>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const status = row.original.status || "-";
+        return (
+          <span
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(
+              status
+            )}`}
+          >
+            {getStatusLabel(status)}
+          </span>
+        );
+      },
     },
     {
-      accessorKey: "date",
+      id: "waktu_diajukan",
+      accessorFn: (row) => row.created_at || row.date || "",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-semibold"
+          className="h-auto p-0 font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-transparent"
         >
-          Waktu Konseling
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          Waktu Diajukan
+          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="text-sm text-gray-600 min-w-[120px]">
-          {formatCounselingDateTime(row.original.date, row.original.time)}
-        </div>
+        <span className="text-sm text-gray-600 font-medium whitespace-nowrap">
+          {formatSubmittedTime(
+            row.original.created_at,
+            row.original.date,
+            row.original.time
+          )}
+        </span>
       ),
     },
     {
       id: "actions",
-      header: "Aksi",
+      header: () => (
+        <span className="font-semibold text-indigo-600 text-xs sm:text-sm">
+          Aksi
+        </span>
+      ),
       cell: ({ row }) => {
         const schedule = row.original;
         const normalizedStatus = (schedule.status || "").toLowerCase();
@@ -531,46 +661,47 @@ export default function CounselingScheduleTable() {
 
   return (
     <div className="space-y-4">
-      {/* Filter Controls - Responsive Layout */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1 min-w-0">
-          <Input
-            placeholder="Cari nama siswa, NISN, atau topik konseling..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full"
-          />
-        </div>
+      {/* Top Filter Bar: Search, Kelas, Status, and Source Buttons */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 py-1">
+        {/* Left Side: Search & Filter Dropdowns */}
+        <div className="flex flex-1 flex-wrap sm:flex-nowrap items-center gap-3">
+          {/* Search Input with Search Icon */}
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Input
+              placeholder="Cari..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-10 bg-white border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-indigo-500 shadow-none"
+            />
+          </div>
 
-        {/* Filter Dropdowns and Page Size */}
-        <div className="flex flex-col sm:flex-row lg:flex-nowrap gap-2 lg:gap-3">
-          {/* Kelas Filter */}
-          <div className="w-full sm:min-w-[140px] lg:w-[140px]">
+          {/* Pilih Kelas Dropdown */}
+          <div className="w-[140px] sm:w-[150px]">
             <Select value={kelasFilter} onValueChange={setKelasFilter}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-10 bg-white border-gray-300 rounded-lg text-sm text-gray-700 shadow-none">
                 <SelectValue placeholder="Pilih Kelas" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Kelas</SelectItem>
-                {uniqueKelas.map((kelas) => (
-                  <SelectItem key={kelas} value={kelas}>
-                    {kelas}
+                {roomOptions.map((room) => (
+                  <SelectItem key={room} value={room}>
+                    {room}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Status Filter */}
-          <div className="w-full sm:min-w-[140px] lg:w-[140px]">
+          {/* Pilih Status Dropdown */}
+          <div className="w-[140px] sm:w-[150px]">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Status" />
+              <SelectTrigger className="h-10 bg-white border-gray-300 rounded-lg text-sm text-gray-700 shadow-none">
+                <SelectValue placeholder="Pilih Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
-                {uniqueStatus.map((status) => (
+                {statusOptions.map((status) => (
                   <SelectItem key={status} value={status}>
                     {getStatusLabel(status)}
                   </SelectItem>
@@ -578,57 +709,76 @@ export default function CounselingScheduleTable() {
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          {/* Prioritas Filter */}
-          <div className="w-full sm:min-w-[140px] lg:w-[140px]">
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Prioritas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Prioritas</SelectItem>
-                {uniquePriorities.map((priority) => (
-                  <SelectItem key={priority} value={priority}>
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Right Side: Source Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <span className="text-sm text-gray-500 font-normal mr-1 whitespace-nowrap">
+            Sumber:
+          </span>
 
-          {/* Page Size Selector */}
-          <div className="flex items-center gap-2 w-full sm:w-auto lg:w-auto">
-            <span className="text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:block">
-              Tampilkan:
-            </span>
-            <span className="text-sm font-medium text-gray-600 sm:hidden">
-              Per halaman:
-            </span>
-            <Select
-              value={currentPageSize.toString()}
-              onValueChange={(value) => setCurrentPageSize(Number(value))}
-            >
-              <SelectTrigger className="w-[80px] sm:w-[80px] lg:w-[80px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="15">15</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Semua */}
+          <button
+            type="button"
+            onClick={() => setSourceFilter("all")}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              sourceFilter === "all"
+                ? "border border-gray-500 text-gray-900 bg-gray-50 font-semibold shadow-xs"
+                : "border border-gray-300 text-gray-600 bg-white hover:border-gray-400"
+            }`}
+          >
+            Semua
+          </button>
+
+          {/* Siswa */}
+          <button
+            type="button"
+            onClick={() => setSourceFilter("student")}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              sourceFilter === "student"
+                ? "border-2 border-indigo-600 text-indigo-600 bg-indigo-50/50 font-semibold"
+                : "border border-indigo-300 text-indigo-600 bg-white hover:bg-indigo-50/20"
+            }`}
+          >
+            <UserIcon className="h-3.5 w-3.5 text-indigo-600" />
+            <span>Siswa ({counts.siswa})</span>
+          </button>
+
+          {/* Curhat */}
+          <button
+            type="button"
+            onClick={() => setSourceFilter("curhat")}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              sourceFilter === "curhat"
+                ? "border-2 border-indigo-600 text-indigo-600 bg-indigo-50/50 font-semibold"
+                : "border border-indigo-300 text-indigo-600 bg-white hover:bg-indigo-50/20"
+            }`}
+          >
+            <MessageCircle className="h-3.5 w-3.5 text-indigo-600" />
+            <span>Curhat ({counts.curhat})</span>
+          </button>
+
+          {/* Guru BK */}
+          <button
+            type="button"
+            onClick={() => setSourceFilter("regular")}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              sourceFilter === "regular"
+                ? "border-2 border-indigo-600 text-indigo-600 bg-indigo-50/50 font-semibold"
+                : "border border-indigo-300 text-indigo-600 bg-white hover:bg-indigo-50/20"
+            }`}
+          >
+            <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
+            <span>Guru BK ({counts.guruBk})</span>
+          </button>
         </div>
       </div>
 
       {/* Data Table */}
       {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">
+        <div className="flex justify-center items-center py-16 bg-white rounded-lg border border-gray-100">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          <span className="ml-3 text-sm text-gray-600">
             Memuat data jadwal konseling...
           </span>
         </div>
@@ -642,33 +792,9 @@ export default function CounselingScheduleTable() {
           showPagination={true}
           pageSize={currentPageSize}
           pageSizeOptions={[5, 10, 15, 20, 25, 50]}
-          showPageSizeSelector={false}
+          showPageSizeSelector={true}
         />
       )}
-
-      {/* Dialog Components */}
-      <ConfirmationDialog
-        isOpen={isConfirmDialogOpen}
-        onClose={() => setIsConfirmDialogOpen(false)}
-        schedule={selectedSchedule}
-        counselors={counselors}
-        onRefreshData={refreshData}
-      />
-
-      <RescheduleDialog
-        isOpen={isRescheduleDialogOpen}
-        onClose={() => setIsRescheduleDialogOpen(false)}
-        schedule={selectedSchedule}
-        counselors={counselors}
-        onRefreshData={refreshData}
-      />
-
-      <CompleteDialog
-        isOpen={isCompleteDialogOpen}
-        onClose={() => setIsCompleteDialogOpen(false)}
-        schedule={selectedSchedule}
-        onRefreshData={refreshData}
-      />
 
       {/* View Result Dialog for Diselesaikan / Dibatalkan */}
       <Dialog open={isViewResultDialogOpen} onOpenChange={setIsViewResultDialogOpen}>
@@ -749,7 +875,31 @@ export default function CounselingScheduleTable() {
         </DialogContent>
       </Dialog>
 
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isConfirmDialogOpen}
+        onClose={() => setIsConfirmDialogOpen(false)}
+        schedule={selectedSchedule}
+        counselors={counselors}
+        onRefreshData={refreshData}
+      />
 
+      {/* Reschedule Dialog */}
+      <RescheduleDialog
+        isOpen={isRescheduleDialogOpen}
+        onClose={() => setIsRescheduleDialogOpen(false)}
+        schedule={selectedSchedule}
+        counselors={counselors}
+        onRefreshData={refreshData}
+      />
+
+      {/* Complete Dialog */}
+      <CompleteDialog
+        isOpen={isCompleteDialogOpen}
+        onClose={() => setIsCompleteDialogOpen(false)}
+        schedule={selectedSchedule}
+        onRefreshData={refreshData}
+      />
     </div>
   );
 }

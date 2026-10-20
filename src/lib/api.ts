@@ -12,6 +12,7 @@ import {
   SharingReplyResponse,
   SharingCreateResponse,
   ReportListResponse,
+  ReportListParams,
   ReportConfirmRequest,
   ReportConfirmResponse,
   ReportCloseRequest,
@@ -486,8 +487,35 @@ export async function authPatch(endpoint: string, data: unknown) {
 /**
  * Get all counseling schedule reports
  */
-export async function getReportList(): Promise<ReportListResponse> {
-  const response = await authGet("/report");
+export async function getReportList(
+  params?: ReportListParams,
+): Promise<ReportListResponse> {
+  let url = "/report";
+  if (params) {
+    const query = new URLSearchParams();
+    if (params.priority && params.priority !== "all") {
+      query.append("priority", params.priority);
+    }
+    if (params.room && params.room !== "all") {
+      query.append("room", params.room);
+    }
+    if (params.search && params.search.trim() !== "") {
+      query.append("search", params.search.trim());
+    }
+    if (params.source && params.source !== "all") {
+      query.append("source", params.source);
+    }
+    if (params.status && params.status !== "all") {
+      query.append("status", params.status);
+    }
+
+    const qs = query.toString();
+    if (qs) {
+      url += `?${qs}`;
+    }
+  }
+
+  const response = await authGet(url);
   return response;
 }
 

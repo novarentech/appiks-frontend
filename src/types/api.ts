@@ -315,8 +315,18 @@ export interface Report {
   notes: string;
   result: string;
   created_at: string;
+  source_type?: string;
+  sharing_id?: number | null;
   user: ReportUser;
   counselor: ReportCounselor;
+}
+
+export interface ReportListParams {
+  priority?: "tinggi" | "rendah" | "sedang" | string | null;
+  room?: string | null;
+  search?: string | null;
+  source?: "all" | "student" | "regular" | string | null;
+  status?: string | null;
 }
 
 export interface ReportListResponse {
@@ -439,6 +449,8 @@ export interface CounselingSchedule {
   notes: string;
   result: string;
   created_at: string;
+  source_type?: string;
+  sharing_id?: number | null;
   user: {
     name: string;
     phone: string;
